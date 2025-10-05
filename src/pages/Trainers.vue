@@ -4,7 +4,12 @@
 
         <!-- Search & Add -->
         <div class="d-flex justify-content-between mb-3">
-            <input type="text" class="form-control w-25" placeholder="Search by name or email" v-model="searchTerm" />
+            <input
+                type="text"
+                class="form-control w-25"
+                placeholder="Search by name or email"
+                v-model="searchTerm"
+            />
             <button class="btn btn-primary" @click="openAddModal">Add Trainer</button>
         </div>
 
@@ -15,16 +20,18 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Specialty</th>
+                    <th>Speciality</th>
+                    <th>Classes</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="trainer in filteredTrainers" :key="trainer.id">
-                    <td>{{ trainer.name }}</td>
+                    <td>{{ trainer.firstName }} {{ trainer.lastName }}</td>
                     <td>{{ trainer.email }}</td>
                     <td>{{ trainer.phone }}</td>
-                    <td>{{ trainer.specialty }}</td>
+                    <td>{{ trainer.speciality }}</td>
+                    <td>{{ trainer.classes?.length || 0 }}</td>
                     <td>
                         <button class="btn btn-sm btn-info me-2" @click="editTrainer(trainer)">Edit</button>
                         <button class="btn btn-sm btn-danger" @click="deleteTrainer(trainer.id)">Delete</button>
@@ -44,8 +51,12 @@
                     <div class="modal-body">
                         <form @submit.prevent="saveTrainer">
                             <div class="mb-3">
-                                <label class="form-label">Name</label>
-                                <input v-model="form.name" type="text" class="form-control" required />
+                                <label class="form-label">First Name</label>
+                                <input v-model="form.firstName" type="text" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input v-model="form.lastName" type="text" class="form-control" required />
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Email</label>
@@ -56,8 +67,8 @@
                                 <input v-model="form.phone" type="text" class="form-control" required />
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Specialty</label>
-                                <input v-model="form.specialty" type="text" class="form-control" />
+                                <label class="form-label">Speciality</label>
+                                <input v-model="form.speciality" type="text" class="form-control" />
                             </div>
                             <button class="btn btn-primary" type="submit">
                                 {{ editingTrainer ? 'Update' : 'Add' }}
@@ -69,48 +80,128 @@
         </div>
     </div>
 </template>
+
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { Modal } from "bootstrap";
+import axios from "axios";
+
+interface GymClass {
+    id: number;
+    name: string;
+    startTime: string;
+    endTime: string;
+}
 
 interface Trainer {
     id: number;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     phone: string;
-    specialty: string;
+    speciality: string;
+    classes?: GymClass[];
 }
 
-const trainers = ref<Trainer[]>([
-    { id: 1, name: "Mike Johnson", email: "mike@example.com", phone: "9876543210", specialty: "Yoga" },
-    { id: 2, name: "Sara Lee", email: "sara@example.com", phone: "9876543211", specialty: "Weightlifting" },
-]);
+// ✅ Backend API base URL
+const API_URL = "http://localhost:3000/trainers"; // Update if needed
 
+const trainers = ref<Trainer[]>([]);
 const searchTerm = ref("");
 
-const filteredTrainers = computed(() => {
-    return trainers.value.filter(
+// Computed: filter trainers by name or email
+const filteredTrainers = computed(() =>
+    trainers.value.filter(
         (t) =>
-            t.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+            `${t.firstName} ${t.lastName}`.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
             t.email.toLowerCase().includes(searchTerm.value.toLowerCase())
-    );
-});
+    )
+);
 
-// Modal handling
+// Modal management
 const modalRef = ref<HTMLElement | null>(null);
 let editingTrainer: Trainer | null = null;
 
 const form = ref<Trainer>({
     id: 0,
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phone: "",
-    specialty: "",
+    speciality: "",
+    classes: [],
 });
+
+// 🟢 Load trainers on mount
+onMounted(async () => {
+    await fetchTrainers();
+});
+
+// ========== API FUNCTIONS ==========
+
+// GET all trainers
+async function fetchTrainers() {
+    try {
+        const res = await axios.get(API_URL);
+        trainers.value = res.data;
+    } catch (err) {
+        console.error("Error fetching trainers:", err);
+        alert("Failed to load trainers.");
+    }
+}
+
+// POST new trainer
+async function createTrainer() {
+    try {
+        const res = await axios.post(API_URL, {
+            firstName: form.value.firstName,
+            lastName: form.value.lastName,
+            email: form.value.email,
+            phone: form.value.phone,
+            speciality: form.value.speciality,
+        });
+        trainers.value.push(res.data);
+    } catch (err) {
+        console.error("Error creating trainer:", err);
+        alert("Failed to create trainer.");
+    }
+}
+
+// PUT update trainer
+async function updateTrainer(id: number) {
+    try {
+        const res = await axios.put(`${API_URL}/${id}`, {
+            firstName: form.value.firstName,
+            lastName: form.value.lastName,
+            email: form.value.email,
+            phone: form.value.phone,
+            speciality: form.value.speciality,
+        });
+        const index = trainers.value.findIndex((t) => t.id === id);
+        if (index !== -1) trainers.value[index] = res.data;
+    } catch (err) {
+        console.error("Error updating trainer:", err);
+        alert("Failed to update trainer.");
+    }
+}
+
+// DELETE trainer
+async function deleteTrainer(id: number) {
+    if (!confirm("Are you sure you want to delete this trainer?")) return;
+    try {
+        await axios.delete(`${API_URL}/${id}`);
+        trainers.value = trainers.value.filter((t) => t.id !== id);
+    } catch (err) {
+        console.error("Error deleting trainer:", err);
+        alert("Failed to delete trainer.");
+    }
+}
+
+// ========== MODAL FUNCTIONS ==========
 
 function openAddModal() {
     editingTrainer = null;
-    form.value = { id: 0, name: "", email: "", phone: "", specialty: "" };
+    form.value = { id: 0, firstName: "", lastName: "", email: "", phone: "", speciality: "", classes: [] };
     if (modalRef.value) new Modal(modalRef.value).show();
 }
 
@@ -124,19 +215,12 @@ function editTrainer(trainer: Trainer) {
     if (modalRef.value) new Modal(modalRef.value).show();
 }
 
-function saveTrainer() {
+async function saveTrainer() {
     if (editingTrainer) {
-        Object.assign(editingTrainer, form.value);
+        await updateTrainer(editingTrainer.id);
     } else {
-        const newId = trainers.value.length ? Math.max(...trainers.value.map((t) => t.id)) + 1 : 1;
-        trainers.value.push({ ...form.value, id: newId });
+        await createTrainer();
     }
     closeModal();
-}
-
-function deleteTrainer(id: number) {
-    if (confirm("Are you sure to delete this trainer?")) {
-        trainers.value = trainers.value.filter((t) => t.id !== id);
-    }
 }
 </script>
