@@ -4,8 +4,12 @@
 
         <!-- Search & Add -->
         <div class="d-flex justify-content-between mb-3">
-            <input type="text" class="form-control w-25" placeholder="Search by class name or trainer"
-                v-model="searchTerm" />
+            <input
+                type="text"
+                class="form-control w-25"
+                placeholder="Search by class name or trainer"
+                v-model="searchTerm"
+            />
             <button class="btn btn-primary" @click="openAddModal">Add Class</button>
         </div>
 
@@ -15,17 +19,17 @@
                 <tr>
                     <th>Class Name</th>
                     <th>Trainer</th>
-                    <th>Date</th>
-                    <th>Time</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="cls in filteredClasses" :key="cls.id">
                     <td>{{ cls.name }}</td>
-                    <td>{{ cls.trainer }}</td>
-                    <td>{{ cls.date }}</td>
-                    <td>{{ cls.time }}</td>
+                    <td>{{ cls.trainer?.firstName }} {{ cls.trainer?.lastName }}</td>
+                    <td>{{ formatDate(cls.startTime) }}</td>
+                    <td>{{ formatDate(cls.endTime) }}</td>
                     <td>
                         <button class="btn btn-sm btn-info me-2" @click="editClass(cls)">Edit</button>
                         <button class="btn btn-sm btn-danger" @click="deleteClass(cls.id)">Delete</button>
@@ -50,15 +54,20 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Trainer</label>
-                                <input v-model="form.trainer" type="text" class="form-control" required />
+                                <select v-model="form.trainerId" class="form-select" required>
+                                    <option value="">Select Trainer</option>
+                                    <option v-for="t in trainers" :key="t.id" :value="t.id">
+                                        {{ t.firstName }} {{ t.lastName }}
+                                    </option>
+                                </select>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Date</label>
-                                <input v-model="form.date" type="date" class="form-control" required />
+                                <label class="form-label">Start Time</label>
+                                <input v-model="form.startTime" type="datetime-local" class="form-control" required />
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Time</label>
-                                <input v-model="form.time" type="time" class="form-control" required />
+                                <label class="form-label">End Time</label>
+                                <input v-model="form.endTime" type="datetime-local" class="form-control" required />
                             </div>
                             <button class="btn btn-primary" type="submit">
                                 {{ editingClass ? 'Update' : 'Add' }}
@@ -70,31 +79,43 @@
         </div>
     </div>
 </template>
+
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { Modal } from "bootstrap";
+import axios from "axios";
+
+interface Trainer {
+    id: number;
+    firstName: string;
+    lastName: string;
+}
 
 interface GymClass {
     id: number;
     name: string;
-    trainer: string;
-    date: string;
-    time: string;
+    startTime: string;
+    endTime: string;
+    trainerId: number;
+    trainer?: Trainer;
 }
 
-// Sample classes
-const classes = ref<GymClass[]>([
-    { id: 1, name: "Yoga", trainer: "Mike Johnson", date: "2025-09-29", time: "08:00" },
-    { id: 2, name: "Weightlifting", trainer: "Sara Lee", date: "2025-09-29", time: "10:00" },
-]);
+// ✅ Backend API URLs
+const CLASSES_API = "http://localhost:3000/classes";
+const TRAINERS_API = "http://localhost:3000/trainers";
 
+const classes = ref<GymClass[]>([]);
+const trainers = ref<Trainer[]>([]);
 const searchTerm = ref("");
 
+// Computed: filter classes by name or trainer
 const filteredClasses = computed(() =>
     classes.value.filter(
         (c) =>
             c.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-            c.trainer.toLowerCase().includes(searchTerm.value.toLowerCase())
+            `${c.trainer?.firstName ?? ""} ${c.trainer?.lastName ?? ""}`
+                .toLowerCase()
+                .includes(searchTerm.value.toLowerCase())
     )
 );
 
@@ -102,17 +123,95 @@ const filteredClasses = computed(() =>
 const modalRef = ref<HTMLElement | null>(null);
 let editingClass: GymClass | null = null;
 
-const form = ref<GymClass>({
+const form = ref({
     id: 0,
     name: "",
-    trainer: "",
-    date: "",
-    time: "",
+    startTime: "",
+    endTime: "",
+    trainerId: 0,
 });
+
+// 🟢 Load classes and trainers on mount
+onMounted(async () => {
+    await fetchTrainers();
+    await fetchClasses();
+});
+
+// ========== API FUNCTIONS ==========
+
+// GET all classes
+async function fetchClasses() {
+    try {
+        const res = await axios.get(CLASSES_API);
+        classes.value = res.data;
+    } catch (err) {
+        console.error("Error fetching classes:", err);
+        alert("Failed to load classes.");
+    }
+}
+
+// GET all trainers (for dropdown)
+async function fetchTrainers() {
+    try {
+        const res = await axios.get(TRAINERS_API);
+        trainers.value = res.data;
+    } catch (err) {
+        console.error("Error fetching trainers:", err);
+        alert("Failed to load trainers.");
+    }
+}
+
+// POST create new class
+async function createClass() {
+    try {
+        const res = await axios.post(CLASSES_API, {
+            name: form.value.name,
+            trainer: { connect: { id: form.value.trainerId } },
+            startTime: new Date(form.value.startTime).toISOString(),
+            endTime: new Date(form.value.endTime).toISOString(),
+        });
+        classes.value.push(res.data);
+        await fetchClasses();
+    } catch (err) {
+        console.error("Error creating class:", err);
+        alert("Failed to create class.");
+    }
+}
+
+// PUT update class
+async function updateClass(id: number) {
+    try {
+        const res = await axios.put(`${CLASSES_API}/${id}`, {
+            name: form.value.name,
+            trainer: { connect: { id: form.value.trainerId } },
+            startTime: new Date(form.value.startTime).toISOString(),
+            endTime: new Date(form.value.endTime).toISOString(),
+        });
+        const index = classes.value.findIndex((c) => c.id === id);
+        if (index !== -1) classes.value[index] = res.data;
+    } catch (err) {
+        console.error("Error updating class:", err);
+        alert("Failed to update class.");
+    }
+}
+
+// DELETE class
+async function deleteClass(id: number) {
+    if (!confirm("Are you sure you want to delete this class?")) return;
+    try {
+        await axios.delete(`${CLASSES_API}/${id}`);
+        classes.value = classes.value.filter((c) => c.id !== id);
+    } catch (err) {
+        console.error("Error deleting class:", err);
+        alert("Failed to delete class.");
+    }
+}
+
+// ========== MODAL FUNCTIONS ==========
 
 function openAddModal() {
     editingClass = null;
-    form.value = { id: 0, name: "", trainer: "", date: "", time: "" };
+    form.value = { id: 0, name: "", startTime: "", endTime: "", trainerId: 0 };
     if (modalRef.value) new Modal(modalRef.value).show();
 }
 
@@ -122,23 +221,28 @@ function closeModal() {
 
 function editClass(cls: GymClass) {
     editingClass = cls;
-    form.value = { ...cls };
+    form.value = {
+        id: cls.id,
+        name: cls.name,
+        startTime: cls.startTime.slice(0, 16),
+        endTime: cls.endTime.slice(0, 16),
+        trainerId: cls.trainerId,
+    };
     if (modalRef.value) new Modal(modalRef.value).show();
 }
 
-function saveClass() {
+async function saveClass() {
     if (editingClass) {
-        Object.assign(editingClass, form.value);
+        await updateClass(editingClass.id);
     } else {
-        const newId = classes.value.length ? Math.max(...classes.value.map((c) => c.id)) + 1 : 1;
-        classes.value.push({ ...form.value, id: newId });
+        await createClass();
     }
     closeModal();
 }
 
-function deleteClass(id: number) {
-    if (confirm("Are you sure to delete this class?")) {
-        classes.value = classes.value.filter((c) => c.id !== id);
-    }
+// ========== UTILITIES ==========
+function formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleString([], { dateStyle: "short", timeStyle: "short" });
 }
 </script>
