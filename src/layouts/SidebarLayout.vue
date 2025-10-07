@@ -5,6 +5,7 @@
       <h2 class="mb-4">GymApp</h2>
       <nav class="nav flex-column">
         <router-link to="/" class="nav-link text-light" active-class="active">Dashboard</router-link>
+        <router-link to="/billing" class="nav-link text-light" active-class="active">Billing</router-link>
         <router-link to="/members" class="nav-link text-light" active-class="active">Members</router-link>
         <router-link to="/trainers" class="nav-link text-light" active-class="active">Trainers</router-link>
         <router-link to="/classes" class="nav-link text-light" active-class="active">Classes</router-link>
