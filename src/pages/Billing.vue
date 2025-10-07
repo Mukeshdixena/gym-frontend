@@ -33,7 +33,7 @@
               <td>₹{{ bill.paid || 0 }}</td>
               <td>₹{{ (bill.amount - (bill.paid || 0)).toFixed(2) }}</td>
               <td>
-                <button class="btn btn-success btn-sm" @click="openApprovePopup(bill)">Approve</button>
+                <button class="btn btn-success btn-sm" @click="approveBill(bill.id)">Approve</button>
                 <button class="btn btn-danger btn-sm ms-2" @click="rejectBill(bill.id)">Reject</button>
               </td>
             </tr>
@@ -286,15 +286,14 @@ const pendingAmount = computed(() => {
   return Math.max(planPrice - discount - paid, 0)
 })
 
+// ✅ Lifecycle
 onMounted(async () => {
   if (approveModalRef.value) approveModal = new Modal(approveModalRef.value)
   if (enrollmentModalRef.value) enrollmentModal = new Modal(enrollmentModalRef.value)
   await loadMembers()
   await loadPlans()
   await loadPendingBills()
-  await loadApprovedBills()
 })
-
 
 async function loadMembers() {
   const res = await axios.get<Member[]>(MEMBERS_API)
