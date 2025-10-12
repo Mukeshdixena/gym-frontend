@@ -60,7 +60,6 @@
       </table>
     </div>
 
-    <!-- ✅ Assign Plan Modal -->
     <div class="modal fade" ref="assignModalRef" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">

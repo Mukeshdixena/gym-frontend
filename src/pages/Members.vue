@@ -80,7 +80,6 @@
                 <textarea v-model="form.address" class="form-control" rows="2" placeholder="Enter address"></textarea>
               </div>
 
-              <!-- ✅ Date of Birth -->
               <div class="mb-3">
                 <label class="form-label">Date of Birth</label>
                 <input v-model="form.dateOfBirth" type="date" class="form-control" />
