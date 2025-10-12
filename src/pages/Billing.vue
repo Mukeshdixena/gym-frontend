@@ -40,7 +40,7 @@
               <td>₹{{ bill.pending || 0 }}</td>
               <td><span class="badge bg-secondary">{{ bill.status }}</span></td>
               <td>
-                <button class="btn btn-success btn-sm" @click="openAssignModal(bill)">
+                <button class="btn btn-primary btn-sm" @click="openAssignModal(bill)">
                   Approve
                 </button>
                 <button class="btn btn-danger btn-sm ms-2" @click="rejectBill(bill.id)">
@@ -69,6 +69,7 @@
               <th>Start</th>
               <th>End</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -82,6 +83,12 @@
               <td>{{ new Date(bill.startDate).toLocaleDateString() }}</td>
               <td>{{ new Date(bill.endDate).toLocaleDateString() }}</td>
               <td><span class="badge bg-success">{{ bill.status }}</span></td>
+              <td>
+                <button v-if="bill.status === 'PARTIAL_PAID'" class="btn btn-primary btn-sm"
+                  @click="openCollectModal(bill)">
+                  Collect Bill
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -93,11 +100,11 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Collect Payment / Apply Discount</h5>
+            <h5 class="modal-title">Collect Payment</h5>
             <button type="button" class="btn-close" @click="closeAssignModal"></button>
           </div>
           <div class="modal-body">
-            <form @submit.prevent="assignPlan">
+            <form @submit.prevent>
               <div class="mb-3">
                 <strong>Member:</strong>
                 <span>{{ selectedMember?.firstName }} {{ selectedMember?.lastName }}</span>
@@ -154,12 +161,15 @@
                 </div>
               </div>
 
-              <button type="submit" class="btn btn-success w-100 mt-4">
-                {{ pendingAmount === 0 ? 'Mark as Fully Paid' : 'Update Payment' }}
-              </button>
-              <button type="submit" class="btn btn-success w-100 mt-4">
-                {{ pendingAmount === 0 ? 'Mark as Fully Paid' : 'Update Payment' }}
-              </button>
+              <!-- Modal Buttons -->
+              <div class="d-grid gap-2 mt-4">
+                <button type="button" class="btn btn-primary" @click="updatePayment">
+                  Update Payment
+                </button>
+                <button v-if="!isPartialPayment" type="button" class="btn btn-success" @click="approvePayment">
+                  Approve
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -206,6 +216,7 @@ const oldPaid = ref(0)
 const oldPending = ref(0)
 const newPaidNow = ref(0)
 const paymentMethod = ref('CASH')
+const isPartialPayment = ref(false) // controls modal approve button
 
 const selectedPlan = computed(() => plans.value.find(p => p.id === enrollmentForm.value.planId))
 const pendingAmount = computed(() =>
@@ -244,8 +255,8 @@ async function loadPlans() {
 
 async function loadMemberships() {
   const res = await axios.get<Membership[]>(`${API_BASE_URL}/memberships`)
-  approvedBills.value = res.data.filter(m => m.status === 'ACTIVE')
-  pendingBills.value = res.data.filter(m => m.status !== 'ACTIVE')
+  approvedBills.value = res.data.filter(m => m.status === 'ACTIVE' || m.status === 'PARTIAL_PAID')
+  pendingBills.value = res.data.filter(m => m.status !== 'ACTIVE' && m.status !== 'PARTIAL_PAID')
 }
 
 function openAssignModal(bill: Membership) {
@@ -257,13 +268,55 @@ function openAssignModal(bill: Membership) {
   oldPending.value = bill.pending
   newPaidNow.value = 0
   paymentMethod.value = 'CASH'
+  isPartialPayment.value = false
+  assignModal.show()
+}
+
+function openCollectModal(bill: Membership) {
+  selectedMembership.value = bill
+  selectedMember.value = bill.member
+  enrollmentForm.value.planId = bill.plan.id
+  enrollmentForm.value.discount = bill.discount
+  oldPaid.value = bill.paid
+  oldPending.value = bill.pending
+  newPaidNow.value = 0
+  paymentMethod.value = 'CASH'
+  isPartialPayment.value = true
   assignModal.show()
 }
 
 function closeAssignModal() { assignModal.hide() }
 function updatePendingAmount() { } // auto via computed
 
-async function assignPlan() {
+// Only update payment/discount
+async function updatePayment() {
+  if (!selectedMembership.value || !selectedPlan.value) return
+  if (newPaidNow.value <= 0 && enrollmentForm.value.discount <= 0) {
+    showToast('Enter some payment or discount to apply.', false)
+    return
+  }
+  try {
+    const patchData: any = {
+      amount: newPaidNow.value,
+      discount: enrollmentForm.value.discount,
+      method: paymentMethod.value
+    }
+
+    // If it's partial payment, update status as PARTIAL_PAID
+    if (isPartialPayment.value) patchData.status = 'PARTIAL_PAID'
+
+    await axios.patch(`${API_BASE_URL}/memberships/payment/${selectedMembership.value.id}`, patchData)
+    await loadMemberships()
+    closeAssignModal()
+    showToast('Payment updated successfully!')
+  } catch (err) {
+    console.error(err)
+    showToast('Error updating payment. Please try again.', false)
+  }
+}
+
+// Update payment + set status to PARTIAL_PAID
+async function approvePayment() {
   if (!selectedMembership.value || !selectedPlan.value) return
   if (newPaidNow.value <= 0 && enrollmentForm.value.discount <= 0) {
     showToast('Enter some payment or discount to apply.', false)
@@ -273,14 +326,15 @@ async function assignPlan() {
     await axios.patch(`${API_BASE_URL}/memberships/payment/${selectedMembership.value.id}`, {
       amount: newPaidNow.value,
       discount: enrollmentForm.value.discount,
-      method: paymentMethod.value
+      method: paymentMethod.value,
+      status: 'PARTIAL_PAID'
     })
     await loadMemberships()
     closeAssignModal()
-    showToast('Payment updated successfully!')
+    showToast('Payment approved and status updated!')
   } catch (err) {
     console.error(err)
-    showToast('Error updating payment. Please try again.', false)
+    showToast('Error approving payment. Please try again.', false)
   }
 }
 
@@ -295,7 +349,6 @@ async function rejectBill(id: number) {
   }
 }
 </script>
-
 
 <style scoped>
 .table td,
