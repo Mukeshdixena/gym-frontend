@@ -5,7 +5,7 @@
     <!-- Search & Add -->
     <div class="d-flex justify-content-between mb-3">
       <input type="text" class="form-control w-25" placeholder="Search by name or email" v-model="searchTerm" />
-      <button class="btn btn-primary" @click="openAddModal">Add Member</button>
+      <button class="btn btn-primary" @click="openAddModal">New Enrollment</button>
     </div>
 
     <!-- Members Table -->
@@ -42,42 +42,51 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ editingMember ? 'Edit Member' : 'Add Member' }}</h5>
+            <h5 class="modal-title">
+              {{ editingMember ? 'Edit Member' : 'New Enrollment' }}
+            </h5>
             <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
+
           <div class="modal-body">
             <form @submit.prevent="saveMember">
+              <!-- First Name -->
               <div class="mb-3">
                 <label class="form-label">First Name</label>
                 <input v-model="form.firstName" type="text" class="form-control" required />
               </div>
+
+              <!-- Last Name -->
               <div class="mb-3">
                 <label class="form-label">Last Name</label>
                 <input v-model="form.lastName" type="text" class="form-control" required />
               </div>
+
+              <!-- Email -->
               <div class="mb-3">
                 <label class="form-label">Email</label>
                 <input v-model="form.email" type="email" class="form-control" required />
               </div>
+
+              <!-- Phone -->
               <div class="mb-3">
                 <label class="form-label">Phone</label>
                 <input v-model="form.phone" type="text" class="form-control" required />
               </div>
+
+              <!-- ✅ Address -->
               <div class="mb-3">
-                <label class="form-label">Plan</label>
-                <select v-model="form.planId" class="form-select" required>
-                  <option v-for="plan in plans" :key="plan.id" :value="plan.id">{{ plan.name }}</option>
-                </select>
+                <label class="form-label">Address</label>
+                <textarea v-model="form.address" class="form-control" rows="2" placeholder="Enter address"></textarea>
               </div>
+
+              <!-- ✅ Date of Birth -->
               <div class="mb-3">
-                <label class="form-label">Membership Status</label>
-                <select v-model="form.membershipStatus" class="form-select" required>
-                  <option>ACTIVE</option>
-                  <option>INACTIVE</option>
-                  <option>EXPIRED</option>
-                </select>
+                <label class="form-label">Date of Birth</label>
+                <input v-model="form.dateOfBirth" type="date" class="form-control" />
               </div>
-              <button class="btn btn-primary" type="submit">
+
+              <button class="btn btn-primary w-100" type="submit">
                 {{ editingMember ? 'Update' : 'Add' }}
               </button>
             </form>
@@ -85,6 +94,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -192,22 +202,13 @@ async function saveMember() {
       lastName: form.value.lastName,
       email: form.value.email,
       phone: form.value.phone,
-      memberships: {
-        create: [
-          {
-            planId: form.value.planId,
-            status: form.value.membershipStatus,
-            startDate: new Date().toISOString(),
-            endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
-          },
-        ],
-      },
+      address: form.value.address,
+      dateOfBirth: form.value.dateOfBirth,
     };
 
     if (editingMember) {
       const res = await axios.put(`${apiUrl}/${editingMember.id}`, payload);
-      const index = members.value.findIndex(m => m.id === editingMember!.id);
-      if (index !== -1) members.value[index] = res.data;
+
     } else {
       const res = await axios.post(apiUrl, payload);
       members.value.push(res.data);
@@ -237,13 +238,12 @@ async function deleteMember(id: number) {
 async function loadMembers() {
   try {
     const resMembers = await axios.get(apiUrl);
-    members.value = resMembers.data;
-
+    members.value = Array.isArray(resMembers.data.data) ? resMembers.data.data : [];
   } catch (err) {
     console.error(err);
-
   }
 }
+
 
 // Fetch members & plans on mount
 onMounted(async () => {
