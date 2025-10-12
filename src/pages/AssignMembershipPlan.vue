@@ -60,6 +60,7 @@
       </table>
     </div>
 
+    <!-- Assign / Renew Modal -->
     <div class="modal fade" ref="assignModalRef" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -121,6 +122,16 @@
                     </div>
 
                     <div class="col-md-4">
+                      <label class="form-label">Payment Method</label>
+                      <select v-model="enrollmentForm.method" class="form-select">
+                        <option value="CASH">Cash</option>
+                        <option value="CARD">Card</option>
+                        <option value="UPI">UPI</option>
+                        <option value="ONLINE">Online</option>
+                      </select>
+                    </div>
+
+                    <div class="col-md-4">
                       <label class="form-label">Pending Amount (₹)</label>
                       <input type="number" class="form-control" :value="pendingAmount" readonly />
                     </div>
@@ -134,18 +145,32 @@
         </div>
       </div>
     </div>
+
+    <!-- Toast -->
+    <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+      aria-live="assertive" aria-atomic="true" style="position: fixed; top: 1rem; right: 1rem; z-index: 1055;">
+      <div class="d-flex">
+        <div class="toast-body">{{ toastMessage }}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" aria-label="Close"
+          @click="toastInstance.hide()"></button>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { Modal } from 'bootstrap';
+import { Modal, Toast } from 'bootstrap';
 import axios from 'axios';
+import { API_BASE_URL } from '@/config';
 
-const membersApi = 'http://localhost:3000/members';
-const plansApi = 'http://localhost:3000/plans';
-const membershipsApi = 'http://localhost:3000/memberships';
+// API endpoints
+const membersApi = `${API_BASE_URL}/members`;
+const plansApi = `${API_BASE_URL}/plans`;
+const membershipsApi = `${API_BASE_URL}/memberships`;
 
+// Interfaces
 interface Plan {
   id: number;
   name: string;
@@ -160,6 +185,8 @@ interface Membership {
   startDate: string;
   endDate: string;
   status: string;
+  paid?: number;
+  discount?: number;
 }
 interface Member {
   id: number;
@@ -184,47 +211,55 @@ const enrollmentForm = ref({
   endDate: '',
   paid: 0,
   discount: 0,
+  method: 'CASH',
 });
 
+// Computed
 const selectedPlan = computed(() =>
-  plans.value.find((p) => p.id === enrollmentForm.value.planId)
+  plans.value.find(p => p.id === enrollmentForm.value.planId)
 );
-
 const formattedEndDate = computed(() =>
-  enrollmentForm.value.endDate
-    ? new Date(enrollmentForm.value.endDate).toLocaleDateString()
-    : ''
+  enrollmentForm.value.endDate ? new Date(enrollmentForm.value.endDate).toLocaleDateString() : ''
 );
+const pendingAmount = computed(() => {
+  if (!selectedPlan.value) return 0;
+  const pending = selectedPlan.value.price - (enrollmentForm.value.discount + enrollmentForm.value.paid);
+  return pending > 0 ? pending : 0;
+});
 
 // Derived lists
 const inactiveMembers = computed(() =>
-  members.value.filter((m) => !m.memberships.length || m.memberships[0].status !== 'ACTIVE')
+  members.value.filter(m => !m.memberships.length || m.memberships[0].status !== 'ACTIVE')
 );
-
 const expiringMembers = computed(() => {
   const now = new Date();
   const soon = new Date();
   soon.setDate(now.getDate() + 7);
-  return members.value.filter((m) => {
+  return members.value.filter(m => {
     const end = m.memberships[0]?.endDate ? new Date(m.memberships[0].endDate) : null;
     return end && end <= soon && end >= now;
   });
 });
 
-const pendingAmount = computed(() => {
-  if (!selectedPlan.value) return 0;
-  return selectedPlan.value.price - (enrollmentForm.value.discount + enrollmentForm.value.paid);
-});
+// Toast
+const toastRef = ref<HTMLElement | null>(null);
+let toastInstance: Toast;
+const toastMessage = ref('');
+function showToast(message: string, isSuccess = true) {
+  toastMessage.value = message;
+  if (toastRef.value) {
+    toastRef.value.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`;
+    toastInstance.show();
+  }
+}
 
 // Methods
 function formatDate(dateStr?: string) {
   return dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A';
 }
-
 function getPlanName(id?: number) {
-  return plans.value.find((p) => p.id === id)?.name ?? 'N/A';
+  return plans.value.find(p => p.id === id)?.name ?? 'N/A';
 }
-
 function updatePlanDates() {
   const plan = selectedPlan.value;
   if (plan && enrollmentForm.value.startDate) {
@@ -234,61 +269,70 @@ function updatePlanDates() {
     enrollmentForm.value.endDate = end.toISOString().split('T')[0];
   }
 }
+function updatePendingAmount() { }
 
-function updatePendingAmount() {
-  // Re-compute automatically via computed property
-}
-
+// Modal
 function openAssignModal(member: Member) {
   selectedMember.value = member;
+  const activeMembership = member.memberships.find(m => m.status === 'ACTIVE');
   enrollmentForm.value = {
     memberId: member.id,
-    planId: 0,
-    startDate: '',
-    endDate: '',
-    paid: 0,
-    discount: 0,
+    planId: activeMembership?.planId ?? 0,
+    startDate: activeMembership?.startDate?.split('T')[0] ?? '',
+    endDate: activeMembership?.endDate?.split('T')[0] ?? '',
+    paid: activeMembership?.paid ?? 0,
+    discount: activeMembership?.discount ?? 0,
+    method: 'CASH',
   };
   if (assignModalRef.value) new Modal(assignModalRef.value).show();
 }
-
 function closeAssignModal() {
   if (assignModalRef.value) Modal.getInstance(assignModalRef.value)?.hide();
 }
 
+// API call
 async function assignPlan() {
   if (!enrollmentForm.value.planId || !enrollmentForm.value.startDate) {
-    alert('Please select plan and start date.');
+    showToast('Please select plan and start date.', false);
     return;
   }
-
   try {
-    console.log('Assigning plan with data:', enrollmentForm.value);
-    await axios.post(membershipsApi, enrollmentForm.value);
-    alert('Plan assigned successfully!');
+    await axios.post(membershipsApi, { ...enrollmentForm.value });
+    showToast('Plan assigned successfully!');
     closeAssignModal();
     loadMembers();
   } catch (err) {
     console.error(err);
-    alert('Failed to assign plan.');
+    showToast('Failed to assign plan.', false);
   }
 }
+
 async function loadMembers() {
   try {
     const resMembers = await axios.get(membersApi);
     members.value = Array.isArray(resMembers.data.data) ? resMembers.data.data : [];
   } catch (err) {
     console.error(err);
+    showToast('Failed to load members.', false);
   }
 }
 
+// Lifecycle
 onMounted(async () => {
-  const [resMembers, resPlans] = await Promise.all([
-    axios.get(membersApi),
-    axios.get(plansApi),
-  ]);
-  members.value = Array.isArray(resMembers.data.data) ? resMembers.data.data : [];
-  plans.value = resPlans.data;
+  if (assignModalRef.value) new Modal(assignModalRef.value);
+  if (toastRef.value) toastInstance = new Toast(toastRef.value);
+
+  try {
+    const [resMembers, resPlans] = await Promise.all([
+      axios.get(membersApi),
+      axios.get(plansApi),
+    ]);
+    members.value = Array.isArray(resMembers.data.data) ? resMembers.data.data : [];
+    plans.value = resPlans.data;
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to load initial data.', false);
+  }
 });
 </script>
 
