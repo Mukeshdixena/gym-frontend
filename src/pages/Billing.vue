@@ -124,8 +124,7 @@
 
                   <div class="col-md-4">
                     <label class="form-label text-primary"><strong>Discount (₹)</strong></label>
-                    <input type="number" class="form-control" v-model.number="enrollmentForm.discount"
-                      @input="updatePendingAmount" placeholder="Enter discount" />
+                    <input type="number" class="form-control" :value="enrollmentForm.discount" readonly />
                   </div>
 
                   <div class="col-md-4">
@@ -140,7 +139,7 @@
 
                   <div class="col-md-4">
                     <label class="form-label text-success"><strong>Paying Now (₹)</strong></label>
-                    <input type="number" class="form-control" v-model.number="newPaidNow" @input="updatePendingAmount"
+                    <input type="number" class="form-control" v-model.number="newPaidNow"
                       placeholder="Enter payment amount" />
                   </div>
 
@@ -160,6 +159,32 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Payment History -->
+              <div v-if="selectedMembership?.payments?.length" class="mt-4">
+                <h6>Payment History</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <th>#</th>
+                        <th>Amount (₹)</th>
+                        <th>Payment Date</th>
+                        <th>Method</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(payment, index) in selectedMembership.payments" :key="payment.id">
+                        <td>{{ index + 1 }}</td>
+                        <td>₹{{ payment.amount }}</td>
+                        <td>{{ new Date(payment.paymentDate).toLocaleString() }}</td>
+                        <td>{{ payment.method }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div v-else class="mt-3 text-muted">No payments made yet.</div>
 
               <!-- Modal Buttons -->
               <div class="d-grid gap-2 mt-4">
@@ -186,6 +211,7 @@ import { API_BASE_URL } from '@/config'
 
 interface Member { id: number; firstName: string; lastName: string }
 interface Plan { id: number; name: string; price: number; durationDays: number }
+interface Payment { id: number; amount: number; paymentDate: string; method: string }
 interface Membership {
   id: number
   planId: number
@@ -198,6 +224,7 @@ interface Membership {
   pending: number
   plan: Plan
   member: Member
+  payments: Payment[]
 }
 
 const pendingBills = ref<Membership[]>([])
@@ -264,8 +291,8 @@ function openAssignModal(bill: Membership) {
   selectedMember.value = bill.member
   enrollmentForm.value.planId = bill.plan.id
   enrollmentForm.value.discount = bill.discount
-  oldPaid.value = bill.paid
-  oldPending.value = bill.pending
+  oldPaid.value = bill.payments.reduce((sum, p) => sum + p.amount, 0)
+  oldPending.value = bill.plan.price - enrollmentForm.value.discount - oldPaid.value
   newPaidNow.value = 0
   paymentMethod.value = 'CASH'
   isPartialPayment.value = false
@@ -277,8 +304,8 @@ function openCollectModal(bill: Membership) {
   selectedMember.value = bill.member
   enrollmentForm.value.planId = bill.plan.id
   enrollmentForm.value.discount = bill.discount
-  oldPaid.value = bill.paid
-  oldPending.value = bill.pending
+  oldPaid.value = bill.payments.reduce((sum, p) => sum + p.amount, 0)
+  oldPending.value = bill.plan.price - enrollmentForm.value.discount - oldPaid.value
   newPaidNow.value = 0
   paymentMethod.value = 'CASH'
   isPartialPayment.value = true
@@ -286,24 +313,23 @@ function openCollectModal(bill: Membership) {
 }
 
 function closeAssignModal() { assignModal.hide() }
-function updatePendingAmount() { } // auto via computed
 
-// Only update payment/discount
+// Only update payment
 async function updatePayment() {
   if (!selectedMembership.value || !selectedPlan.value) return
-  if (newPaidNow.value <= 0 && enrollmentForm.value.discount <= 0) {
-    showToast('Enter some payment or discount to apply.', false)
+  if (newPaidNow.value <= 0) {
+    showToast('Enter some payment to apply.', false)
     return
   }
   try {
     const patchData: any = {
       amount: newPaidNow.value,
-      discount: enrollmentForm.value.discount,
       method: paymentMethod.value
     }
 
-    // If it's partial payment, update status as PARTIAL_PAID
-    if (isPartialPayment.value) patchData.status = 'PARTIAL_PAID'
+    // if (isPartialPayment.value) patchData.status = 'PARTIAL_PAID'
+    if (pendingAmount.value === 0) patchData.status = 'ACTIVE'
+    else patchData.status = 'PARTIAL_PAID'
 
     await axios.patch(`${API_BASE_URL}/memberships/payment/${selectedMembership.value.id}`, patchData)
     await loadMemberships()
@@ -315,17 +341,12 @@ async function updatePayment() {
   }
 }
 
-// Update payment + set status to PARTIAL_PAID
+// Approve payment
 async function approvePayment() {
   if (!selectedMembership.value || !selectedPlan.value) return
-  if (newPaidNow.value <= 0 && enrollmentForm.value.discount <= 0) {
-    showToast('Enter some payment or discount to apply.', false)
-    return
-  }
   try {
     await axios.patch(`${API_BASE_URL}/memberships/payment/${selectedMembership.value.id}`, {
       amount: newPaidNow.value,
-      discount: enrollmentForm.value.discount,
       method: paymentMethod.value,
       status: 'PARTIAL_PAID'
     })
@@ -337,6 +358,7 @@ async function approvePayment() {
     showToast('Error approving payment. Please try again.', false)
   }
 }
+
 
 async function rejectBill(id: number) {
   try {

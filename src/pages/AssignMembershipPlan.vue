@@ -213,7 +213,7 @@ const formattedEndDate = computed(() =>
 // Derived lists
 const inactiveMembers = computed(() =>
   members.value.filter(
-    (m) => !m.memberships.length || m.memberships[0].status !== 'ACTIVE'
+    (m) => !m.memberships.length || m.memberships[0].status === 'EXPIRED'
   )
 );
 
