@@ -40,12 +40,8 @@
               <td>₹{{ bill.pending || 0 }}</td>
               <td><span class="badge bg-secondary">{{ bill.status }}</span></td>
               <td>
-                <button class="btn btn-primary btn-sm" @click="openAssignModal(bill)">
-                  Approve
-                </button>
-                <button class="btn btn-danger btn-sm ms-2" @click="rejectBill(bill.id)">
-                  Reject
-                </button>
+                <button class="btn btn-primary btn-sm" @click="openAssignModal(bill)">Approve</button>
+                <button class="btn btn-danger btn-sm ms-2" @click="rejectBill(bill.id)">Reject</button>
               </td>
             </tr>
           </tbody>
@@ -83,11 +79,18 @@
               <td>{{ new Date(bill.startDate).toLocaleDateString() }}</td>
               <td>{{ new Date(bill.endDate).toLocaleDateString() }}</td>
               <td><span class="badge bg-success">{{ bill.status }}</span></td>
-              <td>
-                <button v-if="bill.status === 'PARTIAL_PAID'" class="btn btn-primary btn-sm"
-                  @click="openCollectModal(bill)">
-                  Collect Bill
-                </button>
+              <td class="align-middle text-center" style="position: relative;">
+                <div class="dropdown" @click.stop="toggleDropdown(bill.id)">
+                  <button class="btn btn-light btn-sm border-0">⋮</button>
+                  <div v-if="openDropdownId === bill.id" class="dropdown-menu-custom">
+                    <a v-if="bill.status === 'PARTIAL_PAID'" href="javascript:void(0);" @click="openCollectModal(bill)"
+                      class="dropdown-item-custom">Payment</a>
+                    <a href="javascript:void(0);" @click="openHistoryModal(bill)" class="dropdown-item-custom">Payment
+                      History</a>
+                    <a href="javascript:void(0);" @click="downloadBill(bill.id)" class="dropdown-item-custom">Download
+                      Bill</a>
+                  </div>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -95,7 +98,7 @@
       </div>
     </div>
 
-    <!-- Payment Collection Modal -->
+    <!-- Collect Payment Modal -->
     <div class="modal fade" ref="assignModalRef" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -186,29 +189,65 @@
               </div>
               <div v-else class="mt-3 text-muted">No payments made yet.</div>
 
-              <!-- Modal Buttons -->
               <div class="d-grid gap-2 mt-4">
-                <button type="button" class="btn btn-primary" @click="updatePayment">
-                  Update Payment
-                </button>
-                <button v-if="!isPartialPayment" type="button" class="btn btn-success" @click="approvePayment">
-                  Approve
-                </button>
+                <button type="button" class="btn btn-primary" @click="updatePayment">Update Payment</button>
+                <button v-if="!isPartialPayment" type="button" class="btn btn-success"
+                  @click="approvePayment">Approve</button>
               </div>
             </form>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Payment History Modal -->
+    <div class="modal fade" ref="historyModalRef" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Payment History</h5>
+            <button type="button" class="btn-close" @click="closeHistoryModal"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="selectedMembership?.payments?.length">
+              <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Amount (₹)</th>
+                    <th>Date</th>
+                    <th>Method</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(p, i) in selectedMembership.payments" :key="p.id">
+                    <td>{{ i + 1 }}</td>
+                    <td>₹{{ p.amount }}</td>
+                    <td>{{ new Date(p.paymentDate).toLocaleString() }}</td>
+                    <td>{{ p.method }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="text-muted">No payments found.</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="closeHistoryModal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { Modal, Toast } from 'bootstrap'
 import { API_BASE_URL } from '@/config'
 
+// --- Interfaces ---
 interface Member { id: number; firstName: string; lastName: string }
 interface Plan { id: number; name: string; price: number; durationDays: number }
 interface Payment { id: number; amount: number; paymentDate: string; method: string }
@@ -227,34 +266,38 @@ interface Membership {
   payments: Payment[]
 }
 
+// --- State ---
 const pendingBills = ref<Membership[]>([])
 const approvedBills = ref<Membership[]>([])
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
 
 const assignModalRef = ref<HTMLElement | null>(null)
+const historyModalRef = ref<HTMLElement | null>(null)
 let assignModal: Modal
+let historyModal: Modal
 
 const selectedMember = ref<Member | null>(null)
 const selectedMembership = ref<Membership | null>(null)
-
 const enrollmentForm = ref({ planId: 0, discount: 0 })
+
 const oldPaid = ref(0)
 const oldPending = ref(0)
 const newPaidNow = ref(0)
 const paymentMethod = ref('CASH')
 const isPartialPayment = ref(false) // controls modal approve button
 
+const toastRef = ref<HTMLElement | null>(null)
+let toastInstance: Toast
+const toastMessage = ref('')
+
+// --- Computed ---
 const selectedPlan = computed(() => plans.value.find(p => p.id === enrollmentForm.value.planId))
 const pendingAmount = computed(() =>
   Math.max((selectedPlan.value?.price || 0) - enrollmentForm.value.discount - (oldPaid.value + newPaidNow.value), 0)
 )
 
-// Toast
-const toastRef = ref<HTMLElement | null>(null)
-let toastInstance: Toast
-const toastMessage = ref('')
-
+// --- Toast Functions ---
 function showToast(message: string, isSuccess = true) {
   toastMessage.value = message
   if (toastRef.value) {
@@ -264,12 +307,7 @@ function showToast(message: string, isSuccess = true) {
 }
 function hideToast() { toastInstance.hide() }
 
-onMounted(async () => {
-  if (assignModalRef.value) assignModal = new Modal(assignModalRef.value)
-  if (toastRef.value) toastInstance = new Toast(toastRef.value)
-  await Promise.all([loadMembers(), loadPlans(), loadMemberships()])
-})
-
+// --- API Calls ---
 async function loadMembers() {
   const res = await axios.get<Member[]>(`${API_BASE_URL}/members`)
   members.value = res.data
@@ -286,6 +324,7 @@ async function loadMemberships() {
   pendingBills.value = res.data.filter(m => m.status !== 'ACTIVE' && m.status !== 'PARTIAL_PAID')
 }
 
+// --- Modals ---
 function openAssignModal(bill: Membership) {
   selectedMembership.value = bill
   selectedMember.value = bill.member
@@ -314,7 +353,35 @@ function openCollectModal(bill: Membership) {
 
 function closeAssignModal() { assignModal.hide() }
 
-// Only update payment
+function openHistoryModal(bill: Membership) {
+  selectedMembership.value = bill
+  historyModal.show()
+}
+function closeHistoryModal() { historyModal.hide() }
+
+// Function to download PDF
+const downloadBill = async (membershipId: number) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/memberships/download-bill/${membershipId}`, {
+      responseType: 'blob', // important for binary files
+    });
+
+    // Create a blob and download
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `bill_${membershipId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error downloading bill:', error);
+    alert('Failed to download bill.');
+  }
+};
+// --- Payment Functions ---
 async function updatePayment() {
   if (!selectedMembership.value || !selectedPlan.value) return
   if (newPaidNow.value <= 0) {
@@ -326,10 +393,7 @@ async function updatePayment() {
       amount: newPaidNow.value,
       method: paymentMethod.value
     }
-
-    // if (isPartialPayment.value) patchData.status = 'PARTIAL_PAID'
-    if (pendingAmount.value === 0) patchData.status = 'ACTIVE'
-    else patchData.status = 'PARTIAL_PAID'
+    patchData.status = pendingAmount.value === 0 ? 'ACTIVE' : 'PARTIAL_PAID'
 
     await axios.patch(`${API_BASE_URL}/memberships/payment/${selectedMembership.value.id}`, patchData)
     await loadMemberships()
@@ -341,7 +405,6 @@ async function updatePayment() {
   }
 }
 
-// Approve payment
 async function approvePayment() {
   if (!selectedMembership.value || !selectedPlan.value) return
   try {
@@ -359,7 +422,6 @@ async function approvePayment() {
   }
 }
 
-
 async function rejectBill(id: number) {
   try {
     await axios.patch(`${API_BASE_URL}/memberships/${id}`, { status: 'INACTIVE' })
@@ -370,11 +432,115 @@ async function rejectBill(id: number) {
     showToast('Failed to reject bill.', false)
   }
 }
-</script>
 
+// --- Dropdown Control ---
+const openDropdownId = ref<number | null>(null)
+const toggleDropdown = (id: number) => {
+  openDropdownId.value = openDropdownId.value === id ? null : id
+}
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  if (!target.closest('.dropdown')) openDropdownId.value = null
+}
+
+// --- Lifecycle Hooks ---
+onMounted(async () => {
+  if (assignModalRef.value) assignModal = new Modal(assignModalRef.value)
+  if (historyModalRef.value) historyModal = new Modal(historyModalRef.value)
+  if (toastRef.value) toastInstance = new Toast(toastRef.value)
+
+  document.addEventListener('click', handleClickOutside)
+  await Promise.all([loadMembers(), loadPlans(), loadMemberships()])
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+</script>
 <style scoped>
+/* Table vertical alignment */
 .table td,
 .table th {
   vertical-align: middle;
+}
+
+/* Dropdown custom menu */
+.dropdown-menu-custom {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  min-width: 150px;
+}
+
+.dropdown-item-custom {
+  display: block;
+  padding: 8px 12px;
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.dropdown-item-custom:hover {
+  background: #f8f9fa;
+  cursor: pointer;
+}
+
+/* Modal adjustments */
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Payment history table */
+.table-sm th,
+.table-sm td {
+  padding: 0.35rem;
+  font-size: 0.875rem;
+}
+
+/* Toast adjustments */
+.toast {
+  min-width: 250px;
+}
+
+/* Center the ⋮ dropdown button */
+.btn-sm.border-0 {
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0 0.4rem;
+}
+
+/* Modal footer button spacing */
+.modal-footer .btn {
+  min-width: 80px;
+}
+
+/* Responsive tables */
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Form spacing */
+.form-control-plaintext {
+  padding: 0.375rem 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Highlight input fields for payment */
+input[readonly] {
+  background-color: #e9ecef;
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 0 0 3px #86b7fe;
+  border-color: #86b7fe;
 }
 </style>

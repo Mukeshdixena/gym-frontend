@@ -1,6 +1,17 @@
 <template>
-  <div class="container-fluid">
-    <h2 class="mb-4">Members</h2>
+  <div class="container-fluid mt-4">
+    <h2 class="mb-4">Members Management</h2>
+
+    <!-- ✅ Toast Container -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+        aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">{{ toastMessage }}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
+        </div>
+      </div>
+    </div>
 
     <!-- Search & Add -->
     <div class="d-flex justify-content-between mb-3">
@@ -26,9 +37,7 @@
           <td>{{ member.email }}</td>
           <td>{{ member.phone }}</td>
           <td>{{ member.memberships[0]?.status ?? 'N/A' }}</td>
-          <td>
-            {{plans.find(p => p.id === member.memberships[0]?.planId)?.name ?? 'N/A'}}
-          </td>
+          <td>{{plans.find(p => p.id === member.memberships[0]?.planId)?.name ?? 'N/A'}}</td>
           <td>
             <button class="btn btn-sm btn-info me-2" @click="editMember(member)">Edit</button>
             <button class="btn btn-sm btn-danger" @click="deleteMember(member.id)">Delete</button>
@@ -42,42 +51,35 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">
-              {{ editingMember ? 'Edit Member' : 'New Enrollment' }}
-            </h5>
+            <h5 class="modal-title">{{ editingMember ? 'Edit Member' : 'New Enrollment' }}</h5>
             <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
 
           <div class="modal-body">
             <form @submit.prevent="saveMember">
-              <!-- First Name -->
               <div class="mb-3">
                 <label class="form-label">First Name</label>
                 <input v-model="form.firstName" type="text" class="form-control" required />
               </div>
 
-              <!-- Last Name -->
               <div class="mb-3">
                 <label class="form-label">Last Name</label>
                 <input v-model="form.lastName" type="text" class="form-control" required />
               </div>
 
-              <!-- Email -->
               <div class="mb-3">
                 <label class="form-label">Email</label>
                 <input v-model="form.email" type="email" class="form-control" required />
               </div>
 
-              <!-- Phone -->
               <div class="mb-3">
                 <label class="form-label">Phone</label>
                 <input v-model="form.phone" type="text" class="form-control" required />
               </div>
 
-              <!-- ✅ Address -->
               <div class="mb-3">
                 <label class="form-label">Address</label>
-                <textarea v-model="form.address" class="form-control" rows="2" placeholder="Enter address"></textarea>
+                <textarea v-model="form.address" class="form-control" rows="2"></textarea>
               </div>
 
               <div class="mb-3">
@@ -93,107 +95,107 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
-import { Modal } from 'bootstrap';
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+import { Modal, Toast } from 'bootstrap'
+import { API_BASE_URL } from '@/config'
 
-// Backend API URLs
-const apiUrl = 'http://localhost:3000/members';
-const plansApiUrl = 'http://localhost:3000/plans';
+// ✅ API endpoints from config file
+const apiUrl = `${API_BASE_URL}/members`
+const plansApiUrl = `${API_BASE_URL}/plans`
 
 // Types
 interface Membership {
-  id: number;
-  planId: number;
-  memberId: number;
-  startDate: string;
-  endDate: string;
-  status: string;
+  id: number
+  planId: number
+  memberId: number
+  startDate: string
+  endDate: string
+  status: string
 }
 
 interface Member {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address?: string;
-  dateOfBirth?: string;
-  memberships: Membership[];
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address?: string
+  dateOfBirth?: string
+  memberships: Membership[]
 }
 
 interface Plan {
-  id: number;
-  name: string;
+  id: number
+  name: string
 }
 
 // State
-const members = ref<Member[]>([]);
-const plans = ref<Plan[]>([]);
-const searchTerm = ref('');
+const members = ref<Member[]>([])
+const plans = ref<Plan[]>([])
+const searchTerm = ref('')
 
 // Modal handling
-const modalRef = ref<HTMLElement | null>(null);
-let editingMember: Member | null = null;
+const modalRef = ref<HTMLElement | null>(null)
+let modalInstance: Modal
+let editingMember: Member | null = null
 
-const form = ref<Member & { membershipStatus?: string; planId?: number }>({
+// Toast handling
+const toastRef = ref<HTMLElement | null>(null)
+let toastInstance: Toast
+const toastMessage = ref('')
+
+function showToast(message: string, isSuccess = true) {
+  toastMessage.value = message
+  if (toastRef.value) {
+    toastRef.value.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`
+    toastInstance.show()
+  }
+}
+function hideToast() {
+  toastInstance.hide()
+}
+
+// Form data
+const form = ref<Member>({
   id: 0,
   firstName: '',
   lastName: '',
   email: '',
   phone: '',
-  memberships: [],
-  membershipStatus: 'ACTIVE',
-  planId: 1, // default
-});
+  memberships: []
+})
 
-// Computed filtered members
+// Filtered list
 const filteredMembers = computed(() =>
-  members.value.filter(
-    m =>
-      `${m.firstName} ${m.lastName}`.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      m.email.toLowerCase().includes(searchTerm.value.toLowerCase())
+  members.value.filter(m =>
+    `${m.firstName} ${m.lastName}`.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+    m.email.toLowerCase().includes(searchTerm.value.toLowerCase())
   )
-);
+)
 
-// Open modal
+// Modal actions
 function openAddModal() {
-  editingMember = null;
-  form.value = {
-    id: 0,
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    memberships: [],
-    membershipStatus: 'ACTIVE',
-    planId: plans.value[0]?.id,
-  };
-  if (modalRef.value) new Modal(modalRef.value).show();
+  editingMember = null
+  form.value = { id: 0, firstName: '', lastName: '', email: '', phone: '', memberships: [] }
+  modalInstance.show()
 }
 
-// Close modal
 function closeModal() {
-  if (modalRef.value) Modal.getInstance(modalRef.value)?.hide();
+  modalInstance.hide()
 }
 
-// Edit member
 function editMember(member: Member) {
-  editingMember = member;
-  form.value = {
-    ...member,
-    membershipStatus: member.memberships[0]?.status ?? 'ACTIVE',
-    planId: member.memberships[0]?.planId ?? plans.value[0]?.id,
-  };
-  if (modalRef.value) new Modal(modalRef.value).show();
+  editingMember = member
+  form.value = { ...member }
+  modalInstance.show()
 }
 
-// Save member
+// CRUD Actions
 async function saveMember() {
   try {
     const payload = {
@@ -202,58 +204,67 @@ async function saveMember() {
       email: form.value.email,
       phone: form.value.phone,
       address: form.value.address,
-      dateOfBirth: form.value.dateOfBirth,
-    };
-
-    if (editingMember) {
-      const res = await axios.put(`${apiUrl}/${editingMember.id}`, payload);
-
-    } else {
-      const res = await axios.post(apiUrl, payload);
-      members.value.push(res.data);
+      dateOfBirth: form.value.dateOfBirth
     }
 
-    loadMembers();
+    if (editingMember) {
+      await axios.put(`${apiUrl}/${editingMember.id}`, payload)
+      showToast('Member updated successfully!')
+    } else {
+      await axios.post(apiUrl, payload)
+      showToast('Member added successfully!')
+    }
 
-    closeModal();
+    await loadMembers()
+    closeModal()
   } catch (err) {
-    console.error(err);
-    alert('Failed to save member.');
+    console.error(err)
+    showToast('Failed to save member.', false)
   }
 }
 
-// Delete member
 async function deleteMember(id: number) {
-  if (!confirm('Are you sure to delete this member?')) return;
+  if (!confirm('Are you sure you want to delete this member?')) return
   try {
-    await axios.delete(`${apiUrl}/${id}`);
-    members.value = members.value.filter(m => m.id !== id);
+    await axios.delete(`${apiUrl}/${id}`)
+    members.value = members.value.filter(m => m.id !== id)
+    showToast('Member deleted successfully!')
   } catch (err) {
-    console.error(err);
-    alert('Failed to delete member.');
+    console.error(err)
+    showToast('Failed to delete member.', false)
   }
 }
 
 async function loadMembers() {
   try {
-    const resMembers = await axios.get(apiUrl);
-    members.value = Array.isArray(resMembers.data.data) ? resMembers.data.data : [];
+    const res = await axios.get(apiUrl)
+    members.value = res.data.data || res.data
   } catch (err) {
-    console.error(err);
+    console.error(err)
+    showToast('Failed to load members.', false)
   }
 }
 
-
-// Fetch members & plans on mount
-onMounted(async () => {
+async function loadPlans() {
   try {
-    loadMembers();
-
-    const resPlans = await axios.get(plansApiUrl);
-    plans.value = resPlans.data;
+    const res = await axios.get(plansApiUrl)
+    plans.value = res.data.data || res.data
   } catch (err) {
-    console.error(err);
-    alert('Failed to fetch members or plans.');
+    console.error(err)
   }
-});
+}
+
+// Lifecycle
+onMounted(async () => {
+  if (modalRef.value) modalInstance = new Modal(modalRef.value)
+  if (toastRef.value) toastInstance = new Toast(toastRef.value)
+  await Promise.all([loadMembers(), loadPlans()])
+})
 </script>
+
+<style scoped>
+.table td,
+.table th {
+  vertical-align: middle;
+}
+</style>

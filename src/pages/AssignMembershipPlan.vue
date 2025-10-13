@@ -2,6 +2,17 @@
   <div class="container mt-4">
     <h3 class="mb-4">Assign Membership Plans</h3>
 
+    <!-- Toast Container -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+        aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">{{ toastMessage }}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
+        </div>
+      </div>
+    </div>
+
     <!-- Members Without Active Plan -->
     <div class="mb-5">
       <h5>Members Without Active Plan</h5>
@@ -86,13 +97,10 @@
 
                 <div v-if="selectedPlan" class="mt-3">
                   <div class="row">
-                    <!-- Left Column -->
                     <div class="col-md-6">
                       <p><strong>Description:</strong> {{ selectedPlan.description }}</p>
                       <p><strong>Duration:</strong> {{ selectedPlan.durationDays }} days</p>
                     </div>
-
-                    <!-- Right Column -->
                     <div class="col-md-6">
                       <div class="mb-2">
                         <label><strong>Start Date:</strong></label>
@@ -149,45 +157,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { Modal } from 'bootstrap';
-import axios from 'axios';
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+import { Modal, Toast } from 'bootstrap'
+import { API_BASE_URL } from '@/config'
 
-const membersApi = 'http://localhost:3000/members';
-const plansApi = 'http://localhost:3000/plans';
-const membershipsApi = 'http://localhost:3000/memberships';
-
-interface Plan {
-  id: number;
-  name: string;
-  price: number;
-  durationDays: number;
-  description: string;
-}
-interface Membership {
-  id: number;
-  planId: number;
-  memberId: number;
-  startDate: string;
-  endDate: string;
-  status: string;
-  paid?: number;
-  discount?: number;
-}
-interface Member {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  memberships: Membership[];
-}
+// Interfaces
+interface Plan { id: number; name: string; price: number; durationDays: number; description: string }
+interface Membership { id: number; planId: number; memberId: number; startDate: string; endDate: string; status: string; paid?: number; discount?: number }
+interface Member { id: number; firstName: string; lastName: string; email: string; phone: string; memberships: Membership[] }
 
 // State
-const members = ref<Member[]>([]);
-const plans = ref<Plan[]>([]);
-const assignModalRef = ref<HTMLElement | null>(null);
-const selectedMember = ref<Member | null>(null);
+const members = ref<Member[]>([])
+const plans = ref<Plan[]>([])
+const assignModalRef = ref<HTMLElement | null>(null)
+let assignModal: Modal
+const selectedMember = ref<Member | null>(null)
 
 // Form
 const enrollmentForm = ref({
@@ -197,69 +182,60 @@ const enrollmentForm = ref({
   endDate: '',
   paid: 0,
   discount: 0,
-  method: 'CASH', // default
-});
+  method: 'CASH'
+})
 
-const selectedPlan = computed(() =>
-  plans.value.find((p) => p.id === enrollmentForm.value.planId)
-);
-
-const formattedEndDate = computed(() =>
-  enrollmentForm.value.endDate
-    ? new Date(enrollmentForm.value.endDate).toLocaleDateString()
-    : ''
-);
-
-// Derived lists
-const inactiveMembers = computed(() =>
-  members.value.filter(
-    (m) => !m.memberships.length || m.memberships[0].status === 'EXPIRED'
-  )
-);
-
-const expiringMembers = computed(() => {
-  const now = new Date();
-  const soon = new Date();
-  soon.setDate(now.getDate() + 7);
-  return members.value.filter((m) => {
-    const end = m.memberships[0]?.endDate ? new Date(m.memberships[0].endDate) : null;
-    return end && end <= soon && end >= now;
-  });
-});
-
-const pendingAmount = computed(() => {
-  if (!selectedPlan.value) return 0;
-  const pending = selectedPlan.value.price - (enrollmentForm.value.discount + enrollmentForm.value.paid);
-  return pending > 0 ? pending : 0;
-});
-
-// Methods
-function formatDate(dateStr?: string) {
-  return dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A';
-}
-
-function getPlanName(id?: number) {
-  return plans.value.find((p) => p.id === id)?.name ?? 'N/A';
-}
-
-function updatePlanDates() {
-  const plan = selectedPlan.value;
-  if (plan && enrollmentForm.value.startDate) {
-    const start = new Date(enrollmentForm.value.startDate);
-    const end = new Date(start);
-    end.setDate(start.getDate() + plan.durationDays);
-    enrollmentForm.value.endDate = end.toISOString().split('T')[0];
+// Toast
+const toastRef = ref<HTMLElement | null>(null)
+let toastInstance: Toast
+const toastMessage = ref('')
+function showToast(message: string, isSuccess = true) {
+  toastMessage.value = message
+  if (toastRef.value) {
+    toastRef.value.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'} border-0`
+    toastInstance.show()
   }
 }
+function hideToast() { toastInstance.hide() }
 
-function updatePendingAmount() {
-  // Computed automatically
+// Computed
+const selectedPlan = computed(() => plans.value.find(p => p.id === enrollmentForm.value.planId))
+const formattedEndDate = computed(() =>
+  enrollmentForm.value.endDate ? new Date(enrollmentForm.value.endDate).toLocaleDateString() : ''
+)
+const inactiveMembers = computed(() => members.value.filter(m => !m.memberships.length || m.memberships[0].status === 'EXPIRED'))
+const expiringMembers = computed(() => {
+  const now = new Date()
+  const soon = new Date()
+  soon.setDate(now.getDate() + 7)
+  return members.value.filter(m => {
+    const end = m.memberships[0]?.endDate ? new Date(m.memberships[0].endDate) : null
+    return end && end <= soon && end >= now
+  })
+})
+const pendingAmount = computed(() => {
+  if (!selectedPlan.value) return 0
+  const pending = selectedPlan.value.price - (enrollmentForm.value.discount + enrollmentForm.value.paid)
+  return pending > 0 ? pending : 0
+})
+
+// Helpers
+function formatDate(dateStr?: string) { return dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A' }
+function getPlanName(id?: number) { return plans.value.find(p => p.id === id)?.name ?? 'N/A' }
+function updatePlanDates() {
+  const plan = selectedPlan.value
+  if (plan && enrollmentForm.value.startDate) {
+    const start = new Date(enrollmentForm.value.startDate)
+    const end = new Date(start)
+    end.setDate(start.getDate() + plan.durationDays)
+    enrollmentForm.value.endDate = end.toISOString().split('T')[0]
+  }
 }
+function updatePendingAmount() { /* handled by computed */ }
 
 function openAssignModal(member: Member) {
-  selectedMember.value = member;
-
-  const activeMembership = member.memberships.find((m) => m.status === 'ACTIVE');
+  selectedMember.value = member
+  const activeMembership = member.memberships.find(m => m.status === 'ACTIVE')
   enrollmentForm.value = {
     memberId: member.id,
     planId: activeMembership?.planId ?? 0,
@@ -267,51 +243,49 @@ function openAssignModal(member: Member) {
     endDate: activeMembership?.endDate?.split('T')[0] ?? '',
     paid: activeMembership?.paid ?? 0,
     discount: activeMembership?.discount ?? 0,
-    method: 'CASH',
-  };
-
-  if (assignModalRef.value) new Modal(assignModalRef.value).show();
+    method: 'CASH'
+  }
+  assignModal.show()
 }
-
-function closeAssignModal() {
-  if (assignModalRef.value) Modal.getInstance(assignModalRef.value)?.hide();
-}
+function closeAssignModal() { assignModal.hide() }
 
 async function assignPlan() {
   if (!enrollmentForm.value.planId || !enrollmentForm.value.startDate) {
-    alert('Please select plan and start date.');
-    return;
+    showToast('Please select plan and start date.', false)
+    return
   }
-
   try {
-    const payload = { ...enrollmentForm.value };
-    await axios.post(membershipsApi, payload);
-    alert('Plan assigned successfully!');
-    closeAssignModal();
-    loadMembers();
+    const payload = { ...enrollmentForm.value }
+    await axios.post(`${API_BASE_URL}/memberships`, payload)
+    await loadMembers()
+    showToast('Plan assigned successfully!')
+    closeAssignModal()
   } catch (err) {
-    console.error(err);
-    alert('Failed to assign plan.');
+    console.error(err)
+    showToast('Failed to assign plan.', false)
   }
 }
 
 async function loadMembers() {
   try {
-    const resMembers = await axios.get(membersApi);
-    members.value = Array.isArray(resMembers.data.data) ? resMembers.data.data : [];
+    const res = await axios.get(`${API_BASE_URL}/members`)
+    members.value = Array.isArray(res.data.data) ? res.data.data : []
   } catch (err) {
-    console.error(err);
+    console.error(err)
+    showToast('Error loading members.', false)
   }
 }
 
 onMounted(async () => {
+  if (assignModalRef.value) assignModal = new Modal(assignModalRef.value)
+  if (toastRef.value) toastInstance = new Toast(toastRef.value)
   const [resMembers, resPlans] = await Promise.all([
-    axios.get(membersApi),
-    axios.get(plansApi),
-  ]);
-  members.value = Array.isArray(resMembers.data.data) ? resMembers.data.data : [];
-  plans.value = resPlans.data;
-});
+    axios.get(`${API_BASE_URL}/members`),
+    axios.get(`${API_BASE_URL}/plans`)
+  ])
+  members.value = Array.isArray(resMembers.data.data) ? resMembers.data.data : []
+  plans.value = resPlans.data
+})
 </script>
 
 <style scoped>
