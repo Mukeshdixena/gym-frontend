@@ -2,184 +2,140 @@
   <div class="container mt-4">
     <h3 class="mb-4">Assign Membership Plans</h3>
 
-    <!-- Toast Container -->
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-      <div
-        ref="toastRef"
-        class="toast align-items-center text-white bg-success border-0"
-        role="alert"
-        aria-live="assertive"
-        aria-atomic="true"
-      >
-        <div class="d-flex">
-          <div class="toast-body">{{ toastMessage }}</div>
-          <button
-            type="button"
-            class="btn-close btn-close-white me-2 m-auto"
-            @click="hideToast"
-          ></button>
+    <!-- Loading Spinner -->
+    <div v-if="isLoading" class="text-center my-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Loading members and plans...</p>
+    </div>
+
+    <div v-else>
+      <!-- Toast Container -->
+      <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+        <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+          aria-live="assertive" aria-atomic="true">
+          <div class="d-flex">
+            <div class="toast-body">{{ toastMessage }}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
+          </div>
         </div>
+      </div>
+
+      <!-- Members Without Active Plan -->
+      <div class="mb-5">
+        <h5>Members Without Active Plan</h5>
+        <table class="table table-hover mt-3">
+          <thead class="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="m in inactiveMembers" :key="m.id">
+              <td>{{ m.firstName }} {{ m.lastName }}</td>
+              <td>{{ m.email }}</td>
+              <td>{{ m.phone }}</td>
+              <td>
+                <button class="btn btn-sm btn-primary" @click="openAssignModal(m)">
+                  Assign Plan
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Active Members -->
+      <div>
+        <h5>Active Members (Sorted by Expiry Date)</h5>
+        <table class="table table-hover mt-3">
+          <thead class="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Plan</th>
+              <th>End Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="m in activeMembers" :key="m.id">
+              <td>{{ m.firstName }} {{ m.lastName }}</td>
+              <td>{{ m.email }}</td>
+              <td>{{ getPlanName(m.memberships[0]?.planId) }}</td>
+              <td>{{ formatDate(getLastActiveEndDate(m.memberships)) }}</td>
+              <td>
+                <span class="badge bg-success">{{ m.memberships[0]?.status }}</span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-warning" @click="openAssignModal(m)">
+                  Renew / Assign New Plan
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Members Without Active Plan -->
-    <div class="mb-5">
-      <h5>Members Without Active Plan</h5>
-      <table class="table table-hover mt-3">
-        <thead class="table-dark">
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="m in inactiveMembers" :key="m.id">
-            <td>{{ m.firstName }} {{ m.lastName }}</td>
-            <td>{{ m.email }}</td>
-            <td>{{ m.phone }}</td>
-            <td>
-              <button class="btn btn-sm btn-primary" @click="openAssignModal(m)">
-                Assign Plan
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Members with Expiring Plans -->
-    <div>
-      <h5>Plans Expiring Soon (Next 7 Days)</h5>
-      <table class="table table-hover mt-3">
-        <thead class="table-dark">
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Plan</th>
-            <th>End Date</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="m in expiringMembers" :key="m.id">
-            <td>{{ m.firstName }} {{ m.lastName }}</td>
-            <td>{{ m.email }}</td>
-            <td>{{ getPlanName(m.memberships[0]?.planId) }}</td>
-            <td>{{ formatDate(m.memberships[0]?.endDate) }}</td>
-            <td>
-              <span class="badge bg-warning text-dark">{{
-                m.memberships[0]?.status
-              }}</span>
-            </td>
-            <td>
-              <button class="btn btn-sm btn-warning" @click="openAssignModal(m)">
-                Renew / Assign New Plan
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
     <!-- Assign / Renew Modal -->
-    <div
-      class="modal fade"
-      ref="assignModalRef"
-      tabindex="-1"
-      aria-hidden="true"
-    >
+    <div class="modal fade" ref="assignModalRef" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
               {{ selectedMember?.memberships[0]?.status === 'ACTIVE' ? 'Renew' : 'Assign' }} Membership Plan
             </h5>
-            <button
-              type="button"
-              class="btn-close"
-              @click="closeAssignModal"
-              aria-label="Close"
-            ></button>
+            <button type="button" class="btn-close" @click="closeAssignModal"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent="assignPlan">
               <div class="mb-3">
                 <strong>Member:</strong>
-                <span>{{ selectedMember?.firstName }} {{ selectedMember?.lastName }}</span>
-                ({{ selectedMember?.email }})
+                {{ selectedMember?.firstName }} {{ selectedMember?.lastName }} ({{ selectedMember?.email }})
               </div>
 
-              <div class="mt-4">
-                <h6>Select Plan</h6>
-                <select
-                  v-model="enrollmentForm.planId"
-                  class="form-select"
-                  @change="updatePlanDates"
-                  required
-                >
+              <div class="mt-3">
+                <label class="form-label"><strong>Select Plan</strong></label>
+                <select v-model="enrollmentForm.planId" class="form-select" @change="updatePlanDates" required>
                   <option :value="0" disabled>-- Select Plan --</option>
                   <option v-for="plan in plans" :key="plan.id" :value="plan.id">
                     {{ plan.name }} - ₹{{ plan.price }} ({{ plan.durationDays }} days)
                   </option>
                 </select>
 
-                <div v-if="selectedPlan" class="mt-3">
+                <div v-if="selectedPlan" class="mt-4">
                   <div class="row">
                     <div class="col-md-6">
                       <p><strong>Description:</strong> {{ selectedPlan.description }}</p>
                       <p><strong>Duration:</strong> {{ selectedPlan.durationDays }} days</p>
                     </div>
                     <div class="col-md-6">
-                      <div class="mb-2">
-                        <label class="form-label"><strong>Start Date:</strong></label>
-                        <input
-                          type="date"
-                          v-model="enrollmentForm.startDate"
-                          class="form-control"
-                          @change="updatePlanDates"
-                          required
-                        />
-                      </div>
-                      <p><strong>End Date:</strong> {{ formattedEndDate }}</p>
+                      <label class="form-label"><strong>Start Date:</strong></label>
+                      <input type="date" v-model="enrollmentForm.startDate" class="form-control"
+                        @change="updatePlanDates" required />
+                      <p class="mt-2"><strong>End Date:</strong> {{ formattedEndDate }}</p>
                     </div>
                   </div>
 
                   <div class="row mt-3 g-3">
                     <div class="col-md-4">
                       <label class="form-label"><strong>Plan Price (₹)</strong></label>
-                      <input
-                        type="number"
-                        class="form-control"
-                        :value="selectedPlan.price"
-                        readonly
-                      />
+                      <input type="number" class="form-control" :value="selectedPlan.price" readonly />
                     </div>
-
                     <div class="col-md-4">
                       <label class="form-label">Discount / Coupon (₹)</label>
-                      <input
-                        type="number"
-                        v-model.number="enrollmentForm.discount"
-                        class="form-control"
-                        min="0"
-                        @input="updatePendingAmount"
-                      />
+                      <input type="number" v-model.number="enrollmentForm.discount" class="form-control" min="0" />
                     </div>
-
                     <div class="col-md-4">
-                      <label class="form-label">Paying Amount (₹)</label>
-                      <input
-                        type="number"
-                        v-model.number="enrollmentForm.paid"
-                        class="form-control"
-                        min="0"
-                        @input="updatePendingAmount"
-                      />
+                      <label class="form-label">Paid (₹)</label>
+                      <input type="number" v-model.number="enrollmentForm.paid" class="form-control" min="0" />
                     </div>
-
                     <div class="col-md-4">
                       <label class="form-label">Payment Method</label>
                       <select v-model="enrollmentForm.method" class="form-select">
@@ -189,22 +145,16 @@
                         <option value="ONLINE">Online</option>
                       </select>
                     </div>
-
                     <div class="col-md-4">
-                      <label class="form-label">Pending Amount (₹)</label>
-                      <input
-                        type="number"
-                        class="form-control"
-                        :value="pendingAmount"
-                        readonly
-                      />
+                      <label class="form-label">Pending (₹)</label>
+                      <input type="number" class="form-control" :value="pendingAmount" readonly />
                     </div>
                   </div>
                 </div>
               </div>
 
               <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting">
-                {{ isSubmitting ? 'Saving...' : 'Assign Plan' }}
+                {{ isSubmitting ? 'Saving...' : 'Save Plan' }}
               </button>
             </form>
           </div>
@@ -217,10 +167,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { Modal, Toast } from 'bootstrap'
-import api from '@/api/axios' // Your Axios instance
+import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
-// Interfaces
 interface Plan {
   id: number
   name: string
@@ -232,7 +181,6 @@ interface Plan {
 interface Membership {
   id: number
   planId: number
-  memberId: number
   startDate: string
   endDate: string
   status: string
@@ -249,19 +197,18 @@ interface Member {
   memberships: Membership[]
 }
 
-// State
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
+const isLoading = ref(true)
+const isSubmitting = ref(false)
+
 const assignModalRef = ref<HTMLElement | null>(null)
 const toastRef = ref<HTMLElement | null>(null)
-
 let assignModal: Modal
 let toastInstance: Toast
 
 const selectedMember = ref<Member | null>(null)
-const isSubmitting = ref(false)
 
-// Form
 const enrollmentForm = ref({
   memberId: 0,
   planId: 0,
@@ -272,125 +219,89 @@ const enrollmentForm = ref({
   method: 'CASH' as 'CASH' | 'CARD' | 'UPI' | 'ONLINE'
 })
 
-// Toast
 const toastMessage = ref('')
-const showToast = (message: string, isSuccess = true) => {
-  toastMessage.value = message
+const showToast = (msg: string, success = true) => {
+  toastMessage.value = msg
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${
-      isSuccess ? 'bg-success' : 'bg-danger'
-    } border-0`
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
     toastInstance?.show()
   }
 }
 const hideToast = () => toastInstance?.hide()
 
-// Computed
-const selectedPlan = computed(() =>
-  plans.value.find((p) => p.id === enrollmentForm.value.planId)
-)
-
-const formattedEndDate = computed(() =>
-  enrollmentForm.value.endDate
-    ? new Date(enrollmentForm.value.endDate).toLocaleDateString('en-IN')
-    : ''
-)
-
-const inactiveMembers = computed(() =>
-  members.value.filter(
-    (m) =>
-      !m.memberships.length ||
-      m.memberships.every((ms) => ms.status === 'EXPIRED')
-  )
-)
-
-const expiringMembers = computed(() => {
-  const now = new Date()
-  const soon = new Date()
-  soon.setDate(now.getDate() + 7)
-
-  return members.value.filter((m) => {
-    const membership = m.memberships[0]
-    if (!membership?.endDate) return false
-    const end = new Date(membership.endDate)
-    return end >= now && end <= soon
-  })
-})
-
+const selectedPlan = computed(() => plans.value.find(p => p.id === enrollmentForm.value.planId))
+const formattedEndDate = computed(() => enrollmentForm.value.endDate ? new Date(enrollmentForm.value.endDate).toLocaleDateString('en-IN') : '')
 const pendingAmount = computed(() => {
   if (!selectedPlan.value) return 0
-  const pending =
-    selectedPlan.value.price -
-    (enrollmentForm.value.discount + enrollmentForm.value.paid)
-  return pending > 0 ? pending : 0
+  const balance = selectedPlan.value.price - (enrollmentForm.value.paid + enrollmentForm.value.discount)
+  return balance > 0 ? balance : 0
 })
 
-// Helpers
-const formatDate = (dateStr?: string) =>
+const inactiveMembers = computed(() => members.value.filter(m => !m.memberships.length || m.memberships.every(ms => ms.status === 'EXPIRED')))
+const activeMembers = computed(() => members.value
+  .map(m => {
+    const active = m.memberships.filter(ms => ms.status === 'ACTIVE')
+      .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+    return { ...m, memberships: active }
+  })
+  .filter(m => m.memberships.length > 0)
+  .sort((a, b) => new Date(a.memberships[0].endDate).getTime() - new Date(b.memberships[0].endDate).getTime())
+)
+
+const getPlanName = (id?: number) => plans.value.find(p => p.id === id)?.name ?? 'N/A'
+const formatDate = (dateStr?: string | null) =>
   dateStr ? new Date(dateStr).toLocaleDateString('en-IN') : 'N/A'
 
-const getPlanName = (id?: number) =>
-  plans.value.find((p) => p.id === id)?.name ?? 'N/A'
+
+const getLastActiveEndDate = (list: Membership[]) => {
+  const active = list.filter(m => m.status === 'ACTIVE')
+  if (!active.length) return null
+  return active.sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0].endDate
+}
 
 const updatePlanDates = () => {
   const plan = selectedPlan.value
-  if (plan && enrollmentForm.value.startDate) {
-    const start = new Date(enrollmentForm.value.startDate)
-    const end = new Date(start)
-    end.setDate(start.getDate() + plan.durationDays)
-    enrollmentForm.value.endDate = end.toISOString().split('T')[0]
-  }
+  if (!plan || !enrollmentForm.value.startDate) return
+  const start = new Date(enrollmentForm.value.startDate)
+  const end = new Date(start)
+  end.setDate(start.getDate() + plan.durationDays)
+  enrollmentForm.value.endDate = end.toISOString().split('T')[0]
 }
 
-const updatePendingAmount = () => {
-  // Trigger computed update
-}
-
-// Modal
 const openAssignModal = (member: Member) => {
   selectedMember.value = member
-  const activeMembership = member.memberships.find((m) => m.status === 'ACTIVE')
+  const lastActive = member.memberships.find(m => m.status === 'ACTIVE')
+
+  const startDate = lastActive?.endDate
+    ? lastActive.endDate.split('T')[0]
+    : new Date().toISOString().split('T')[0]
 
   enrollmentForm.value = {
     memberId: member.id,
-    planId: activeMembership?.planId ?? 0,
-    startDate: activeMembership?.startDate?.split('T')[0] ?? new Date().toISOString().split('T')[0],
-    endDate: activeMembership?.endDate?.split('T')[0] ?? '',
-    paid: activeMembership?.paid ?? 0,
-    discount: activeMembership?.discount ?? 0,
+    planId: lastActive?.planId ?? 0,
+    startDate,
+    endDate: '',
+    paid: lastActive?.paid ?? 0,
+    discount: lastActive?.discount ?? 0,
     method: 'CASH'
   }
 
-  // Auto-calculate end date if plan selected
-  if (enrollmentForm.value.planId) {
-    updatePlanDates()
-  }
-
-  assignModal?.show()
+  if (enrollmentForm.value.planId) updatePlanDates()
+  assignModal.show()
 }
 
 const closeAssignModal = () => {
-  assignModal?.hide()
-  // Reset form
-  enrollmentForm.value = {
-    memberId: 0,
-    planId: 0,
-    startDate: '',
-    endDate: '',
-    paid: 0,
-    discount: 0,
-    method: 'CASH'
-  }
+  assignModal.hide()
   selectedMember.value = null
+  enrollmentForm.value = { memberId: 0, planId: 0, startDate: '', endDate: '', paid: 0, discount: 0, method: 'CASH' }
 }
 
-// API Calls
 const loadMembers = async () => {
   try {
     const res: AxiosResponse<{ data: Member[] }> = await api.get('/members')
     members.value = Array.isArray(res.data.data) ? res.data.data : []
-  } catch (err: any) {
-    console.error('Load members error:', err)
+  } catch (e) {
+    console.error(e)
     showToast('Failed to load members.', false)
   }
 }
@@ -399,62 +310,41 @@ const loadPlans = async () => {
   try {
     const res: AxiosResponse<Plan[]> = await api.get('/plans')
     plans.value = Array.isArray(res.data) ? res.data : []
-  } catch (err: any) {
-    console.error('Load plans error:', err)
+  } catch (e) {
+    console.error(e)
     showToast('Failed to load plans.', false)
   }
 }
 
 const assignPlan = async () => {
   if (!enrollmentForm.value.planId || !enrollmentForm.value.startDate) {
-    showToast('Please select a plan and start date.', false)
+    showToast('Please select plan and start date.', false)
     return
   }
 
   isSubmitting.value = true
-
   try {
-    const payload = {
-      ...enrollmentForm.value,
-      // Ensure numbers
-      paid: Number(enrollmentForm.value.paid),
-      discount: Number(enrollmentForm.value.discount)
-    }
-
-    await api.post('/memberships', payload)
+    await api.post('/memberships', enrollmentForm.value)
     await loadMembers()
-    showToast('Membership assigned successfully!')
     closeAssignModal()
-  } catch (err: any) {
-    console.error('Assign plan error:', err)
-    const msg = err.response?.data?.message || 'Failed to assign plan.'
-    showToast(msg, false)
+    showToast('Membership assigned successfully!')
+  } catch (e: any) {
+    console.error(e)
+    showToast(e.response?.data?.message || 'Failed to assign plan.', false)
   } finally {
     isSubmitting.value = false
   }
 }
 
-// Lifecycle
 onMounted(async () => {
-  // Initialize Bootstrap components
-  if (assignModalRef.value) {
-    assignModal = new Modal(assignModalRef.value)
-  }
-  if (toastRef.value) {
-    toastInstance = new Toast(toastRef.value)
-  }
-
-  // Load data
+  if (assignModalRef.value) assignModal = new Modal(assignModalRef.value)
+  if (toastRef.value) toastInstance = new Toast(toastRef.value)
   await Promise.all([loadMembers(), loadPlans()])
+  isLoading.value = false
 })
 
-// Optional: Auto-hide toast after 3s
-watch(toastMessage, (msg) => {
-  if (msg) {
-    setTimeout(() => {
-      if (toastMessage.value === msg) hideToast()
-    }, 3000)
-  }
+watch(toastMessage, msg => {
+  if (msg) setTimeout(() => { if (toastMessage.value === msg) hideToast() }, 3000)
 })
 </script>
 
@@ -462,6 +352,7 @@ watch(toastMessage, (msg) => {
 .table {
   vertical-align: middle;
 }
+
 .badge {
   font-size: 0.75rem;
 }
