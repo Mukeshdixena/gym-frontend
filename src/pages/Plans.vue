@@ -29,8 +29,16 @@
       </button>
     </div>
 
+    <!-- Loading Spinner -->
+    <div v-if="isLoading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3 text-muted">Loading plans...</p>
+    </div>
+
     <!-- Plans Grid -->
-    <div class="row g-4">
+    <div v-else class="row g-4">
       <div
         v-for="plan in plans"
         :key="plan.id"
@@ -41,7 +49,7 @@
             <h5 class="card-title">{{ plan.name }}</h5>
             <p class="card-text text-muted">{{ plan.description }}</p>
             <div class="mt-auto">
-              <p class="h4 text-primary">₹{{ plan.price }}</p>
+              <p class="h4 text-primary mb-1">₹{{ plan.price }}</p>
               <p class="text-muted small">{{ plan.durationDays }} days</p>
               <div class="d-flex gap-2 mt-3">
                 <button
@@ -227,9 +235,8 @@ const hideToast = () => toastInstance?.hide()
 // --- API ---
 const loadPlans = async () => {
   try {
-    // Always expect { data: [...] }
-    const res: AxiosResponse<{ data: Plan[] }> = await api.get('/plans')
-    plans.value = res.data.data ?? []
+    const res: AxiosResponse<Plan[]> = await api.get('/plans')
+    plans.value = res.data ?? []
   } catch (err: any) {
     console.error('Load plans error:', err)
     showToast('Failed to load plans.', false)
@@ -329,9 +336,10 @@ onMounted(async () => {
 
 <style scoped>
 .card {
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 .card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 </style>
