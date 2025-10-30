@@ -237,7 +237,7 @@ const pendingAmount = computed(() => {
   return balance > 0 ? balance : 0
 })
 
-const inactiveMembers = computed(() => members.value.filter(m => !m.memberships.length || m.memberships.every(ms => ms.status === 'EXPIRED')))
+const inactiveMembers = computed(() => members.value.filter(m => !m.memberships.length || m.memberships.every(ms => ms.status === 'EXPIRED' || ms.status === 'CANCELLED')))
 const activeMembers = computed(() => members.value
   .map(m => {
     const active = m.memberships.filter(ms => ms.status === 'ACTIVE')

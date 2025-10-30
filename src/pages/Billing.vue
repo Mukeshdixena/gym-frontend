@@ -591,7 +591,7 @@ const approvePayment = async () => {
 const rejectBill = async (id: number) => {
   if (!confirm('Reject this bill?')) return
   try {
-    await api.patch(`/memberships/${id}`, { status: 'INACTIVE' })
+    await api.patch(`/memberships/${id}`, { status: 'CANCELLED' })
     await loadMemberships()
     showToast('Bill rejected.')
   } catch (err: any) {
