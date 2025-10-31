@@ -133,19 +133,6 @@
                       <input type="number" v-model.number="enrollmentForm.discount" class="form-control" min="0" />
                     </div>
                     <div class="col-md-4">
-                      <label class="form-label">Paid (₹)</label>
-                      <input type="number" v-model.number="enrollmentForm.paid" class="form-control" min="0" />
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Payment Method</label>
-                      <select v-model="enrollmentForm.method" class="form-select">
-                        <option value="CASH">Cash</option>
-                        <option value="CARD">Card</option>
-                        <option value="UPI">UPI</option>
-                        <option value="ONLINE">Online</option>
-                      </select>
-                    </div>
-                    <div class="col-md-4">
                       <label class="form-label">Pending (₹)</label>
                       <input type="number" class="form-control" :value="pendingAmount" readonly />
                     </div>

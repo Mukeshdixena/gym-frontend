@@ -4,20 +4,11 @@
 
     <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-      <div
-        ref="toastRef"
-        class="toast align-items-center text-white bg-success border-0"
-        role="alert"
-        aria-live="assertive"
-        aria-atomic="true"
-      >
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+        aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
           <div class="toast-body">{{ toastMessage }}</div>
-          <button
-            type="button"
-            class="btn-close btn-close-white me-2 m-auto"
-            @click="hideToast"
-          ></button>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
         </div>
       </div>
     </div>
@@ -94,43 +85,25 @@
               <td>{{ formatDate(bill.startDate) }}</td>
               <td>{{ formatDate(bill.endDate) }}</td>
               <td>
-                <span
-                  class="badge"
-                  :class="{
-                    'bg-success': bill.status === 'ACTIVE',
-                    'bg-warning text-dark': bill.status === 'PARTIAL_PAID'
-                  }"
-                >
+                <span class="badge" :class="{
+                  'bg-success': bill.status === 'ACTIVE',
+                  'bg-warning text-dark': bill.status === 'PARTIAL_PAID'
+                }">
                   {{ bill.status }}
                 </span>
               </td>
               <td class="text-center">
                 <div class="dropdown" @click.stop="toggleDropdown(bill.id)">
                   <button class="btn btn-light btn-sm border-0">⋮</button>
-                  <div
-                    v-if="openDropdownId === bill.id"
-                    class="dropdown-menu-custom shadow-sm"
-                  >
-                    <a
-                      v-if="bill.status === 'PARTIAL_PAID'"
-                      href="javascript:void(0)"
-                      @click="openCollectModal(bill)"
-                      class="dropdown-item-custom"
-                    >
+                  <div v-if="openDropdownId === bill.id" class="dropdown-menu-custom shadow-sm">
+                    <a v-if="bill.status === 'PARTIAL_PAID'" href="javascript:void(0)" @click="openCollectModal(bill)"
+                      class="dropdown-item-custom">
                       Payment
                     </a>
-                    <a
-                      href="javascript:void(0)"
-                      @click="openHistoryModal(bill)"
-                      class="dropdown-item-custom"
-                    >
+                    <a href="javascript:void(0)" @click="openHistoryModal(bill)" class="dropdown-item-custom">
                       Payment History
                     </a>
-                    <a
-                      href="javascript:void(0)"
-                      @click="downloadBill(bill.id)"
-                      class="dropdown-item-custom"
-                    >
+                    <a href="javascript:void(0)" @click="downloadBill(bill.id)" class="dropdown-item-custom">
                       Download Bill
                     </a>
                   </div>
@@ -143,22 +116,12 @@
     </div>
 
     <!-- Collect Payment Modal -->
-    <div
-      class="modal fade"
-      ref="collectModalRef"
-      tabindex="-1"
-      aria-hidden="true"
-    >
+    <div class="modal fade" ref="collectModalRef" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Collect Payment</h5>
-            <button
-              type="button"
-              class="btn-close"
-              @click="closeCollectModal"
-              aria-label="Close"
-            ></button>
+            <button type="button" class="btn-close" @click="closeCollectModal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent>
@@ -180,68 +143,28 @@
                 <div class="mt-3 row g-3">
                   <div class="col-md-4">
                     <label class="form-label"><strong>Plan Price (₹)</strong></label>
-                    <input
-                      type="number"
-                      class="form-control"
-                      :value="selectedPlan?.price"
-                      readonly
-                    />
+                    <input type="number" class="form-control" :value="selectedPlan?.price" readonly />
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label text-primary"
-                      ><strong>Discount (₹)</strong></label
-                    >
-                    <input
-                      type="number"
-                      class="form-control"
-                      :value="enrollmentForm.discount"
-                      readonly
-                    />
+                    <label class="form-label text-primary"><strong>Discount (₹)</strong></label>
+                    <input type="number" class="form-control" :value="enrollmentForm.discount" readonly />
                   </div>
                   <div class="col-md-4">
                     <label class="form-label"><strong>Already Paid (₹)</strong></label>
-                    <input
-                      type="number"
-                      class="form-control"
-                      :value="oldPaid"
-                      readonly
-                    />
+                    <input type="number" class="form-control" :value="oldPaid" readonly />
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label"
-                      ><strong>Pending (Before) (₹)</strong></label
-                    >
-                    <input
-                      type="number"
-                      class="form-control"
-                      :value="oldPending"
-                      readonly
-                    />
+                    <label class="form-label"><strong>Pending (Before) (₹)</strong></label>
+                    <input type="number" class="form-control" :value="oldPending" readonly />
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label text-success"
-                      ><strong>Paying Now (₹)</strong></label
-                    >
-                    <input
-                      type="number"
-                      class="form-control"
-                      v-model.number="newPaidNow"
-                      min="0"
-                      :max="oldPending"
-                      placeholder="Enter amount"
-                      @input="validatePayment"
-                    />
+                    <label class="form-label text-success"><strong>Paying Now (₹)</strong></label>
+                    <input type="number" class="form-control" v-model.number="newPaidNow" min="0" :max="oldPending"
+                      placeholder="Enter amount" @input="validatePayment" />
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label text-danger"
-                      ><strong>Pending (After) (₹)</strong></label
-                    >
-                    <input
-                      type="number"
-                      class="form-control"
-                      :value="pendingAfterPayment"
-                      readonly
-                    />
+                    <label class="form-label text-danger"><strong>Pending (After) (₹)</strong></label>
+                    <input type="number" class="form-control" :value="pendingAfterPayment" readonly />
                   </div>
                   <div class="col-md-4">
                     <label class="form-label"><strong>Payment Method</strong></label>
@@ -269,10 +192,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr
-                        v-for="(p, i) in selectedMembership.payments"
-                        :key="p.id"
-                      >
+                      <tr v-for="(p, i) in selectedMembership.payments" :key="p.id">
                         <td>{{ i + 1 }}</td>
                         <td>₹{{ p.amount }}</td>
                         <td>{{ formatDateTime(p.paymentDate) }}</td>
@@ -285,21 +205,12 @@
               <div v-else class="mt-3 text-muted">No payments made yet.</div>
 
               <div class="d-grid gap-2 mt-4">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="updatePayment"
-                  :disabled="isSubmitting || newPaidNow <= 0"
-                >
+                <button type="button" class="btn btn-primary" @click="updatePayment"
+                  :disabled="isSubmitting || newPaidNow <= 0">
                   {{ isSubmitting ? 'Updating...' : 'Update Payment' }}
                 </button>
-                <button
-                  v-if="!isPartialPayment"
-                  type="button"
-                  class="btn btn-success"
-                  @click="approvePayment"
-                  :disabled="isSubmitting || pendingAfterPayment > 0"
-                >
+                <button v-if="!isPartialPayment" type="button" class="btn btn-success" @click="approvePayment"
+                  :disabled="isSubmitting || pendingAfterPayment > 0">
                   {{ isSubmitting ? 'Approving...' : 'Approve Full Payment' }}
                 </button>
               </div>
@@ -310,22 +221,12 @@
     </div>
 
     <!-- Payment History Modal -->
-    <div
-      class="modal fade"
-      ref="historyModalRef"
-      tabindex="-1"
-      aria-hidden="true"
-    >
+    <div class="modal fade" ref="historyModalRef" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Payment History</h5>
-            <button
-              type="button"
-              class="btn-close"
-              @click="closeHistoryModal"
-              aria-label="Close"
-            ></button>
+            <button type="button" class="btn-close" @click="closeHistoryModal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div v-if="selectedMembership?.payments?.length">
@@ -358,6 +259,31 @@
         </div>
       </div>
     </div>
+
+    <!-- SMALL CONFIRM MODAL -->
+    <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" style="display: block;" v-if="isConfirmOpen"
+      @click.self="resolveConfirm(false)">
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-0 pb-2">
+            <h5 class="modal-title fs-6">Confirm Action</h5>
+            <button type="button" class="btn-close" @click="resolveConfirm(false)"></button>
+          </div>
+          <div class="modal-body pt-2 pb-3">
+            {{ confirmMessage }}
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-secondary btn-sm" @click="resolveConfirm(false)">
+              Cancel
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" @click="resolveConfirm(true)">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="isConfirmOpen" class="modal-backdrop fade show"></div>
   </div>
 </template>
 
@@ -463,9 +389,8 @@ const validatePayment = () => {
 const showToast = (message: string, isSuccess = true) => {
   toastMessage.value = message
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${
-      isSuccess ? 'bg-success' : 'bg-danger'
-    } border-0`
+    toastRef.value.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'
+      } border-0`
     toastInstance?.show()
   }
   setTimeout(() => {
@@ -571,6 +496,10 @@ const approvePayment = async () => {
     showToast('Full amount not paid.', false)
     return
   }
+
+  const ok = await showConfirm('Approve this payment and activate the membership?')
+  if (!ok) return
+
   isSubmitting.value = true
   try {
     await api.patch(`/memberships/payment/${selectedMembership.value!.id}`, {
@@ -589,13 +518,16 @@ const approvePayment = async () => {
 }
 
 const rejectBill = async (id: number) => {
-  if (!confirm('Reject this bill?')) return
+  const ok = await showConfirm('Reject this bill?')
+  if (!ok) return
+
   try {
-    await api.patch(`/memberships/${id}`, { status: 'CANCELLED' })
+    await api.delete(`/memberships/${id}`)
     await loadMemberships()
-    showToast('Bill rejected.')
+    showToast('Bill rejected successfully.')
   } catch (err: any) {
-    showToast('Rejection failed.', false)
+    console.error('Failed to reject bill:', err)
+    showToast('Rejection failed. Please try again.', false)
   }
 }
 
@@ -625,6 +557,22 @@ const handleClickOutside = (e: MouseEvent) => {
   if (!(e.target as HTMLElement).closest('.dropdown')) {
     openDropdownId.value = null
   }
+}
+
+// --- Confirm Modal Logic ---
+const isConfirmOpen = ref(false)
+const confirmMessage = ref('')
+let resolveConfirm: (value: boolean) => void = () => {}
+
+const showConfirm = (message: string): Promise<boolean> => {
+  return new Promise<boolean>((resolve) => {
+    confirmMessage.value = message
+    isConfirmOpen.value = true
+    resolveConfirm = (value) => {
+      isConfirmOpen.value = false
+      resolve(value)
+    }
+  })
 }
 
 // --- Lifecycle ---
@@ -695,5 +643,10 @@ onBeforeUnmount(() => {
 input[readonly],
 .form-control-plaintext {
   background-color: #f8f9fa !important;
+}
+
+/* Small confirm modal tweaks */
+.modal-sm .modal-content {
+  border-radius: 0.5rem;
 }
 </style>
