@@ -4,20 +4,11 @@
 
     <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 2000">
-      <div
-        ref="toastRef"
-        class="toast align-items-center text-white bg-success border-0"
-        role="alert"
-        aria-live="assertive"
-        aria-atomic="true"
-      >
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+        aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
           <div class="toast-body">{{ toastMessage }}</div>
-          <button
-            type="button"
-            class="btn-close btn-close-white me-2 m-auto"
-            @click="hideToast"
-          ></button>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
         </div>
       </div>
     </div>
@@ -36,6 +27,7 @@
           <th>Description</th>
           <th>Price</th>
           <th>Duration (Days)</th>
+          <th>Status</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -46,13 +38,20 @@
           <td>₹{{ plan.price }}</td>
           <td>{{ plan.durationDays }}</td>
           <td>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" :id="'switch-' + plan.id" :checked="plan.isActive"
+                @change="togglePlanStatus(plan.id!, $event)" :disabled="isToggling" />
+              <label class="form-check-label" :for="'switch-' + plan.id"
+                :class="{ 'text-success': plan.isActive, 'text-muted': !plan.isActive }">
+                {{ plan.isActive ? 'Active' : 'Inactive' }}
+              </label>
+            </div>
+          </td>
+          <td>
             <button class="btn btn-sm btn-info me-2" @click="editPlan(plan)">
               Edit
             </button>
-            <button
-              class="btn btn-sm btn-danger"
-              @click="confirmDelete(plan.id!)"
-            >
+            <button class="btn btn-sm btn-danger" @click="confirmDelete(plan.id!)">
               Delete
             </button>
           </td>
@@ -76,13 +75,8 @@
               <!-- Name -->
               <div class="mb-3">
                 <label class="form-label">Plan Name</label>
-                <input
-                  v-model.trim="form.name"
-                  type="text"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.name }"
-                  @blur="validateField('name')"
-                />
+                <input v-model.trim="form.name" type="text" class="form-control" :class="{ 'is-invalid': errors.name }"
+                  @blur="validateField('name')" />
                 <div v-if="errors.name" class="invalid-feedback">
                   {{ errors.name }}
                 </div>
@@ -91,13 +85,8 @@
               <!-- Description -->
               <div class="mb-3">
                 <label class="form-label">Description</label>
-                <textarea
-                  v-model.trim="form.description"
-                  class="form-control"
-                  rows="2"
-                  :class="{ 'is-invalid': errors.description }"
-                  @blur="validateField('description')"
-                ></textarea>
+                <textarea v-model.trim="form.description" class="form-control" rows="2"
+                  :class="{ 'is-invalid': errors.description }" @blur="validateField('description')"></textarea>
                 <div v-if="errors.description" class="invalid-feedback">
                   {{ errors.description }}
                 </div>
@@ -106,14 +95,11 @@
               <!-- Price -->
               <div class="mb-3">
                 <label class="form-label">Price (₹)</label>
-                <input
-                  v-model.number="form.price"
-                  type="number"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.price }"
-                  @blur="validateField('price')"
-                  min="1"
-                />
+                <div v-if="editingPlan" class="form-control bg-light">
+                  ₹{{ form.price }}
+                </div>
+                <input v-else v-model.number="form.price" type="number" class="form-control"
+                  :class="{ 'is-invalid': errors.price }" @blur="validateField('price')" min="1" />
                 <div v-if="errors.price" class="invalid-feedback">
                   {{ errors.price }}
                 </div>
@@ -122,25 +108,29 @@
               <!-- Duration -->
               <div class="mb-3">
                 <label class="form-label">Duration (Days)</label>
-                <input
-                  v-model.number="form.durationDays"
-                  type="number"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.durationDays }"
-                  @blur="validateField('durationDays')"
-                  min="1"
-                />
+                <div v-if="editingPlan" class="form-control bg-light">
+                  {{ form.durationDays }} days
+                </div>
+                <input v-else v-model.number="form.durationDays" type="number" class="form-control"
+                  :class="{ 'is-invalid': errors.durationDays }" @blur="validateField('durationDays')" min="1" />
                 <div v-if="errors.durationDays" class="invalid-feedback">
                   {{ errors.durationDays }}
                 </div>
               </div>
 
+              <!-- Active Toggle -->
+              <div class="mb-3">
+                <label class="form-label">Status</label>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="activeSwitch" v-model="form.isActive" />
+                  <label class="form-check-label" for="activeSwitch">
+                    {{ form.isActive ? 'Active' : 'Inactive' }}
+                  </label>
+                </div>
+              </div>
+
               <!-- Submit -->
-              <button
-                class="btn btn-primary w-100"
-                type="submit"
-                :disabled="!isFormValid || isUnchanged"
-              >
+              <button class="btn btn-primary w-100" type="submit" :disabled="!isFormValid || isUnchanged">
                 {{ editingPlan ? 'Update' : 'Add' }}
               </button>
             </form>
@@ -181,6 +171,7 @@ interface Plan {
   description: string
   price: number
   durationDays: number
+  isActive: boolean
 }
 
 const plans = ref<Plan[]>([])
@@ -194,6 +185,7 @@ const deleteId = ref<number | null>(null)
 const toastRef = ref<HTMLElement | null>(null)
 let toastInstance!: bootstrap.Toast
 const toastMessage = ref('')
+const isToggling = ref(false)
 
 // ──────────────────────────────
 // Form + Validation
@@ -203,7 +195,8 @@ const form = ref<Partial<Plan>>({
   name: '',
   description: '',
   price: 0,
-  durationDays: 0
+  durationDays: 0,
+  isActive: true
 })
 
 const originalForm = ref<Partial<Plan>>({})
@@ -244,9 +237,8 @@ const isUnchanged = computed(() => {
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${
-      success ? 'bg-success' : 'bg-danger'
-    } border-0`
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'
+      } border-0`
     toastInstance.show()
   }
 }
@@ -257,7 +249,14 @@ const hideToast = () => toastInstance.hide()
 // ──────────────────────────────
 const openAddModal = () => {
   editingPlan.value = null
-  form.value = { id: 0, name: '', description: '', price: 0, durationDays: 0 }
+  form.value = {
+    id: 0,
+    name: '',
+    description: '',
+    price: 0,
+    durationDays: 0,
+    isActive: true
+  }
   originalForm.value = { ...form.value }
   modalInstance.show()
 }
@@ -278,6 +277,28 @@ const confirmDelete = (id?: number) => {
 const hideDeleteModal = () => deleteModalInstance.hide()
 
 // ──────────────────────────────
+// Toggle Plan Status
+// ──────────────────────────────
+const togglePlanStatus = async (id: number, event: Event) => {
+  const checked = (event.target as HTMLInputElement).checked
+  isToggling.value = true
+
+  try {
+    await api.patch(`/plans/${id}/status`, { isActive: checked })
+    const plan = plans.value.find(p => p.id === id)
+    if (plan) plan.isActive = checked
+    showToast(`Plan marked as ${checked ? 'Active' : 'Inactive'}`)
+  } catch (err) {
+    console.error(err)
+    showToast('Failed to update status.', false)
+    // Revert UI
+    event.target && ((event.target as HTMLInputElement).checked = !checked)
+  } finally {
+    isToggling.value = false
+  }
+}
+
+// ──────────────────────────────
 // API Calls
 // ──────────────────────────────
 const loadPlans = async () => {
@@ -296,11 +317,16 @@ const savePlan = async () => {
     return
   }
 
-  const payload = {
+  const payload: any = {
     name: form.value.name!.trim(),
     description: form.value.description!.trim(),
-    price: form.value.price!,
-    durationDays: form.value.durationDays!
+    isActive: form.value.isActive ?? true,
+  }
+
+  // Only include price & durationDays when creating
+  if (!editingPlan.value) {
+    payload.price = form.value.price!
+    payload.durationDays = form.value.durationDays!
   }
 
   try {
@@ -308,7 +334,8 @@ const savePlan = async () => {
       await api.put(`/plans/${editingPlan.value.id}`, payload)
       showToast('Plan updated successfully!')
     } else {
-      await api.post('/plans', payload)
+      const res = await api.post('/plans', payload)
+      plans.value.push(res.data)
       showToast('Plan added successfully!')
     }
     await loadPlans()
@@ -320,17 +347,32 @@ const savePlan = async () => {
 }
 
 const deletePlanConfirmed = async () => {
-  if (!deleteId.value) return
+  if (!deleteId.value) return;
+
   try {
-    await api.delete(`/plans/${deleteId.value}`)
-    plans.value = plans.value.filter((p) => p.id !== deleteId.value)
-    hideDeleteModal()
-    showToast('Plan deleted successfully!')
-  } catch (err) {
-    console.error(err)
-    showToast('Failed to delete plan.', false)
+    await api.delete(`/plans/${deleteId.value}`);
+
+    // Success: Remove from local state
+    plans.value = plans.value.filter((p) => p.id !== deleteId.value);
+    hideDeleteModal();
+    showToast('Plan deleted successfully!', true);
+  } catch (err: any) {
+
+    // Extract meaningful message from NestJS error response
+    let errorMessage = 'Failed to delete plan.';
+
+    if (err.response?.data?.message) {
+      // Handle string or array of messages
+      const msg = err.response.data.message;
+      errorMessage =
+        Array.isArray(msg) ? msg[0] : msg;
+    } else if (err.response?.data?.error) {
+      errorMessage = err.response.data.error;
+    }
+
+    showToast(errorMessage, false);
   }
-}
+};
 
 // ──────────────────────────────
 // Lifecycle
@@ -360,5 +402,9 @@ onMounted(async () => {
 .invalid-feedback {
   display: block;
   font-size: 0.875rem;
+}
+
+.form-switch .form-check-input {
+  cursor: pointer;
 }
 </style>
