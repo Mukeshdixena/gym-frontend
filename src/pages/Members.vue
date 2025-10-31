@@ -22,40 +22,86 @@
     </div>
 
     <!-- Members Table -->
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover align-middle">
       <thead class="table-dark">
         <tr>
           <th>Name</th>
           <th>Email</th>
           <th>Phone</th>
           <th>DOB</th>
-          <th>Membership</th>
+          <th>Membership Status</th>
           <th>Plan</th>
           <th>Actions</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr v-for="member in filteredMembers" :key="member.id">
-          <td>{{ member.firstName }} {{ member.lastName }}</td>
-          <td>{{ member.email }}</td>
-          <td>{{ member.phone }}</td>
-          <td>{{ member.dateOfBirth || 'N/A' }}</td>
-          <td>{{ member.memberships[0]?.status ?? 'N/A' }}</td>
-          <td>
-            {{
-              plans.find((p) => p.id === member.memberships[0]?.planId)?.name ??
-              'N/A'
-            }}
-          </td>
-          <td>
-            <button class="btn btn-sm btn-info me-2" @click="editMember(member)">
-              Edit
-            </button>
-            <button class="btn btn-sm btn-danger" @click="deleteMember(member.id)">
-              Delete
-            </button>
-          </td>
-        </tr>
+        <template v-for="member in filteredMembers" :key="member.id">
+          <!-- Main Row -->
+          <tr @click="toggleExpand(member.id)" style="cursor: pointer"
+            :class="{ 'table-active': expandedMemberId === member.id }">
+            <td>{{ member.firstName }} {{ member.lastName }}</td>
+            <td>{{ member.email }}</td>
+            <td>{{ member.phone }}</td>
+            <td>
+              {{
+                member.dateOfBirth
+                  ? new Date(member.dateOfBirth).toLocaleDateString()
+                  : 'N/A'
+              }}
+            </td>
+            <td>{{ member.memberships[0]?.status ?? 'N/A' }}</td>
+            <td>
+              {{
+                plans.find((p) => p.id === member.memberships[0]?.planId)?.name ??
+                'N/A'
+              }}
+            </td>
+            <td>
+              <button class="btn btn-sm btn-info me-2" @click.stop="editMember(member)">
+                Edit
+              </button>
+              <button class="btn btn-sm btn-danger" @click.stop="deleteMember(member.id)">
+                Delete
+              </button>
+            </td>
+          </tr>
+
+          <!-- Expandable Membership Row -->
+          <tr v-if="expandedMemberId === member.id">
+            <td colspan="7" class="bg-light">
+              <div v-if="member.memberships.length">
+                <table class="table table-bordered table-sm mb-0">
+                  <thead class="table-secondary">
+                    <tr>
+                      <th>Plan</th>
+                      <th>Status</th>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th>Paid</th>
+                      <th>Pending</th>
+                      <th>Discount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="ms in member.memberships" :key="ms.id">
+                      <td>
+                        {{plans.find((p) => p.id === ms.planId)?.name ?? 'N/A'}}
+                      </td>
+                      <td>{{ ms.status }}</td>
+                      <td>{{ new Date(ms.startDate).toLocaleDateString() }}</td>
+                      <td>{{ new Date(ms.endDate).toLocaleDateString() }}</td>
+                      <td>{{ ms.paid }}</td>
+                      <td>{{ ms.pending }}</td>
+                      <td>{{ ms.discount ?? 0 }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-else class="text-muted p-2">No memberships</div>
+            </td>
+          </tr>
+        </template>
       </tbody>
     </table>
 
@@ -128,7 +174,9 @@
                 </div>
               </div>
 
-              <button class="btn btn-primary w-100" type="submit" :disabled="!isFormValid">
+              <!-- Submit Button -->
+              <button class="btn btn-primary w-100" type="submit"
+                :disabled="!isFormValid || (!!editingMember && !isFormDirty)">
                 {{ editingMember ? 'Update' : 'Add' }}
               </button>
             </form>
@@ -144,8 +192,74 @@ import { ref, computed, onMounted } from 'vue'
 import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 
-const errors = ref<Record<string, string>>({})
+// ──────────────────────────────────────
+// Types
+// ──────────────────────────────────────
+interface Membership {
+  id: number
+  planId: number
+  memberId: number
+  startDate: string
+  endDate: string
+  status: string
+  paid: number
+  pending: number
+  discount?: number
+}
 
+interface Member {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address?: string
+  dateOfBirth?: string
+  memberships: Membership[]
+}
+
+interface Plan {
+  id: number
+  name: string
+}
+
+// ──────────────────────────────────────
+// State
+// ──────────────────────────────────────
+const members = ref<Member[]>([])
+const plans = ref<Plan[]>([])
+const searchTerm = ref('')
+const modalRef = ref<HTMLElement | null>(null)
+let modalInstance!: Modal
+let editingMember: Member | null = null
+const toastRef = ref<HTMLElement | null>(null)
+let toastInstance!: Toast
+const toastMessage = ref('')
+const expandedMemberId = ref<number | null>(null)
+
+const form = ref<Partial<Member>>({
+  id: 0,
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  address: '',
+  dateOfBirth: '',
+  memberships: [],
+})
+const originalForm = ref<Partial<Member>>({})
+
+// ──────────────────────────────────────
+// Expand / Collapse Memberships
+// ──────────────────────────────────────
+const toggleExpand = (id: number) => {
+  expandedMemberId.value = expandedMemberId.value === id ? null : id
+}
+
+// ──────────────────────────────────────
+// Validation
+// ──────────────────────────────────────
+const errors = ref<Record<string, string>>({})
 const validateField = (field: string) => {
   const value = form.value[field as keyof Member]
   switch (field) {
@@ -174,10 +288,7 @@ const validateField = (field: string) => {
 }
 
 const isFormValid = computed(() => {
-  ;['firstName', 'lastName', 'email', 'phone', 'dateOfBirth'].forEach(
-    validateField
-  )
-
+  ;['firstName', 'lastName', 'email', 'phone', 'dateOfBirth'].forEach(validateField)
   return (
     form.value.firstName &&
     form.value.lastName &&
@@ -189,56 +300,28 @@ const isFormValid = computed(() => {
 })
 
 // ──────────────────────────────────────
-// Types
+// Dirty Check
 // ──────────────────────────────────────
-interface Membership {
-  id: number
-  planId: number
-  memberId: number
-  startDate: string
-  endDate: string
-  status: string
-}
-interface Member {
-  id: number
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address?: string
-  dateOfBirth?: string
-  memberships: Membership[]
-}
-interface Plan {
-  id: number
-  name: string
-}
-
-// ──────────────────────────────────────
-// State
-// ──────────────────────────────────────
-const members = ref<Member[]>([])
-const plans = ref<Plan[]>([])
-const searchTerm = ref('')
-const modalRef = ref<HTMLElement | null>(null)
-let modalInstance!: Modal
-let editingMember: Member | null = null
-const toastRef = ref<HTMLElement | null>(null)
-let toastInstance!: Toast
-const toastMessage = ref('')
-
-const form = ref<Partial<Member>>({
-  id: 0,
-  firstName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  address: '',
-  dateOfBirth: '',
-  memberships: [],
+const isFormDirty = computed(() => {
+  if (!editingMember) return true
+  const keys: (keyof Member)[] = [
+    'firstName',
+    'lastName',
+    'email',
+    'phone',
+    'address',
+    'dateOfBirth',
+  ]
+  return keys.some((key) => {
+    const current = (form.value[key] ?? '').toString().trim()
+    const original = (originalForm.value[key] ?? '').toString().trim()
+    return current !== original
+  })
 })
 
-// Toast Helper
+// ──────────────────────────────────────
+// Toast
+// ──────────────────────────────────────
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
@@ -249,6 +332,9 @@ const showToast = (msg: string, success = true) => {
 }
 const hideToast = () => toastInstance.hide()
 
+// ──────────────────────────────────────
+// Computed
+// ──────────────────────────────────────
 const filteredMembers = computed(() =>
   members.value.filter(
     (m) =>
@@ -274,12 +360,19 @@ const openAddModal = () => {
     dateOfBirth: '',
     memberships: [],
   }
+  originalForm.value = {}
   modalInstance.show()
 }
-const closeModal = () => modalInstance.hide()
+
+const closeModal = () => {
+  modalInstance.hide()
+  originalForm.value = {}
+}
+
 const editMember = (member: Member) => {
   editingMember = member
   form.value = { ...member }
+  originalForm.value = { ...member }
   modalInstance.show()
 }
 
@@ -314,9 +407,7 @@ const getErrorMessage = (err: any, fallback: string) => {
 
 const saveMember = async () => {
   if (!isFormValid.value) {
-    ;['firstName', 'lastName', 'email', 'phone', 'dateOfBirth'].forEach(
-      validateField
-    )
+    ;['firstName', 'lastName', 'email', 'phone', 'dateOfBirth'].forEach(validateField)
     showToast('Please fill all required fields correctly.', false)
     return
   }
@@ -374,6 +465,19 @@ onMounted(async () => {
 .table td,
 .table th {
   vertical-align: middle;
+}
+
+.table-active {
+  background-color: #f8f9fa !important;
+}
+
+.bg-light {
+  background-color: #f9f9f9 !important;
+}
+
+.table-sm th,
+.table-sm td {
+  padding: 0.3rem 0.5rem;
 }
 
 .invalid-feedback {
