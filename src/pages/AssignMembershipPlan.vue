@@ -319,7 +319,7 @@ const loadMembers = async () => {
 
 const loadPlans = async () => {
   try {
-    const res: AxiosResponse<Plan[]> = await api.get('/plans')
+    const res: AxiosResponse<Plan[]> = await api.get('/plans?isActive=true&sortBy=createdAt&order=desc')
     plans.value = Array.isArray(res.data) ? res.data : []
   } catch (e) {
     console.error('loadPlans error:', e)
