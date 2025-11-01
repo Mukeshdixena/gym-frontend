@@ -59,8 +59,8 @@
     <!-- Payments Table -->
     <div v-else class="card shadow-sm">
       <div class="card-header bg-primary text-white fw-bold">All Payments</div>
-      <div class="card-body table-responsive p-0">
-        <table class="table table-hover align-middle mb-0">
+      <div class="card-body table-responsive ">
+        <table class="table table-hover align-middle ">
           <thead>
             <tr>
               <th>#</th>
@@ -104,7 +104,7 @@
 
               <!-- Expanded Row -->
               <tr v-if="expandedId === payment.id">
-                <td colspan="8" class="p-0 bg-light">
+                <td colspan="8" class="bg-light">
                   <div class="p-3">
                     <div class="row g-3">
                       <div class="col-md-6"><strong>Membership ID:</strong> {{ payment.membershipId }}</div>

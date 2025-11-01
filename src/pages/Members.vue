@@ -37,8 +37,8 @@
     <!-- Members Table -->
     <div v-else class="card shadow-sm">
       <div class="card-header bg-primary text-white fw-bold">All Members</div>
-      <div class="card-body table-responsive p-0">
-        <table class="table table-hover align-middle mb-0">
+      <div class="card-body table-responsive">
+        <table class="table table-hover align-middle">
           <thead>
             <tr>
               <th>#</th>
