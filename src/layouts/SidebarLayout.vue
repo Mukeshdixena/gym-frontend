@@ -2,7 +2,7 @@
   <div class="d-flex vh-100">
     <!-- Sidebar -->
     <aside class="bg-dark text-light p-3" style="width: 220px; position: relative;">
-      <h2 class="mb-4">GymApp</h2>
+      <h3 class="mb-4">DailyGym💪</h3>
 
       <nav class="nav flex-column">
         <router-link to="/" class="nav-link text-light" active-class="active">Dashboard</router-link>
@@ -50,7 +50,7 @@
     <!-- Main content -->
     <div class="flex-grow-1 d-flex flex-column">
       <header class="bg-light p-3 border-bottom">
-        <h3>Welcome to Gym Management</h3>
+        <h3>Welcome to DailyGym CRM</h3>
       </header>
       <main class="flex-grow-1 p-3 bg-light">
         <router-view />
