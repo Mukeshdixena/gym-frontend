@@ -13,6 +13,29 @@
       </div>
     </div>
 
+    <!-- ==== FILTERS ==== -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <input type="text" class="form-control form-control-sm" placeholder="Member name / email"
+          v-model="filterMember" />
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" v-model="filterPlan">
+          <option :value="null">All Plans</option>
+          <option v-for="p in uniquePlans" :key="p.id" :value="p.id">{{ p.name }}</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" v-model="filterStatus">
+          <option :value="null">All Statuses</option>
+          <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline-secondary btn-sm w-100" @click="resetFilters">Clear</button>
+      </div>
+    </div>
+
     <!-- Pending Bills -->
     <div class="card mb-4 shadow-sm">
       <div class="card-header bg-warning text-dark fw-bold">Pending Bills</div>
@@ -31,23 +54,17 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="bill in pendingBills" :key="bill.id">
+            <tr v-for="bill in filteredPendingBills" :key="bill.id">
               <td>{{ bill.id }}</td>
               <td>{{ bill.member.firstName }} {{ bill.member.lastName }}</td>
               <td>{{ bill.plan.name }}</td>
               <td>₹{{ bill.plan.price }}</td>
               <td>₹{{ totalPaid(bill) }}</td>
               <td>₹{{ pendingForBill(bill) }}</td>
+              <td><span class="badge bg-secondary">{{ bill.status }}</span></td>
               <td>
-                <span class="badge bg-secondary">{{ bill.status }}</span>
-              </td>
-              <td>
-                <button class="btn btn-primary btn-sm" @click="openAssignModal(bill)">
-                  Approve
-                </button>
-                <button class="btn btn-danger btn-sm ms-2" @click="rejectBill(bill.id)">
-                  Reject
-                </button>
+                <button class="btn btn-primary btn-sm" @click="openAssignModal(bill)">Approve</button>
+                <button class="btn btn-danger btn-sm ms-2" @click="rejectBill(bill.id)">Reject</button>
               </td>
             </tr>
           </tbody>
@@ -75,7 +92,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="bill in approvedBills" :key="bill.id">
+            <tr v-for="bill in filteredApprovedBills" :key="bill.id">
               <td>{{ bill.id }}</td>
               <td>{{ bill.member.firstName }} {{ bill.member.lastName }}</td>
               <td>{{ bill.plan.name }}</td>
@@ -85,21 +102,17 @@
               <td>{{ formatDate(bill.startDate) }}</td>
               <td>{{ formatDate(bill.endDate) }}</td>
               <td>
-                <span class="badge" :class="{
-                  'bg-success': bill.status === 'ACTIVE',
-                  'bg-warning text-dark': bill.status === 'PARTIAL_PAID'
-                }">
+                <span class="badge"
+                  :class="{ 'bg-success': bill.status === 'ACTIVE', 'bg-warning text-dark': bill.status === 'PARTIAL_PAID' }">
                   {{ bill.status }}
                 </span>
               </td>
               <td class="text-center">
                 <div class="dropdown" @click.stop="toggleDropdown(bill.id)">
-                  <button class="btn btn-light btn-sm border-0">⋮</button>
+                  <button class="btn btn-light btn-sm border-0">...</button>
                   <div v-if="openDropdownId === bill.id" class="dropdown-menu-custom shadow-sm">
                     <a v-if="bill.status === 'PARTIAL_PAID'" href="javascript:void(0)" @click="openCollectModal(bill)"
-                      class="dropdown-item-custom">
-                      Payment
-                    </a>
+                      class="dropdown-item-custom">Payment</a>
                     <a href="javascript:void(0)" @click="openHistoryModal(bill)" class="dropdown-item-custom">
                       Payment History
                     </a>
@@ -134,10 +147,7 @@
               <div class="mt-4">
                 <h6>Membership Plan</h6>
                 <div class="form-control-plaintext p-2 bg-light rounded">
-                  {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }} ({{
-                    selectedPlan?.durationDays
-                  }}
-                  days)
+                  {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }} ({{ selectedPlan?.durationDays }} days)
                 </div>
 
                 <div class="mt-3 row g-3">
@@ -252,9 +262,7 @@
             <div v-else class="text-muted">No payments found.</div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" @click="closeHistoryModal">
-              Close
-            </button>
+            <button class="btn btn-secondary" @click="closeHistoryModal">Close</button>
           </div>
         </div>
       </div>
@@ -269,16 +277,10 @@
             <h5 class="modal-title fs-6">Confirm Action</h5>
             <button type="button" class="btn-close" @click="resolveConfirm(false)"></button>
           </div>
-          <div class="modal-body pt-2 pb-3">
-            {{ confirmMessage }}
-          </div>
+          <div class="modal-body pt-2 pb-3">{{ confirmMessage }}</div>
           <div class="modal-footer border-0 pt-0">
-            <button type="button" class="btn btn-secondary btn-sm" @click="resolveConfirm(false)">
-              Cancel
-            </button>
-            <button type="button" class="btn btn-danger btn-sm" @click="resolveConfirm(true)">
-              OK
-            </button>
+            <button type="button" class="btn btn-secondary btn-sm" @click="resolveConfirm(false)">Cancel</button>
+            <button type="button" class="btn btn-danger btn-sm" @click="resolveConfirm(true)">OK</button>
           </div>
         </div>
       </div>
@@ -293,28 +295,27 @@ import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
-// --- Interfaces ---
+// ──────────────────────────────────────────────────────────────
+// Interfaces (match your API response)
+// ──────────────────────────────────────────────────────────────
 interface Member {
   id: number
   firstName: string
   lastName: string
   email: string
 }
-
 interface Plan {
   id: number
   name: string
   price: number
   durationDays: number
 }
-
 interface Payment {
   id: number
   amount: number
   paymentDate: string
   method: string
 }
-
 interface Membership {
   id: number
   planId: number
@@ -323,15 +324,27 @@ interface Membership {
   endDate: string
   status: string
   discount: number
+  paid?: number
+  pending?: number
+  createdAt: string
+  updatedAt: string
   plan: Plan
   member: Member
   payments: Payment[]
 }
 
-// --- State ---
+// ──────────────────────────────────────────────────────────────
+// State
+// ──────────────────────────────────────────────────────────────
 const pendingBills = ref<Membership[]>([])
 const approvedBills = ref<Membership[]>([])
 
+// Filters
+const filterMember = ref('')
+const filterPlan = ref<number | null>(null)
+const filterStatus = ref<string | null>(null)
+
+// Modal / Toast refs
 const collectModalRef = ref<HTMLElement | null>(null)
 const historyModalRef = ref<HTMLElement | null>(null)
 const toastRef = ref<HTMLElement | null>(null)
@@ -340,22 +353,24 @@ let collectModal: Modal
 let historyModal: Modal
 let toastInstance: Toast
 
+// Modal data
 const selectedMember = ref<Member | null>(null)
 const selectedMembership = ref<Membership | null>(null)
 const selectedPlan = ref<Plan | null>(null)
 
 const enrollmentForm = ref({ planId: 0, discount: 0 })
-
 const oldPaid = ref(0)
 const oldPending = ref(0)
 const newPaidNow = ref(0)
 const paymentMethod = ref<'CASH' | 'CARD' | 'UPI' | 'ONLINE'>('CASH')
-const isPartialPayment = ref(false)
+const isPartialPayment = ref(false)          // ← fixed typo
 const isSubmitting = ref(false)
 
 const toastMessage = ref('')
 
-// --- Computed ---
+// ──────────────────────────────────────────────────────────────
+// Computed
+// ──────────────────────────────────────────────────────────────
 const pendingAfterPayment = computed(() => {
   if (!selectedPlan.value) return 0
   const totalPaid = oldPaid.value + newPaidNow.value
@@ -363,15 +378,65 @@ const pendingAfterPayment = computed(() => {
   return Math.max(netPrice - totalPaid, 0)
 })
 
-// --- Helpers ---
-const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString('en-IN')
+// ── Latest payment date (fallback to updatedAt / createdAt) ──
+const latestPaymentDate = (m: Membership): Date => {
+  if (m.payments?.length) {
+    return new Date(Math.max(...m.payments.map(p => new Date(p.paymentDate).getTime())))
+  }
+  return new Date(m.updatedAt || m.createdAt)
+}
 
-const formatDateTime = (date: string) =>
-  new Date(date).toLocaleString('en-IN')
+// ── Filtered + sorted lists ──
+const filteredPendingBills = computed(() => applyFilters(pendingBills.value))
 
-const totalPaid = (bill: Membership) =>
-  bill.payments.reduce((sum, p) => sum + p.amount, 0)
+const filteredApprovedBills = computed(() => {
+  const sorted = [...approvedBills.value].sort((a, b) => {
+    return latestPaymentDate(b).getTime() - latestPaymentDate(a).getTime()
+  })
+  return applyFilters(sorted)
+})
+
+// ── Filter helpers ──
+const uniquePlans = computed(() => {
+  const map = new Map<number, Plan>()
+    ;[...pendingBills.value, ...approvedBills.value].forEach(m => map.set(m.plan.id, m.plan))
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+})
+
+const statusOptions = computed(() => {
+  const set = new Set<string>()
+    ;[...pendingBills.value, ...approvedBills.value].forEach(m => set.add(m.status))
+  return Array.from(set).sort()
+})
+
+// ── Actual filter function (now a normal function) ──
+function applyFilters(list: Membership[]) {
+  return list.filter(m => {
+    const memberMatch = !filterMember.value ||
+      `${m.member.firstName} ${m.member.lastName}`.toLowerCase().includes(filterMember.value.toLowerCase()) ||
+      m.member.email.toLowerCase().includes(filterMember.value.toLowerCase())
+
+    const planMatch = filterPlan.value === null || m.plan.id === filterPlan.value
+    const statusMatch = filterStatus.value === null || m.status === filterStatus.value
+
+    return memberMatch && planMatch && statusMatch
+  })
+}
+
+// ── Reset filters ──
+const resetFilters = () => {
+  filterMember.value = ''
+  filterPlan.value = null
+  filterStatus.value = null
+}
+
+// ──────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────
+const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
+const formatDateTime = (d: string) => new Date(d).toLocaleString('en-IN')
+
+const totalPaid = (bill: Membership) => bill.payments.reduce((s, p) => s + p.amount, 0)
 
 const pendingForBill = (bill: Membership) => {
   const net = bill.plan.price - bill.discount
@@ -379,83 +444,69 @@ const pendingForBill = (bill: Membership) => {
 }
 
 const validatePayment = () => {
-  if (newPaidNow.value > oldPending.value) {
-    newPaidNow.value = oldPending.value
-  }
+  if (newPaidNow.value > oldPending.value) newPaidNow.value = oldPending.value
   if (newPaidNow.value < 0) newPaidNow.value = 0
 }
 
-// --- Toast ---
-const showToast = (message: string, isSuccess = true) => {
-  toastMessage.value = message
+// ──────────────────────────────────────────────────────────────
+// Toast
+// ──────────────────────────────────────────────────────────────
+const showToast = (msg: string, success = true) => {
+  toastMessage.value = msg
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${isSuccess ? 'bg-success' : 'bg-danger'
-      } border-0`
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
     toastInstance?.show()
   }
-  setTimeout(() => {
-    if (toastMessage.value === message) hideToast()
-  }, 4000)
+  setTimeout(() => { if (toastMessage.value === msg) hideToast() }, 4000)
 }
 const hideToast = () => toastInstance?.hide()
 
-// --- API ---
+// ──────────────────────────────────────────────────────────────
+// API
+// ──────────────────────────────────────────────────────────────
 const loadMemberships = async () => {
   try {
     const res: AxiosResponse<Membership[]> = await api.get('/memberships')
     const data = Array.isArray(res.data) ? res.data : []
-    approvedBills.value = data.filter(
-      (m) => m.status === 'ACTIVE' || m.status === 'PARTIAL_PAID'
-    )
-    pendingBills.value = data.filter(
-      (m) => !['ACTIVE', 'PARTIAL_PAID'].includes(m.status)
-    )
+    approvedBills.value = data.filter(m => ['ACTIVE', 'PARTIAL_PAID'].includes(m.status))
+    pendingBills.value = data.filter(m => !['ACTIVE', 'PARTIAL_PAID'].includes(m.status))
   } catch (err: any) {
     console.error(err)
     showToast('Failed to load memberships.', false)
   }
 }
 
-// --- Modals ---
+// ──────────────────────────────────────────────────────────────
+// Modals
+// ──────────────────────────────────────────────────────────────
 const openAssignModal = (bill: Membership) => {
   setupModal(bill, false)
   collectModal?.show()
 }
-
 const openCollectModal = (bill: Membership) => {
   setupModal(bill, true)
   collectModal?.show()
 }
-
 const setupModal = (bill: Membership, partial: boolean) => {
   selectedMembership.value = bill
   selectedMember.value = bill.member
   selectedPlan.value = bill.plan
-  enrollmentForm.value = {
-    planId: bill.plan.id,
-    discount: bill.discount,
-  }
+  enrollmentForm.value = { planId: bill.plan.id, discount: bill.discount }
   oldPaid.value = totalPaid(bill)
   oldPending.value = pendingForBill(bill)
   newPaidNow.value = 0
   paymentMethod.value = 'CASH'
   isPartialPayment.value = partial
 }
-
 const closeCollectModal = () => {
   collectModal?.hide()
   resetForm()
 }
-
 const openHistoryModal = (bill: Membership) => {
   selectedMembership.value = bill
   historyModal?.show()
 }
-
-const closeHistoryModal = () => {
-  historyModal?.hide()
-}
-
+const closeHistoryModal = () => historyModal?.hide()
 const resetForm = () => {
   selectedMembership.value = null
   selectedMember.value = null
@@ -464,13 +515,11 @@ const resetForm = () => {
   isSubmitting.value = false
 }
 
-// --- Actions ---
+// ──────────────────────────────────────────────────────────────
+// Actions
+// ──────────────────────────────────────────────────────────────
 const updatePayment = async () => {
-  if (newPaidNow.value <= 0) {
-    showToast('Enter a valid payment amount.', false)
-    return
-  }
-
+  if (newPaidNow.value <= 0) return showToast('Enter a valid payment amount.', false)
   isSubmitting.value = true
   try {
     const payload = {
@@ -478,13 +527,11 @@ const updatePayment = async () => {
       method: paymentMethod.value,
       status: pendingAfterPayment.value === 0 ? 'ACTIVE' : 'PARTIAL_PAID',
     }
-
     await api.patch(`/memberships/payment/${selectedMembership.value!.id}`, payload)
     await loadMemberships()
     showToast('Payment updated successfully!')
     closeCollectModal()
   } catch (err: any) {
-    console.error(err)
     showToast(err.response?.data?.message || 'Payment update failed.', false)
   } finally {
     isSubmitting.value = false
@@ -492,14 +539,9 @@ const updatePayment = async () => {
 }
 
 const approvePayment = async () => {
-  if (pendingAfterPayment.value > 0) {
-    showToast('Full amount not paid.', false)
-    return
-  }
-
+  if (pendingAfterPayment.value > 0) return showToast('Full amount not paid.', false)
   const ok = await showConfirm('Approve this payment and activate the membership?')
   if (!ok) return
-
   isSubmitting.value = true
   try {
     await api.patch(`/memberships/payment/${selectedMembership.value!.id}`, {
@@ -520,22 +562,18 @@ const approvePayment = async () => {
 const rejectBill = async (id: number) => {
   const ok = await showConfirm('Reject this bill?')
   if (!ok) return
-
   try {
     await api.delete(`/memberships/${id}`)
     await loadMemberships()
     showToast('Bill rejected successfully.')
   } catch (err: any) {
-    console.error('Failed to reject bill:', err)
     showToast('Rejection failed. Please try again.', false)
   }
 }
 
 const downloadBill = async (id: number) => {
   try {
-    const res = await api.get(`/memberships/download-bill/${id}`, {
-      responseType: 'blob',
-    })
+    const res = await api.get(`/memberships/download-bill/${id}`, { responseType: 'blob' })
     const blob = new Blob([res.data], { type: 'application/pdf' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -548,34 +586,37 @@ const downloadBill = async (id: number) => {
   }
 }
 
-// --- Dropdown ---
+// ──────────────────────────────────────────────────────────────
+// Dropdown
+// ──────────────────────────────────────────────────────────────
 const openDropdownId = ref<number | null>(null)
 const toggleDropdown = (id: number) => {
   openDropdownId.value = openDropdownId.value === id ? null : id
 }
 const handleClickOutside = (e: MouseEvent) => {
-  if (!(e.target as HTMLElement).closest('.dropdown')) {
-    openDropdownId.value = null
-  }
+  if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null
 }
 
-// --- Confirm Modal Logic ---
+// ──────────────────────────────────────────────────────────────
+// Confirm Modal
+// ──────────────────────────────────────────────────────────────
 const isConfirmOpen = ref(false)
 const confirmMessage = ref('')
-let resolveConfirm: (value: boolean) => void = () => {}
-
-const showConfirm = (message: string): Promise<boolean> => {
-  return new Promise<boolean>((resolve) => {
-    confirmMessage.value = message
+let resolveConfirm: (v: boolean) => void = () => { }
+const showConfirm = (msg: string): Promise<boolean> => {
+  return new Promise<boolean>(resolve => {
+    confirmMessage.value = msg
     isConfirmOpen.value = true
-    resolveConfirm = (value) => {
+    resolveConfirm = v => {
       isConfirmOpen.value = false
-      resolve(value)
+      resolve(v)
     }
   })
 }
 
-// --- Lifecycle ---
+// ──────────────────────────────────────────────────────────────
+// Lifecycle
+// ──────────────────────────────────────────────────────────────
 onMounted(async () => {
   if (collectModalRef.value) collectModal = new Modal(collectModalRef.value)
   if (historyModalRef.value) historyModal = new Modal(historyModalRef.value)
@@ -608,7 +649,7 @@ onBeforeUnmount(() => {
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
   z-index: 1000;
   min-width: 160px;
 }
@@ -618,7 +659,7 @@ onBeforeUnmount(() => {
   padding: 8px 12px;
   color: #333;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: .9rem;
 }
 
 .dropdown-item-custom:hover {
@@ -628,7 +669,7 @@ onBeforeUnmount(() => {
 .btn-sm.border-0 {
   font-size: 1.3rem;
   line-height: 1;
-  padding: 0 0.4rem;
+  padding: 0 .4rem;
 }
 
 .modal-body {
@@ -645,8 +686,7 @@ input[readonly],
   background-color: #f8f9fa !important;
 }
 
-/* Small confirm modal tweaks */
 .modal-sm .modal-content {
-  border-radius: 0.5rem;
+  border-radius: .5rem;
 }
 </style>
