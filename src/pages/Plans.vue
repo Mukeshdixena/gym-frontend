@@ -43,7 +43,7 @@
             @change="loadPlans" />
         </div>
 
-        <div>
+        <!-- <div>
           <label class="form-label mb-1">Sort By</label>
           <select v-model="filters.sortBy" class="form-select" @change="loadPlans">
             <option value="createdAt">Created Date</option>
@@ -51,15 +51,15 @@
             <option value="durationDays">Duration</option>
             <option value="name">Name</option>
           </select>
-        </div>
+        </div> -->
 
-        <div>
+        <!-- <div>
           <label class="form-label mb-1">Order</label>
           <select v-model="filters.order" class="form-select" @change="loadPlans">
             <option value="desc">Descending</option>
             <option value="asc">Ascending</option>
           </select>
-        </div>
+        </div> -->
       </div>
 
       <button class="btn btn-primary" @click="openAddModal">New Plan</button>
