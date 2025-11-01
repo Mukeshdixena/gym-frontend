@@ -83,9 +83,8 @@
               <td>{{ plan.durationDays }} days</td>
               <td>
                 <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" :id="'switch-' + plan.id"
-                    :checked="plan.isActive" @change="togglePlanStatus(plan.id, $event)"
-                    :disabled="isToggling" />
+                  <input class="form-check-input" type="checkbox" :id="'switch-' + plan.id" :checked="plan.isActive"
+                    @change="togglePlanStatus(plan.id, $event)" :disabled="isToggling" />
                   <label class="form-check-label" :for="'switch-' + plan.id"
                     :class="{ 'text-success': plan.isActive, 'text-muted': !plan.isActive }">
                     {{ plan.isActive ? 'Active' : 'Inactive' }}
@@ -97,7 +96,8 @@
                   <button class="btn btn-light btn-sm border-0">...</button>
                   <div v-if="openDropdownId === plan.id" class="dropdown-menu-custom shadow-sm">
                     <a href="javascript:void(0)" @click="editPlan(plan)" class="dropdown-item-custom">Edit</a>
-                    <a href="javascript:void(0)" @click="confirmDelete(plan.id)" class="dropdown-item-custom text-danger">
+                    <a href="javascript:void(0)" @click="confirmDelete(plan.id)"
+                      class="dropdown-item-custom text-danger">
                       Delete
                     </a>
                   </div>
@@ -171,8 +171,7 @@
               </div>
 
               <div class="d-grid gap-2 mt-4">
-                <button type="button" class="btn btn-primary" @click="savePlan"
-                  :disabled="!isFormValid || isUnchanged">
+                <button type="button" class="btn btn-primary" @click="savePlan" :disabled="!isFormValid || isUnchanged">
                   {{ editingPlan ? 'Update Plan' : 'Add Plan' }}
                 </button>
               </div>
@@ -429,7 +428,7 @@ const handleClickOutside = (e: MouseEvent) => {
 // Confirm Delete
 // ──────────────────────────────────────────────────────────────
 const isConfirmOpen = ref(false)
-let resolveConfirm: (v: boolean) => void = () => {}
+let resolveConfirm: (v: boolean) => void = () => { }
 
 const showConfirm = (): Promise<boolean> => {
   return new Promise<boolean>(resolve => {
@@ -489,7 +488,7 @@ onBeforeUnmount(() => {
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
   z-index: 2000;
   min-width: 160px;
 }
@@ -536,5 +535,9 @@ input[readonly],
 
 .form-switch .form-check-input {
   cursor: pointer;
+}
+
+.card-body {
+  overflow: visible !important;
 }
 </style>

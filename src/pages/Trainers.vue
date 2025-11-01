@@ -69,7 +69,8 @@
                     <button class="btn btn-light btn-sm border-0">...</button>
                     <div v-if="openDropdownId === trainer.id" class="dropdown-menu-custom shadow-sm">
                       <a href="javascript:void(0)" @click="editTrainer(trainer)" class="dropdown-item-custom">Edit</a>
-                      <a href="javascript:void(0)" @click="confirmDelete(trainer)" class="dropdown-item-custom text-danger">
+                      <a href="javascript:void(0)" @click="confirmDelete(trainer)"
+                        class="dropdown-item-custom text-danger">
                         Delete
                       </a>
                     </div>
@@ -400,7 +401,7 @@ const handleClickOutside = (e: MouseEvent) => {
 // Confirm Delete
 // ──────────────────────────────────────────────────────────────
 const isConfirmOpen = ref(false)
-let resolveConfirm: (v: boolean) => void = () => {}
+let resolveConfirm: (v: boolean) => void = () => { }
 
 const showConfirm = (msg: string): Promise<boolean> => {
   return new Promise<boolean>(resolve => {
@@ -466,7 +467,7 @@ onBeforeUnmount(() => {
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
   z-index: 2000;
   min-width: 160px;
 }
@@ -513,5 +514,9 @@ onBeforeUnmount(() => {
 .spinner-border-sm {
   width: 1rem;
   height: 1rem;
+}
+
+.card-body {
+  overflow: visible !important;
 }
 </style>

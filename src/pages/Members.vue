@@ -64,8 +64,7 @@
                   {{ member.dateOfBirth ? formatDate(member.dateOfBirth) : 'N/A' }}
                 </td>
                 <td>
-                  <span class="badge"
-                    :class="getStatusClass(member.memberships[0]?.status)">
+                  <span class="badge" :class="getStatusClass(member.memberships[0]?.status)">
                     {{ member.memberships[0]?.status ?? 'N/A' }}
                   </span>
                 </td>
@@ -77,7 +76,8 @@
                     <button class="btn btn-light btn-sm border-0">...</button>
                     <div v-if="openDropdownId === member.id" class="dropdown-menu-custom shadow-sm">
                       <a href="javascript:void(0)" @click="editMember(member)" class="dropdown-item-custom">Edit</a>
-                      <a href="javascript:void(0)" @click="confirmDelete(member)" class="dropdown-item-custom text-danger">
+                      <a href="javascript:void(0)" @click="confirmDelete(member)"
+                        class="dropdown-item-custom text-danger">
                         Delete
                       </a>
                     </div>
@@ -592,5 +592,9 @@ onBeforeUnmount(() => {
 input[readonly],
 .form-control-plaintext {
   background-color: #f8f9fa !important;
+}
+
+.card-body {
+  overflow: visible !important;
 }
 </style>

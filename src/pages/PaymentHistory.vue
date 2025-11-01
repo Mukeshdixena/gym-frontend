@@ -410,4 +410,8 @@ onBeforeUnmount(() => {
 .badge {
   font-size: .75rem;
 }
+
+.card-body {
+  overflow: visible !important;
+}
 </style>
