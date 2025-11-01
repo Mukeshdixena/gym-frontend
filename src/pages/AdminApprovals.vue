@@ -1,138 +1,432 @@
 <template>
   <div class="container mt-4">
-    <h3 class="mb-4">Pending User Approvals</h3>
+    <h3 class="mb-4">Admin – User Management</h3>
 
-    <!-- Loading Spinner -->
-    <div v-if="loading" class="text-center my-5">
-      <div class="spinner-border text-primary"></div>
-      <p class="mt-2">Loading pending users...</p>
+    <!-- Toast -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+        aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">{{ toastMessage }}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
+        </div>
+      </div>
     </div>
 
-    <!-- No Data -->
-    <div v-else-if="users.length === 0" class="alert alert-info text-center">
-      No pending user approvals found.
+    <!-- ==== FILTERS ==== -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <input type="text" class="form-control form-control-sm" placeholder="Name / email" v-model="filterMember" />
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" v-model="filterRole">
+          <option :value="null">All Roles</option>
+          <option v-for="r in roleOptions" :key="r" :value="r">{{ r }}</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" v-model="filterStatus">
+          <option :value="null">All Statuses</option>
+          <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline-secondary btn-sm w-100" @click="resetFilters">Clear</button>
+      </div>
     </div>
 
-    <!-- Table -->
-    <table v-else class="table table-bordered align-middle shadow-sm">
-      <thead class="table-light">
-        <tr>
-          <th>#</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Status</th>
-          <th>Role</th>
-          <th>Registered</th>
-          <th style="width: 160px;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(u, i) in users" :key="u.id">
-          <td>{{ i + 1 }}</td>
-          <td>{{ u.name }}</td>
-          <td>{{ u.email }}</td>
-          <td>
-            <span
-              :class="{
-                'badge bg-warning text-dark': u.status === 'PENDING',
-                'badge bg-success': u.status === 'APPROVED',
-                'badge bg-danger': u.status === 'REJECTED'
-              }"
-            >
-              {{ u.status }}
-            </span>
-          </td>
-          <td>{{ u.role }}</td>
-          <td>{{ new Date(u.createdAt).toLocaleDateString() }}</td>
-          <td>
-            <button
-              class="btn btn-success btn-sm me-2"
-              @click="approveUser(u.id)"
-              :disabled="u.status === 'APPROVED'"
-            >
-              Approve
-            </button>
-            <button
-              class="btn btn-danger btn-sm"
-              @click="rejectUser(u.id)"
-              :disabled="u.status === 'REJECTED'"
-            >
-              Reject
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Pending Approvals -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-warning text-dark fw-bold">Pending Approvals</div>
+      <div class="card-body table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Registered</th>
+              <th>Status</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(u, i) in filteredPending" :key="u.id">
+              <td>{{ i + 1 }}</td>
+              <td>{{ u.name }}</td>
+              <td>{{ u.email }}</td>
+              <td>{{ formatDate(u.createdAt) }}</td>
+              <td><span class="badge bg-warning text-dark">PENDING</span></td>
+              <td class="text-center">
+                <button class="btn btn-success btn-sm me-2" @click="approveUser(u.id)">Approve</button>
+                <button class="btn btn-danger btn-sm" @click="rejectUser(u.id)">Reject</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="!filteredPending.length" class="alert alert-info text-center">No pending users found.</div>
+      </div>
+    </div>
+
+    <!-- Approved Users -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white fw-bold">Approved Users</div>
+      <div class="card-body table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Registered</th>
+              <th>Status</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(u, i) in filteredApproved" :key="u.id">
+              <td>{{ i + 1 }}</td>
+              <td>{{ u.name }}</td>
+              <td>{{ u.email }}</td>
+              <td>{{ u.role }}</td>
+              <td>{{ formatDate(u.createdAt) }}</td>
+              <td>
+                <span class="badge"
+                  :class="{ 'bg-success': u.status === 'APPROVED', 'bg-danger': u.status === 'REJECTED' }">
+                  {{ u.status }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="dropdown" @click.stop="toggleDropdown(u.id)">
+                  <button class="btn btn-light btn-sm border-0">…</button>
+                  <div v-if="openDropdownId === u.id" class="dropdown-menu-custom shadow-sm">
+                    <a href="javascript:void(0)" @click="openEditModal(u)" class="dropdown-item-custom">Edit</a>
+                    <a href="javascript:void(0)" @click="deleteUser(u.id)"
+                      class="dropdown-item-custom text-danger">Delete</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="!filteredApproved.length" class="alert alert-info text-center">No approved users found.</div>
+      </div>
+    </div>
+
+    <!-- Edit / Create User Modal -->
+    <div class="modal fade" ref="editModalRef" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ editForm.id ? 'Edit User' : 'Create New User' }}</h5>
+            <button type="button" class="btn-close" @click="closeEditModal"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveUser">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Name</label>
+                  <input v-model="editForm.name" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input v-model="editForm.email" type="email" class="form-control" required />
+                </div>
+                <div class="col-md-6" v-if="!editForm.id">
+                  <label class="form-label">Password</label>
+                  <input v-model="editForm.password" type="password" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Role</label>
+                  <select v-model="editForm.role" class="form-select">
+                    <option value="USER">USER</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </div>
+              </div>
+              <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                  {{ isSubmitting ? 'Saving…' : 'Save' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Small Confirm Modal -->
+    <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" style="display: block;" v-if="isConfirmOpen"
+      @click.self="resolveConfirm(false)">
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-0 pb-2">
+            <h5 class="modal-title fs-6">Confirm Action</h5>
+            <button type="button" class="btn-close" @click="resolveConfirm(false)"></button>
+          </div>
+          <div class="modal-body pt-2 pb-3">{{ confirmMessage }}</div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-secondary btn-sm" @click="resolveConfirm(false)">Cancel</button>
+            <button type="button" class="btn btn-danger btn-sm" @click="resolveConfirm(true)">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="isConfirmOpen" class="modal-backdrop fade show"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
-import { Toast } from 'bootstrap'
 
-const users = ref<any[]>([])
-const loading = ref(true)
-let toastInstance: Toast | null = null
-
-const showToast = (msg: string, success = true) => {
-  const toastEl = document.createElement('div')
-  toastEl.className = `toast align-items-center text-white ${
-    success ? 'bg-success' : 'bg-danger'
-  } border-0 position-fixed top-0 end-0 m-3`
-  toastEl.style.zIndex = '2000'
-  toastEl.innerHTML = `
-    <div class="d-flex">
-      <div class="toast-body">${msg}</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-    </div>
-  `
-  document.body.appendChild(toastEl)
-  toastInstance = new Toast(toastEl)
-  toastInstance.show()
-  setTimeout(() => toastEl.remove(), 3000)
+interface User {
+  id: number
+  name: string
+  email: string
+  role: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  createdAt: string
 }
 
-const fetchPending = async () => {
-  loading.value = true
+// ── State ─────────────────────────────────────────────────────────────────────
+const allUsers = ref<User[]>([])
+const pending = ref<User[]>([])
+const approved = ref<User[]>([])
+
+// Filters
+const filterMember = ref('')
+const filterRole = ref<string | null>(null)
+const filterStatus = ref<string | null>(null)
+
+// Toast / Modal refs
+const toastRef = ref<HTMLElement | null>(null)
+const editModalRef = ref<HTMLElement | null>(null)
+let toastInstance: Toast
+let editModal: Modal
+
+// Edit form
+interface EditForm { id?: number; name: string; email: string; password: string; role: string }
+const editForm = ref<EditForm>({ name: '', email: '', password: '', role: 'USER' })
+const isSubmitting = ref(false)
+
+// Dropdown
+const openDropdownId = ref<number | null>(null)
+
+// Confirm modal
+const isConfirmOpen = ref(false)
+const confirmMessage = ref('')
+let resolveConfirm: (v: boolean) => void = () => { }
+
+const toastMessage = ref('')
+
+// ── Computed ───────────────────────────────────────────────────────────────────
+const roleOptions = computed(() => {
+  const set = new Set<string>()
+  allUsers.value.forEach(u => set.add(u.role))
+  return Array.from(set).sort()
+})
+
+const statusOptions = computed(() => {
+  const set = new Set<string>()
+  allUsers.value.forEach(u => set.add(u.status))
+  return Array.from(set).sort()
+})
+
+const filteredPending = computed(() => applyFilters(pending.value))
+const filteredApproved = computed(() => applyFilters(approved.value))
+
+function applyFilters(list: User[]) {
+  return list.filter(u => {
+    const member = !filterMember.value ||
+      u.name.toLowerCase().includes(filterMember.value.toLowerCase()) ||
+      u.email.toLowerCase().includes(filterMember.value.toLowerCase())
+    const role = filterRole.value === null || u.role === filterRole.value
+    const status = filterStatus.value === null || u.status === filterStatus.value
+    return member && role && status
+  })
+}
+
+const resetFilters = () => {
+  filterMember.value = ''
+  filterRole.value = null
+  filterStatus.value = null
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
+
+// Toast
+const showToast = (msg: string, success = true) => {
+  toastMessage.value = msg
+  if (toastRef.value) {
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
+    toastInstance?.show()
+  }
+  setTimeout(() => { if (toastMessage.value === msg) hideToast() }, 4000)
+}
+const hideToast = () => toastInstance?.hide()
+
+// Confirm
+const showConfirm = (msg: string): Promise<boolean> => {
+  return new Promise<boolean>(resolve => {
+    confirmMessage.value = msg
+    isConfirmOpen.value = true
+    resolveConfirm = v => {
+      isConfirmOpen.value = false
+      resolve(v)
+    }
+  })
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+const loadUsers = async () => {
   try {
-    const { data } = await api.get('/admin-users/pending')
-    users.value = data
-  } catch (err) {
-    console.error(err)
-    showToast('Failed to load users.', false)
-  } finally {
-    loading.value = false
+    const { data } = await api.get<User[]>('/admin-users')
+    allUsers.value = data
+    pending.value = data.filter(u => u.status === 'PENDING')
+    approved.value = data.filter(u => u.status !== 'PENDING')
+  } catch {
+    showToast('Failed to load users', false)
   }
 }
 
+// ── Actions ───────────────────────────────────────────────────────────────────
 const approveUser = async (id: number) => {
   try {
     await api.patch(`/admin-users/approve/${id}`)
-    showToast('User approved successfully!')
-    await fetchPending()
-  } catch (err) {
-    console.error(err)
-    showToast('Failed to approve user.', false)
+    showToast('User approved')
+    await loadUsers()
+  } catch {
+    showToast('Approve failed', false)
   }
 }
-
 const rejectUser = async (id: number) => {
+  const ok = await showConfirm('Reject this user?')
+  if (!ok) return
   try {
     await api.patch(`/admin-users/reject/${id}`)
-    showToast('User rejected successfully.')
-    await fetchPending()
-  } catch (err) {
-    console.error(err)
-    showToast('Failed to reject user.', false)
+    showToast('User rejected')
+    await loadUsers()
+  } catch {
+    showToast('Reject failed', false)
+  }
+}
+const deleteUser = async (id: number) => {
+  const ok = await showConfirm('Delete this user? This action cannot be undone.')
+  if (!ok) return
+  try {
+    await api.delete(`/admin-users/${id}`)
+    showToast('User deleted')
+    await loadUsers()
+  } catch {
+    showToast('Delete failed', false)
   }
 }
 
-onMounted(fetchPending)
+// ── Edit / Create Modal ───────────────────────────────────────────────────────
+const openEditModal = (user?: User) => {
+  if (user) {
+    editForm.value = { ...user, password: '' }
+  } else {
+    editForm.value = { name: '', email: '', password: '', role: 'USER' }
+  }
+  editModal?.show()
+}
+const closeEditModal = () => {
+  editModal?.hide()
+  editForm.value = { name: '', email: '', password: '', role: 'USER' }
+}
+const saveUser = async () => {
+  if (!editForm.value.name || !editForm.value.email || (!editForm.value.id && !editForm.value.password)) return
+  isSubmitting.value = true
+  try {
+    if (editForm.value.id) {
+      await api.patch(`/admin-users/${editForm.value.id}`, editForm.value)
+      showToast('User updated')
+    } else {
+      await api.post('/admin-users', editForm.value)
+      showToast('User created')
+    }
+    closeEditModal()
+    await loadUsers()
+  } catch {
+    showToast('Save failed', false)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+// ── Dropdown ───────────────────────────────────────────────────────────────────
+const toggleDropdown = (id: number) => {
+  openDropdownId.value = openDropdownId.value === id ? null : id
+}
+const handleClickOutside = (e: MouseEvent) => {
+  if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null
+}
+
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
+onMounted(async () => {
+  if (toastRef.value) toastInstance = new Toast(toastRef.value)
+  if (editModalRef.value) editModal = new Modal(editModalRef.value)
+  document.addEventListener('click', handleClickOutside)
+  await loadUsers()
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
-.table {
-  background: #fff;
+.table td,
+.table th {
+  vertical-align: middle;
+}
+
+/* Dropdown */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu-custom {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: .5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+  z-index: 2000;
+  min-width: 140px;
+}
+
+.dropdown-item-custom {
+  display: block;
+  padding: .5rem 1rem;
+  color: #333;
+  font-size: .9rem;
+}
+
+.dropdown-item-custom:hover {
+  background: #f8f9fa;
+}
+
+.btn-sm.border-0 {
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 0 .4rem;
+}
+
+/* Modal */
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.card-body {
+  overflow: visible !important;
 }
 </style>
