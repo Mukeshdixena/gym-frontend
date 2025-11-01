@@ -9,12 +9,11 @@ import Trainers from "@/pages/Trainers.vue";
 import Classes from "@/pages/Classes.vue";
 import Plans from "@/pages/Plans.vue";
 import Billing from "@/pages/Billing.vue";
-import Login from "@/pages/Login.vue"; // ← Your Login Page
-import PaymentHistory from "@/pages/PaymentHistory.vue"; // ← New Payment History Page
+import Login from "@/pages/Login.vue";
+import PaymentHistory from "@/pages/PaymentHistory.vue";
 
 // --- Routes ---
 const routes = [
-  // Public Route
   {
     path: "/login",
     name: "Login",
@@ -72,32 +71,41 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
-  // Catch-all: Redirect to login
+  {
+    path: "/admin/approvals",
+    name: "AdminApprovals",
+    component: () => import("@/pages/AdminApprovals.vue"),
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+
   {
     path: "/:pathMatch(.*)*",
     redirect: "/login",
   },
 ];
 
-// --- Router ---
 const router = createRouter({
   history: createWebHistory(),
   routes,
 });
 
-// --- Route Guard ---
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = !!localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    // Not logged in → go to login
-    next({ name: "Login", query: { redirect: to.fullPath } });
-  } else if (to.name === "Login" && isAuthenticated) {
-    // Already logged in → go to dashboard
-    next({ name: "Dashboard" });
-  } else {
-    next();
+  if (to.meta.requiresAuth && !token) {
+    return next({ name: "Login", query: { redirect: to.fullPath } });
   }
+
+  if (to.name === "Login" && token) {
+    return next({ name: "Dashboard" });
+  }
+
+  if (to.meta.requiresAdmin && role !== "ADMIN") {
+    return next({ name: "Dashboard" });
+  }
+
+  next();
 });
 
 export default router;
