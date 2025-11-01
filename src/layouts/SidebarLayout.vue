@@ -5,6 +5,7 @@
       <h3 class="mb-4">DailyGym💪</h3>
 
       <nav class="nav flex-column">
+        <router-link to="/admin/approvals" class="nav-link text-light" active-class="active">User Approvals</router-link>
         <router-link to="/" class="nav-link text-light" active-class="active">Dashboard</router-link>
         <router-link to="/billing" class="nav-link text-light" active-class="active">Billing</router-link>
         <router-link to="/assign-membership-plan" class="nav-link text-light" active-class="active">Assign Membership Plan</router-link>

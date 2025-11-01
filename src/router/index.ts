@@ -75,6 +75,7 @@ const routes = [
     path: "/admin/approvals",
     name: "AdminApprovals",
     component: () => import("@/pages/AdminApprovals.vue"),
+    // meta: { requiresAuth: true },
     meta: { requiresAuth: true, requiresAdmin: true },
   },
 
@@ -92,6 +93,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
+  console.log(role);
 
   if (to.meta.requiresAuth && !token) {
     return next({ name: "Login", query: { redirect: to.fullPath } });
