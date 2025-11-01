@@ -86,7 +86,7 @@
                   <tbody>
                     <tr v-for="ms in member.memberships" :key="ms.id">
                       <td>
-                        {{plans.find((p) => p.id === ms.planId)?.name ?? 'N/A'}}
+                        {{ plans.find((p) => p.id === ms.planId)?.name ?? 'N/A' }}
                       </td>
                       <td>{{ ms.status }}</td>
                       <td>{{ new Date(ms.startDate).toLocaleDateString() }}</td>
@@ -184,6 +184,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal fade" tabindex="-1" ref="deleteModalRef">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Delete
+            </h5>
+            <button type="button" class="btn-close btn-close-white" @click="closeDeleteModal"></button>
+          </div>
+
+          <div class="modal-body">
+            <p class="mb-0">
+              Delete <strong>{{ memberToDelete?.firstName }} {{ memberToDelete?.lastName }}</strong> permanently?
+            </p>
+            <small class="text-muted">This action cannot be undone.</small>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeDeleteModal">
+              Cancel
+            </button>
+            <button type="button" class="btn btn-danger" @click="confirmDelete">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -236,6 +266,11 @@ const toastRef = ref<HTMLElement | null>(null)
 let toastInstance!: Toast
 const toastMessage = ref('')
 const expandedMemberId = ref<number | null>(null)
+
+// Delete Modal State
+const deleteModalRef = ref<HTMLElement | null>(null)
+let deleteModalInstance!: Modal
+const memberToDelete = ref<Member | null>(null)
 
 const form = ref<Partial<Member>>({
   id: 0,
@@ -325,8 +360,7 @@ const isFormDirty = computed(() => {
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'
-      } border-0`
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
     toastInstance.show()
   }
 }
@@ -346,7 +380,7 @@ const filteredMembers = computed(() =>
 )
 
 // ──────────────────────────────────────
-// Modal Actions
+// Modal Actions (Add/Edit)
 // ──────────────────────────────────────
 const openAddModal = () => {
   editingMember = null
@@ -374,6 +408,36 @@ const editMember = (member: Member) => {
   form.value = { ...member }
   originalForm.value = { ...member }
   modalInstance.show()
+}
+
+// ──────────────────────────────────────
+// Delete Confirmation Modal
+// ──────────────────────────────────────
+const openDeleteModal = (member: Member) => {
+  memberToDelete.value = member
+  deleteModalInstance.show()
+}
+
+const closeDeleteModal = () => {
+  memberToDelete.value = null
+  deleteModalInstance.hide()
+}
+
+const confirmDelete = async () => {
+  if (!memberToDelete.value) return
+
+  const idToDelete = memberToDelete.value.id
+
+  try {
+    await api.delete(`/members/${idToDelete}`)
+    members.value = members.value.filter(m => m.id !== idToDelete)
+    showToast('Member deleted successfully!')
+  } catch (err: any) {
+    console.error(err)
+    showToast(getErrorMessage(err, 'Failed to delete member.'), false)
+  } finally {
+    closeDeleteModal()
+  }
 }
 
 // ──────────────────────────────────────
@@ -437,16 +501,11 @@ const saveMember = async () => {
   }
 }
 
-const deleteMember = async (id: number) => {
-  if (!confirm('Delete this member permanently?')) return
-  try {
-    await api.delete(`/members/${id}`)
-    members.value = members.value.filter((m) => m.id !== id)
-    showToast('Member deleted successfully!')
-  } catch (err: any) {
-    console.error(err)
-    showToast(getErrorMessage(err, 'Failed to delete member.'), false)
-  }
+// Updated deleteMember: opens modal instead of alert
+const deleteMember = (memberId: number) => {
+  const member = members.value.find(m => m.id === memberId)
+  if (!member) return
+  openDeleteModal(member)
 }
 
 // ──────────────────────────────────────
@@ -455,8 +514,13 @@ const deleteMember = async (id: number) => {
 onMounted(async () => {
   if (modalRef.value)
     modalInstance = new Modal(modalRef.value, { backdrop: 'static' })
+
+  if (deleteModalRef.value)
+    deleteModalInstance = new Modal(deleteModalRef.value, { backdrop: 'static' })
+
   if (toastRef.value)
     toastInstance = new Toast(toastRef.value, { delay: 3000, autohide: true })
+
   await Promise.all([loadMembers(), loadPlans()])
 })
 </script>

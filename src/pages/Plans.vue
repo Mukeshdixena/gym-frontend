@@ -13,9 +13,55 @@
       </div>
     </div>
 
-    <!-- Add Button -->
-    <div class="d-flex justify-content-between mb-3">
-      <h5 class="m-0">Available Plans</h5>
+    <!-- Filters + Add Button -->
+    <div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+      <div class="d-flex flex-wrap gap-2 align-items-end">
+        <div>
+          <label class="form-label mb-1">Search</label>
+          <input v-model.trim="filters.search" type="text" class="form-control"
+            placeholder="Search by name or description" @input="loadPlans" />
+        </div>
+
+        <div>
+          <label class="form-label mb-1">Status</label>
+          <select v-model="filters.isActive" class="form-select" @change="loadPlans">
+            <option value="">All</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label mb-1">Min Price</label>
+          <input v-model.number="filters.minPrice" type="number" class="form-control" placeholder="Min ₹"
+            @change="loadPlans" />
+        </div>
+
+        <div>
+          <label class="form-label mb-1">Max Price</label>
+          <input v-model.number="filters.maxPrice" type="number" class="form-control" placeholder="Max ₹"
+            @change="loadPlans" />
+        </div>
+
+        <div>
+          <label class="form-label mb-1">Sort By</label>
+          <select v-model="filters.sortBy" class="form-select" @change="loadPlans">
+            <option value="createdAt">Created Date</option>
+            <option value="price">Price</option>
+            <option value="durationDays">Duration</option>
+            <option value="name">Name</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label mb-1">Order</label>
+          <select v-model="filters.order" class="form-select" @change="loadPlans">
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+          </select>
+        </div>
+      </div>
+
       <button class="btn btn-primary" @click="openAddModal">New Plan</button>
     </div>
 
@@ -188,6 +234,18 @@ const toastMessage = ref('')
 const isToggling = ref(false)
 
 // ──────────────────────────────
+// Filters
+// ──────────────────────────────
+const filters = ref({
+  search: '',
+  isActive: '',
+  minPrice: '',
+  maxPrice: '',
+  sortBy: 'createdAt',
+  order: 'desc'
+})
+
+// ──────────────────────────────
 // Form + Validation
 // ──────────────────────────────
 const form = ref<Partial<Plan>>({
@@ -303,7 +361,13 @@ const togglePlanStatus = async (id: number, event: Event) => {
 // ──────────────────────────────
 const loadPlans = async () => {
   try {
-    const res = await api.get('/plans')
+    const params = new URLSearchParams()
+    Object.entries(filters.value).forEach(([key, val]) => {
+      if (val !== '' && val !== null && val !== undefined)
+        params.append(key, String(val))
+    })
+
+    const res = await api.get(`/plans?${params.toString()}`)
     plans.value = Array.isArray(res.data) ? res.data : res.data.data || []
   } catch (err) {
     console.error(err)
@@ -323,7 +387,6 @@ const savePlan = async () => {
     isActive: form.value.isActive ?? true,
   }
 
-  // Only include price & durationDays when creating
   if (!editingPlan.value) {
     payload.price = form.value.price!
     payload.durationDays = form.value.durationDays!
@@ -347,32 +410,23 @@ const savePlan = async () => {
 }
 
 const deletePlanConfirmed = async () => {
-  if (!deleteId.value) return;
-
+  if (!deleteId.value) return
   try {
-    await api.delete(`/plans/${deleteId.value}`);
-
-    // Success: Remove from local state
-    plans.value = plans.value.filter((p) => p.id !== deleteId.value);
-    hideDeleteModal();
-    showToast('Plan deleted successfully!', true);
+    await api.delete(`/plans/${deleteId.value}`)
+    plans.value = plans.value.filter(p => p.id !== deleteId.value)
+    hideDeleteModal()
+    showToast('Plan deleted successfully!')
   } catch (err: any) {
-
-    // Extract meaningful message from NestJS error response
-    let errorMessage = 'Failed to delete plan.';
-
-    if (err.response?.data?.message) {
-      // Handle string or array of messages
-      const msg = err.response.data.message;
-      errorMessage =
-        Array.isArray(msg) ? msg[0] : msg;
-    } else if (err.response?.data?.error) {
-      errorMessage = err.response.data.error;
-    }
-
-    showToast(errorMessage, false);
+    let errorMessage = 'Failed to delete plan.'
+    if (err.response?.data?.message)
+      errorMessage = Array.isArray(err.response.data.message)
+        ? err.response.data.message[0]
+        : err.response.data.message
+    else if (err.response?.data?.error)
+      errorMessage = err.response.data.error
+    showToast(errorMessage, false)
   }
-};
+}
 
 // ──────────────────────────────
 // Lifecycle
@@ -381,14 +435,9 @@ onMounted(async () => {
   if (modalRef.value)
     modalInstance = new bootstrap.Modal(modalRef.value, { backdrop: 'static' })
   if (deleteModalRef.value)
-    deleteModalInstance = new bootstrap.Modal(deleteModalRef.value, {
-      backdrop: 'static'
-    })
+    deleteModalInstance = new bootstrap.Modal(deleteModalRef.value, { backdrop: 'static' })
   if (toastRef.value)
-    toastInstance = new bootstrap.Toast(toastRef.value, {
-      delay: 3000,
-      autohide: true
-    })
+    toastInstance = new bootstrap.Toast(toastRef.value, { delay: 3000, autohide: true })
   await loadPlans()
 })
 </script>
