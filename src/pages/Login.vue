@@ -14,7 +14,7 @@
     <!-- Login Card -->
     <div class="card shadow-lg" style="max-width: 420px; width: 100%">
       <div class="card-header bg-primary text-white text-center py-3">
-        <h4 class="mb-0">Gym Admin Portal</h4>
+        <h4 class="mb-0">DailyGym Admin Login</h4>
       </div>
       <div class="card-body p-4">
         <!-- Tabs: Login / Sign Up -->
@@ -44,7 +44,7 @@
                 <label for="loginPassword" class="form-label">Password</label>
                 <div class="input-group">
                   <input id="loginPassword" v-model="loginForm.password" :type="showLoginPassword ? 'text' : 'password'"
-                    class="form-control" placeholder="••••••••" required :disabled="isLoading" />
+                    class="form-control" placeholder="Enter Password" required :disabled="isLoading" />
                   <button type="button" class="btn btn-outline-secondary"
                     @click="showLoginPassword = !showLoginPassword" :disabled="isLoading">
                     <i :class="showLoginPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
