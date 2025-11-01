@@ -1,9 +1,10 @@
 <template>
-  <div class="d-flex vh-100">
+  <div class="d-flex min-vh-100">
     <!-- Sidebar -->
-    <aside class="bg-dark text-light p-3" style="width: 220px; position: relative;">
-      <h3 class="mb-4">DailyGym💪</h3>
+    <aside class="bg-dark text-light py-4 px-2" style="width: 220px; position: relative;">
+      <h3 class="mb-4 mx-3 text-secondary fw-bold">DailyGym®</h3>
 
+      <div class="pt-4">
       <nav class="nav flex-column">
         <!-- 🟢 Show only if ADMIN -->
         <router-link v-if="isAdmin" to="/admin/approvals" class="nav-link text-light" active-class="active">
@@ -21,6 +22,7 @@
         <router-link to="/payment-history" class="nav-link text-light" active-class="active">Payment
           History</router-link>
       </nav>
+      </div>
 
       <!-- Logout Button -->
       <div class="mt-auto pt-3">
@@ -44,7 +46,7 @@
     <!-- Main content -->
     <div class="flex-grow-1 d-flex flex-column">
       <header class="bg-light p-3 border-bottom">
-        <h3>Welcome to DailyGym CRM</h3>
+        <h4 class="m-2 fw-semibold"><span class="text-success">Welcome back, Admin!</span> Let’s make today a productive one at DailyGym</h4>
       </header>
       <main class="flex-grow-1 p-3 bg-light">
         <router-view />
