@@ -47,7 +47,7 @@
               <th>Phone</th>
               <th>Speciality</th>
               <th>Classes</th>
-              <th>Actions</th>
+              <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>

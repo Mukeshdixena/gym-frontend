@@ -50,7 +50,7 @@
               <th>Paid</th>
               <th>Pending</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -88,7 +88,7 @@
               <th>Start</th>
               <th>End</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>

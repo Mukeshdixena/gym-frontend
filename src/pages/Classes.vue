@@ -46,7 +46,7 @@
               <th>Trainer</th>
               <th>Start Time</th>
               <th>End Time</th>
-              <th>Actions</th>
+              <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
