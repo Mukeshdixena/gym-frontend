@@ -352,7 +352,7 @@ const loginAsUser = async (userId: number) => {
 
   try {
     // call impersonation API (admin-only)
-    const { data } = await api.patch(`/admin-users/impersonate/${userId}`)
+    const { data } = await api.post(`/admin-users/impersonate/${userId}`)
 
     // store the returned token & user info (replaces current admin token)
     if (data?.token && data?.user) {
