@@ -75,11 +75,10 @@
                   <div class="dropdown" @click.stop="toggleDropdown(member.id)">
                     <button class="btn btn-light btn-sm border-0">...</button>
                     <div v-if="openDropdownId === member.id" class="dropdown-menu-custom shadow-sm">
-                      <a href="javascript:void(0)" @click="editMember(member)" class="dropdown-item-custom">Edit</a>
+                      <a href="javascript:void(0)" @click="editMember(member)" class="dropdown-item-custom">Edit
+                        Member</a>
                       <a href="javascript:void(0)" @click="confirmDelete(member)"
-                        class="dropdown-item-custom text-danger">
-                        Delete
-                      </a>
+                        class="dropdown-item-custom text-danger">Delete Member</a>
                     </div>
                   </div>
                 </td>
@@ -99,6 +98,7 @@
                           <th>Paid</th>
                           <th>Pending</th>
                           <th>Discount</th>
+                          <th class="text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -114,6 +114,17 @@
                           <td>₹{{ ms.paid }}</td>
                           <td>₹{{ ms.pending }}</td>
                           <td>₹{{ ms.discount ?? 0 }}</td>
+                          <td class="text-center" @click.stop>
+                            <button class="btn btn-sm btn-outline-primary me-1" @click="openEditMembershipModal(ms)">
+                              Edit
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" @click="openRefundModal(ms)">
+                              Refund
+                            </button>
+                            <button class="btn btn-sm btn-outline-dark ms-1" @click="confirmDeleteMembership(ms)">
+                              Delete
+                            </button>
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -131,62 +142,64 @@
     </div>
 
     <!-- Add/Edit Member Modal -->
-    <div class="modal fade" ref="modalRef" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" ref="memberModalRef" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
               {{ editingMember ? 'Edit Member' : 'Add Member' }}
             </h5>
-            <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+            <button type="button" class="btn-close" @click="closeMemberModal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label"><strong>First Name</strong></label>
-                  <input v-model.trim="form.firstName" type="text" class="form-control"
-                    :class="{ 'is-invalid': errors.firstName }" @blur="validateField('firstName')" required />
-                  <div v-if="errors.firstName" class="invalid-feedback">{{ errors.firstName }}</div>
+                  <input v-model.trim="memberForm.firstName" type="text" class="form-control"
+                    :class="{ 'is-invalid': memberErrors.firstName }" @blur="validateMemberField('firstName')"
+                    required />
+                  <div v-if="memberErrors.firstName" class="invalid-feedback">{{ memberErrors.firstName }}</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label"><strong>Last Name</strong></label>
-                  <input v-model.trim="form.lastName" type="text" class="form-control"
-                    :class="{ 'is-invalid': errors.lastName }" @blur="validateField('lastName')" required />
-                  <div v-if="errors.lastName" class="invalid-feedback">{{ errors.lastName }}</div>
+                  <input v-model.trim="memberForm.lastName" type="text" class="form-control"
+                    :class="{ 'is-invalid': memberErrors.lastName }" @blur="validateMemberField('lastName')" required />
+                  <div v-if="memberErrors.lastName" class="invalid-feedback">{{ memberErrors.lastName }}</div>
                 </div>
               </div>
 
               <div class="row g-3 mt-2">
                 <div class="col-md-6">
                   <label class="form-label"><strong>Email</strong></label>
-                  <input v-model.trim="form.email" type="email" class="form-control"
-                    :class="{ 'is-invalid': errors.email }" @blur="validateField('email')" required />
-                  <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
+                  <input v-model.trim="memberForm.email" type="email" class="form-control"
+                    :class="{ 'is-invalid': memberErrors.email }" @blur="validateMemberField('email')" required />
+                  <div v-if="memberErrors.email" class="invalid-feedback">{{ memberErrors.email }}</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label"><strong>Phone</strong></label>
-                  <input v-model.trim="form.phone" type="text" class="form-control"
-                    :class="{ 'is-invalid': errors.phone }" @blur="validateField('phone')" required />
-                  <div v-if="errors.phone" class="invalid-feedback">{{ errors.phone }}</div>
+                  <input v-model.trim="memberForm.phone" type="text" class="form-control"
+                    :class="{ 'is-invalid': memberErrors.phone }" @blur="validateMemberField('phone')" required />
+                  <div v-if="memberErrors.phone" class="invalid-feedback">{{ memberErrors.phone }}</div>
                 </div>
               </div>
 
               <div class="mt-3">
                 <label class="form-label">Address</label>
-                <textarea v-model.trim="form.address" class="form-control" rows="2"></textarea>
+                <textarea v-model.trim="memberForm.address" class="form-control" rows="2"></textarea>
               </div>
 
               <div class="mt-3">
                 <label class="form-label"><strong>Date of Birth</strong></label>
-                <input v-model="form.dateOfBirth" type="date" class="form-control"
-                  :class="{ 'is-invalid': errors.dateOfBirth }" @blur="validateField('dateOfBirth')" required />
-                <div v-if="errors.dateOfBirth" class="invalid-feedback">{{ errors.dateOfBirth }}</div>
+                <input v-model="memberForm.dateOfBirth" type="date" class="form-control"
+                  :class="{ 'is-invalid': memberErrors.dateOfBirth }" @blur="validateMemberField('dateOfBirth')"
+                  required />
+                <div v-if="memberErrors.dateOfBirth" class="invalid-feedback">{{ memberErrors.dateOfBirth }}</div>
               </div>
 
               <div class="d-grid gap-2 mt-4">
                 <button type="button" class="btn btn-primary" @click="saveMember"
-                  :disabled="!isFormValid || (!!editingMember && !isFormDirty)">
+                  :disabled="!isMemberFormValid || (!!editingMember && !isMemberFormDirty)">
                   {{ editingMember ? 'Update Member' : 'Add Member' }}
                 </button>
               </div>
@@ -196,18 +209,89 @@
       </div>
     </div>
 
-    <!-- SMALL CONFIRM MODAL -->
+    <!-- Edit Membership Modal -->
+    <div class="modal fade" ref="membershipModalRef" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Membership</h5>
+            <button type="button" class="btn-close" @click="closeMembershipModal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Plan</label>
+              <select v-model="membershipForm.planId" class="form-select">
+                <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Start Date</label>
+              <input v-model="membershipForm.startDate" type="date" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">End Date</label>
+              <input v-model="membershipForm.endDate" type="date" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Status</label>
+              <select v-model="membershipForm.status" class="form-select">
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="PARTIAL_PAID">Partial Paid</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <button class="btn btn-primary w-100" @click="saveMembership">Update</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Refund Modal -->
+    <div class="modal fade" ref="refundModalRef" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Issue Refund</h5>
+            <button type="button" class="btn-close" @click="closeRefundModal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Amount (₹)</label>
+              <input v-model.number="refundForm.amount" type="number" min="1" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Reason (optional)</label>
+              <input v-model="refundForm.reason" type="text" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Method</label>
+              <select v-model="refundForm.method" class="form-select">
+                <option value="CASH">Cash</option>
+                <option value="CARD">Card</option>
+                <option value="UPI">UPI</option>
+                <option value="ONLINE">Online</option>
+              </select>
+            </div>
+            <button class="btn btn-success w-100" @click="processRefund">Refund</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Delete Membership -->
     <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" style="display: block;" v-if="isConfirmOpen"
       @click.self="resolveConfirm(false)">
       <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-0 pb-2">
-            <h5 class="modal-title fs-6">Confirm Delete</h5>
+            <h5 class="modal-title fs-6">Delete Membership?</h5>
             <button type="button" class="btn-close" @click="resolveConfirm(false)"></button>
           </div>
           <div class="modal-body pt-2 pb-3">
-            Delete <strong>{{ memberToDelete?.firstName }} {{ memberToDelete?.lastName }}</strong> permanently?
-            <br><small class="text-muted">This action cannot be undone.</small>
+            Delete membership permanently?
+            <br><small class="text-muted">This cannot be undone.</small>
           </div>
           <div class="modal-footer border-0 pt-0">
             <button type="button" class="btn btn-secondary btn-sm" @click="resolveConfirm(false)">Cancel</button>
@@ -264,28 +348,30 @@ const plans = ref<Plan[]>([])
 const searchTerm = ref('')
 const isLoading = ref(true)
 
-const modalRef = ref<HTMLElement | null>(null)
 const toastRef = ref<HTMLElement | null>(null)
+const memberModalRef = ref<HTMLElement | null>(null)
+const membershipModalRef = ref<HTMLElement | null>(null)
+const refundModalRef = ref<HTMLElement | null>(null)
 
-let modal: Modal
 let toastInstance: Toast
+let memberModal: Modal
+let membershipModal: Modal
+let refundModal: Modal
 
 const editingMember = ref<Member | null>(null)
-const memberToDelete = ref<Member | null>(null)
+const editingMembership = ref<Membership | null>(null)
+const refundMembership = ref<Membership | null>(null)
+
 const expandedMemberId = ref<number | null>(null)
 const openDropdownId = ref<number | null>(null)
 
-const form = ref<Partial<Member>>({
-  firstName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  address: '',
-  dateOfBirth: '',
-})
-const originalForm = ref<Partial<Member>>({})
+const memberForm = ref<Partial<Member>>({})
+const memberErrors = ref<Record<string, string>>({})
+const originalMemberForm = ref<Partial<Member>>({})
 
-const errors = ref<Record<string, string>>({})
+const membershipForm = ref<Partial<Membership>>({})
+const refundForm = ref({ amount: 0, reason: '', method: 'CASH' })
+
 const toastMessage = ref('')
 
 // ──────────────────────────────────────────────────────────────
@@ -300,24 +386,24 @@ const filteredMembers = computed(() => {
   )
 })
 
-const isFormValid = computed(() => {
-  ;['firstName', 'lastName', 'email', 'phone', 'dateOfBirth'].forEach(validateField)
+const isMemberFormValid = computed(() => {
+  ;['firstName', 'lastName', 'email', 'phone', 'dateOfBirth'].forEach(validateMemberField)
   return (
-    form.value.firstName &&
-    form.value.lastName &&
-    form.value.email &&
-    form.value.phone &&
-    form.value.dateOfBirth &&
-    !Object.values(errors.value).some(err => err)
+    memberForm.value.firstName &&
+    memberForm.value.lastName &&
+    memberForm.value.email &&
+    memberForm.value.phone &&
+    memberForm.value.dateOfBirth &&
+    !Object.values(memberErrors.value).some(err => err)
   )
 })
 
-const isFormDirty = computed(() => {
+const isMemberFormDirty = computed(() => {
   if (!editingMember.value) return true
   const keys: (keyof Member)[] = ['firstName', 'lastName', 'email', 'phone', 'address', 'dateOfBirth']
   return keys.some(key => {
-    const current = (form.value[key] ?? '').toString().trim()
-    const original = (originalForm.value[key] ?? '').toString().trim()
+    const current = (memberForm.value[key] ?? '').toString().trim()
+    const original = (originalMemberForm.value[key] ?? '').toString().trim()
     return current !== original
   })
 })
@@ -338,29 +424,29 @@ const getStatusClass = (status?: string) => {
 // ──────────────────────────────────────────────────────────────
 // Validation
 // ──────────────────────────────────────────────────────────────
-const validateField = (field: string) => {
-  const value = form.value[field as keyof Member]
+const validateMemberField = (field: string) => {
+  const value = memberForm.value[field as keyof Member]
   switch (field) {
     case 'firstName':
-      errors.value.firstName = value ? '' : 'First name is required.'
+      memberErrors.value.firstName = value ? '' : 'First name is required.'
       break
     case 'lastName':
-      errors.value.lastName = value ? '' : 'Last name is required.'
+      memberErrors.value.lastName = value ? '' : 'Last name is required.'
       break
     case 'email':
-      if (!value) errors.value.email = 'Email is required.'
+      if (!value) memberErrors.value.email = 'Email is required.'
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value)))
-        errors.value.email = 'Enter a valid email.'
-      else errors.value.email = ''
+        memberErrors.value.email = 'Enter a valid email.'
+      else memberErrors.value.email = ''
       break
     case 'phone':
-      if (!value) errors.value.phone = 'Phone number is required.'
+      if (!value) memberErrors.value.phone = 'Phone number is required.'
       else if (!/^[0-9]{10}$/.test(String(value)))
-        errors.value.phone = 'Enter a valid 10-digit phone number.'
-      else errors.value.phone = ''
+        memberErrors.value.phone = 'Enter a valid 10-digit phone number.'
+      else memberErrors.value.phone = ''
       break
     case 'dateOfBirth':
-      errors.value.dateOfBirth = value ? '' : 'Date of birth is required.'
+      memberErrors.value.dateOfBirth = value ? '' : 'Date of birth is required.'
       break
   }
 }
@@ -401,48 +487,45 @@ const loadPlans = async () => {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Modals
+// Member Modals
 // ──────────────────────────────────────────────────────────────
 const openAddModal = () => {
   editingMember.value = null
-  form.value = { firstName: '', lastName: '', email: '', phone: '', address: '', dateOfBirth: '' }
-  originalForm.value = {}
-  errors.value = {}
-  modal?.show()
+  memberForm.value = { firstName: '', lastName: '', email: '', phone: '', address: '', dateOfBirth: '' }
+  originalMemberForm.value = {}
+  memberErrors.value = {}
+  memberModal?.show()
 }
 
 const editMember = (member: Member) => {
   editingMember.value = member
-  form.value = { ...member }
-  originalForm.value = { ...member }
-  errors.value = {}
-  modal?.show()
+  memberForm.value = { ...member }
+  originalMemberForm.value = { ...member }
+  memberErrors.value = {}
+  memberModal?.show()
 }
 
-const closeModal = () => {
-  modal?.hide()
+const closeMemberModal = () => {
+  memberModal?.hide()
   editingMember.value = null
-  form.value = {}
-  originalForm.value = {}
-  errors.value = {}
+  memberForm.value = {}
+  originalMemberForm.value = {}
+  memberErrors.value = {}
 }
 
-// ──────────────────────────────────────────────────────────────
-// Actions
-// ──────────────────────────────────────────────────────────────
 const saveMember = async () => {
-  if (!isFormValid.value) {
+  if (!isMemberFormValid.value) {
     showToast('Please fill all required fields correctly.', false)
     return
   }
 
   const payload = {
-    firstName: form.value.firstName!.trim(),
-    lastName: form.value.lastName!.trim(),
-    email: form.value.email!.trim(),
-    phone: form.value.phone!.trim(),
-    address: form.value.address?.trim(),
-    dateOfBirth: form.value.dateOfBirth,
+    firstName: memberForm.value.firstName!.trim(),
+    lastName: memberForm.value.lastName!.trim(),
+    email: memberForm.value.email!.trim(),
+    phone: memberForm.value.phone!.trim(),
+    address: memberForm.value.address?.trim(),
+    dateOfBirth: memberForm.value.dateOfBirth,
   }
 
   try {
@@ -454,10 +537,114 @@ const saveMember = async () => {
       showToast('Member added successfully!')
     }
     await loadMembers()
-    closeModal()
+    closeMemberModal()
   } catch (err: any) {
     const msg = err?.response?.data?.message || 'Failed to save member.'
     showToast(Array.isArray(msg) ? msg.join(', ') : msg, false)
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Membership Edit Modal
+// ──────────────────────────────────────────────────────────────
+const openEditMembershipModal = (ms: Membership) => {
+  editingMembership.value = ms
+  membershipForm.value = {
+    planId: ms.planId,
+    startDate: ms.startDate.split('T')[0],
+    endDate: ms.endDate.split('T')[0],
+    status: ms.status,
+  }
+  membershipModal?.show()
+}
+
+const closeMembershipModal = () => {
+  membershipModal?.hide()
+  editingMembership.value = null
+}
+
+const saveMembership = async () => {
+  if (!editingMembership.value) return
+
+  try {
+    await api.patch(`/memberships/${editingMembership.value.id}`, membershipForm.value)
+    showToast('Membership updated successfully!')
+    await loadMembers()
+    closeMembershipModal()
+  } catch (err: any) {
+    showToast(err?.response?.data?.message || 'Failed to update membership.', false)
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Refund Modal
+// ──────────────────────────────────────────────────────────────
+const openRefundModal = (ms: Membership) => {
+  refundMembership.value = ms
+  refundForm.value = { amount: 0, reason: '', method: 'CASH' }
+  refundModal?.show()
+}
+
+const closeRefundModal = () => {
+  refundModal?.hide()
+  refundMembership.value = null
+}
+
+const processRefund = async () => {
+  if (!refundMembership.value || refundForm.value.amount <= 0) {
+    showToast('Enter valid refund amount.', false)
+    return
+  }
+
+  try {
+    await api.post(`/memberships/${refundMembership.value.id}/refund`, refundForm.value)
+    showToast('Refund processed successfully!')
+    await loadMembers()
+    closeRefundModal()
+  } catch (err: any) {
+    showToast(err?.response?.data?.message || 'Refund failed.', false)
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Delete Membership
+// ──────────────────────────────────────────────────────────────
+const isConfirmOpen = ref(false)
+let resolveConfirm: (v: boolean) => void = () => { }
+
+const showConfirm = (msg: string): Promise<boolean> => {
+  return new Promise<boolean>(resolve => {
+    isConfirmOpen.value = true
+    resolveConfirm = v => {
+      isConfirmOpen.value = false
+      resolve(v)
+    }
+  })
+}
+
+const confirmDeleteMembership = async (ms: Membership) => {
+  const ok = await showConfirm('Delete this membership?')
+  if (!ok) return
+
+  try {
+    await api.delete(`/memberships/${ms.id}`)
+    showToast('Membership deleted!')
+    await loadMembers()
+  } catch (err: any) {
+    showToast(err?.response?.data?.message || 'Failed to delete.', false)
+  }
+}
+
+const confirmDelete = async (member: Member) => {
+  const ok = await showConfirm(`Delete ${member.firstName} ${member.lastName} permanently?`)
+  if (!ok) return
+
+  try {
+    await api.delete(`/members/${member.id}`)
+    members.value = members.value.filter(m => m.id !== member.id)
+    showToast('Member deleted successfully!')
+  } catch (err: any) {
+    showToast(err?.response?.data?.message || 'Failed to delete member.', false)
   }
 }
 
@@ -479,42 +666,13 @@ const handleClickOutside = (e: MouseEvent) => {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Confirm Delete
-// ──────────────────────────────────────────────────────────────
-const isConfirmOpen = ref(false)
-const confirmMessage = ref('')
-let resolveConfirm: (v: boolean) => void = () => { }
-
-const showConfirm = (msg: string): Promise<boolean> => {
-  return new Promise<boolean>(resolve => {
-    confirmMessage.value = msg
-    isConfirmOpen.value = true
-    resolveConfirm = v => {
-      isConfirmOpen.value = false
-      resolve(v)
-    }
-  })
-}
-
-const confirmDelete = async (member: Member) => {
-  const ok = await showConfirm(`Delete ${member.firstName} ${member.lastName} permanently?`)
-  if (!ok) return
-
-  try {
-    await api.delete(`/members/${member.id}`)
-    members.value = members.value.filter(m => m.id !== member.id)
-    showToast('Member deleted successfully!')
-  } catch (err: any) {
-    showToast(err?.response?.data?.message || 'Failed to delete member.', false)
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
 // Lifecycle
 // ──────────────────────────────────────────────────────────────
 onMounted(async () => {
-  if (modalRef.value) modal = new Modal(modalRef.value)
   if (toastRef.value) toastInstance = new Toast(toastRef.value)
+  if (memberModalRef.value) memberModal = new Modal(memberModalRef.value)
+  if (membershipModalRef.value) membershipModal = new Modal(membershipModalRef.value)
+  if (refundModalRef.value) refundModal = new Modal(refundModalRef.value)
 
   document.addEventListener('click', handleClickOutside)
 
@@ -587,14 +745,5 @@ onBeforeUnmount(() => {
 
 .modal-sm .modal-content {
   border-radius: .5rem;
-}
-
-input[readonly],
-.form-control-plaintext {
-  background-color: #f8f9fa !important;
-}
-
-.card-body {
-  overflow: visible !important;
 }
 </style>
