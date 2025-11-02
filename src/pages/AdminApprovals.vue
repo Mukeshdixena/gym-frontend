@@ -59,7 +59,13 @@
               <td><span class="badge bg-warning text-dark">PENDING</span></td>
               <td class="text-center">
                 <button class="btn btn-success btn-sm me-2" @click="approveUser(u.id)">Approve</button>
-                <button class="btn btn-danger btn-sm" @click="rejectUser(u.id)">Reject</button>
+                <button class="btn btn-danger btn-sm me-2" @click="rejectUser(u.id)">Reject</button>
+
+                <!-- Login as (disabled for PENDING) -->
+                <button class="btn btn-warning btn-sm" @click="loginAsUser(u.id)" :disabled="u.status !== 'APPROVED'"
+                  title="Login as this user (only for approved users)">
+                  Login as
+                </button>
               </td>
             </tr>
           </tbody>
@@ -104,6 +110,8 @@
                     <a href="javascript:void(0)" @click="openEditModal(u)" class="dropdown-item-custom">Edit</a>
                     <a href="javascript:void(0)" @click="deleteUser(u.id)"
                       class="dropdown-item-custom text-danger">Delete</a>
+                    <a href="javascript:void(0)" @click="loginAsUser(u.id)"
+                      class="dropdown-item-custom text-warning">Login as</a>
                   </div>
                 </div>
               </td>
@@ -144,6 +152,14 @@
                     <option value="ADMIN">ADMIN</option>
                   </select>
                 </div>
+                <div class="col-md-6 mt-3">
+                  <label class="form-label">Status</label>
+                  <select v-model="editForm.status" class="form-select">
+                    <option value="PENDING">PENDING</option>
+                    <option value="APPROVED">APPROVED</option>
+                    <option value="REJECTED">REJECTED</option>
+                  </select>
+                </div>
               </div>
               <div class="d-grid gap-2 mt-4">
                 <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
@@ -181,6 +197,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
+import { useRouter } from 'vue-router'
 
 interface User {
   id: number
@@ -208,8 +225,8 @@ let toastInstance: Toast
 let editModal: Modal
 
 // Edit form
-interface EditForm { id?: number; name: string; email: string; password: string; role: string }
-const editForm = ref<EditForm>({ name: '', email: '', password: '', role: 'USER' })
+interface EditForm { id?: number; name: string; email: string; password: string; role: string; status?: string }
+const editForm = ref<EditForm>({ name: '', email: '', password: '', role: 'USER', status: 'PENDING' })
 const isSubmitting = ref(false)
 
 // Dropdown
@@ -221,6 +238,8 @@ const confirmMessage = ref('')
 let resolveConfirm: (v: boolean) => void = () => { }
 
 const toastMessage = ref('')
+
+const router = useRouter()
 
 // ── Computed ───────────────────────────────────────────────────────────────────
 const roleOptions = computed(() => {
@@ -326,18 +345,55 @@ const deleteUser = async (id: number) => {
   }
 }
 
+// Login as / Impersonation
+const loginAsUser = async (userId: number) => {
+  const ok = await showConfirm('Login as this user? This will replace your current session token.')
+  if (!ok) return
+
+  try {
+    // call impersonation API (admin-only)
+    const { data } = await api.patch(`/admin-users/impersonate/${userId}`)
+
+    // store the returned token & user info (replaces current admin token)
+    if (data?.token && data?.user) {
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('role', data.user.role)
+      localStorage.setItem('name', data.user.name)
+
+      showToast(`Now logged in as ${data.user.name}`)
+
+      // Optional: redirect to user dashboard (home)
+      setTimeout(() => {
+        router.push('/') // go to user area
+      }, 800)
+    } else {
+      showToast('Invalid server response', false)
+    }
+  } catch (err: any) {
+    console.error(err)
+    // If unauthorized, clear local and force login
+    if (err.response?.status === 401) {
+      localStorage.clear()
+      showToast('Session expired. Please log in.', false)
+      setTimeout(() => router.push('/login'), 800)
+      return
+    }
+    showToast('Failed to impersonate user', false)
+  }
+}
+
 // ── Edit / Create Modal ───────────────────────────────────────────────────────
 const openEditModal = (user?: User) => {
   if (user) {
-    editForm.value = { ...user, password: '' }
+    editForm.value = { id: user.id, name: user.name, email: user.email, password: '', role: user.role, status: user.status }
   } else {
-    editForm.value = { name: '', email: '', password: '', role: 'USER' }
+    editForm.value = { name: '', email: '', password: '', role: 'USER', status: 'PENDING' }
   }
   editModal?.show()
 }
 const closeEditModal = () => {
   editModal?.hide()
-  editForm.value = { name: '', email: '', password: '', role: 'USER' }
+  editForm.value = { name: '', email: '', password: '', role: 'USER', status: 'PENDING' }
 }
 const saveUser = async () => {
   if (!editForm.value.name || !editForm.value.email || (!editForm.value.id && !editForm.value.password)) return
@@ -428,5 +484,16 @@ onBeforeUnmount(() => {
 
 .card-body {
   overflow: visible !important;
+}
+
+/* warning button */
+.btn-warning {
+  background-color: #ffc107;
+  border: none;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background-color: #e0a800;
 }
 </style>
