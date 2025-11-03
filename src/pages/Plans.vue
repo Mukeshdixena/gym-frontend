@@ -13,11 +13,7 @@
       </div>
     </div>
 
-    <!-- Filters + Add Button -->
-    <div class="card shadow-sm mb-3">
-      <div class="card-header bg-primary text-white fw-bold">Filters</div>
-      <div class="card-body">
-        <div class="row g-3">
+        <div class="row g-3 mb-3">
           <div class="col-md-3">
             <label class="form-label"><strong>Search</strong></label>
             <input v-model.trim="filters.search" type="text" class="form-control form-control-sm"
@@ -47,8 +43,6 @@
             </button>
           </div>
         </div>
-      </div>
-    </div>
 
     <!-- Loading -->
     <div v-if="isLoading" class="text-center my-5">

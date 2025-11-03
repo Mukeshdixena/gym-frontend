@@ -14,9 +14,7 @@
     </div>
 
     <!-- Filters -->
-    <div class="card shadow-sm mb-3">
-      <div class="card-header bg-primary text-white fw-bold">Filters</div>
-      <div class="card-body">
+      <div class="card-body mb-3">
         <div class="row g-3">
           <div class="col-md-3">
             <input type="text" class="form-control form-control-sm" placeholder="Search by name or email"
@@ -46,7 +44,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <!-- Loading -->
     <div v-if="isLoading" class="text-center my-5">

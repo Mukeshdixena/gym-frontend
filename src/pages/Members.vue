@@ -743,6 +743,11 @@ onBeforeUnmount(() => {
   min-width: 280px;
 }
 
+.card-body {
+  overflow: visible !important;
+}
+
+
 .modal-sm .modal-content {
   border-radius: .5rem;
 }
