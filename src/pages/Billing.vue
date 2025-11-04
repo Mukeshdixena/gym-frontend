@@ -33,7 +33,8 @@
       <div class="col-md-3">
         <select class="form-select form-select-sm" v-model="filterPlan">
           <option :value="null">All {{ billType === 'membership' ? 'Plans' : 'Add-ons' }}</option>
-          <option v-for="p in uniquePlans" :key="p.id" :value="p.id">{{ p.name }}</option>
+          <option v-for="p in uniquePlans" :key="p?.id" :value="p?.id">{{ p?.name || 'Unnamed' }}</option>
+
         </select>
       </div>
       <div class="col-md-3">
@@ -159,7 +160,8 @@
               <div class="mt-4">
                 <h6>Membership Plan</h6>
                 <div class="form-control-plaintext p-2 bg-light rounded">
-                  {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }} <span v-if="billType === 'membership'">({{ selectedPlanDuration }} days)</span>
+                  {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }} <span v-if="billType === 'membership'">({{
+                    selectedPlanDuration }} days)</span>
                 </div>
 
                 <div class="mt-3 row g-3">
@@ -396,11 +398,17 @@ const filteredApprovedBills = computed(() => {
 const uniquePlans = computed(() => {
   const map = new Map<number, Plan | Addon>()
     ;[...pendingBills.value, ...approvedBills.value].forEach(b => {
-      const plan = billType.value === 'membership' ? (b as Membership).plan : (b as MemberAddon).addon
-      map.set(plan.id, plan)
+      const plan = billType.value === 'membership'
+        ? (b as Membership).plan
+        : (b as MemberAddon).addon
+
+      if (plan && plan.id) {        // ✅ safety check added
+        map.set(plan.id, plan)
+      }
     })
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
 })
+
 
 const statusOptions = computed(() => {
   const set = new Set<string>()
@@ -444,8 +452,9 @@ const formatDateTime = (d: string) => new Date(d).toLocaleString('en-IN')
 const totalPaid = (b: Bill) => b.payments.reduce((s, p) => s + p.amount, 0)
 const pendingForBill = (b: Bill) => Math.max(b.price - b.discount - totalPaid(b), 0)
 
-const getPlanName = (b: Bill) => billType.value === 'membership' ? (b as Membership).plan.name : (b as MemberAddon).addon.name
-const getPrice = (b: Bill) => billType.value === 'membership' ? (b as Membership).plan.price : b.price
+const getPlanName = (b: Bill) => billType.value === 'membership' ? (b as Membership).plan?.name : (b as MemberAddon).addon?.name
+
+const getPrice = (b: Bill) => billType.value === 'membership' ? (b as Membership).plan?.price : b.price
 
 const validatePayment = () => {
   if (newPaidNow.value > oldPending.value) newPaidNow.value = oldPending.value
