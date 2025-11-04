@@ -4,8 +4,7 @@
 
     <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
-        aria-live="assertive" aria-atomic="true">
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert">
         <div class="d-flex">
           <div class="toast-body">{{ toastMessage }}</div>
           <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
@@ -14,278 +13,214 @@
     </div>
 
     <!-- Filters -->
-      <div class="card-body mb-3">
-        <div class="row g-3">
-          <div class="col-md-3">
-            <input type="text" class="form-control form-control-sm" placeholder="Search by name or email"
-              v-model="searchTerm" />
-          </div>
-          <div class="col-md-2">
-            <input type="date" class="form-control form-control-sm" v-model="startDate" />
-          </div>
-          <div class="col-md-2">
-            <input type="date" class="form-control form-control-sm" v-model="endDate" />
-          </div>
-          <div class="col-md-2">
-            <select class="form-select form-select-sm" v-model="method">
-              <option :value="null">All Methods</option>
-              <option v-for="m in paymentMethods" :key="m" :value="m">
-                {{ formatMethod(m) }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-3 d-flex gap-2 align-items-center">
-            <button class="btn btn-outline-primary btn-sm" @click="loadPayments(1)">
-              Refresh
-            </button>
-            <button class="btn btn-outline-secondary btn-sm" @click="resetFilters">
-              Clear
-            </button>
-          </div>
-        </div>
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <label class="form-label"><strong>Search</strong></label>
+        <input v-model.trim="searchTerm" @input="resetPageAndLoad" type="text" class="form-control form-control-sm"
+          placeholder="Member name or ID" />
       </div>
+
+      <div class="col-md-2">
+        <label class="form-label"><strong>Start Date</strong></label>
+        <input v-model="startDate" @change="resetPageAndLoad" type="date" class="form-control form-control-sm" />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label"><strong>End Date</strong></label>
+        <input v-model="endDate" @change="resetPageAndLoad" type="date" class="form-control form-control-sm" />
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label"><strong>Method</strong></label>
+        <select v-model="method" @change="resetPageAndLoad" class="form-select form-select-sm">
+          <option value="">All</option>
+          <option value="cash">Cash</option>
+          <option value="online">Online</option>
+        </select>
+      </div>
+    </div>
 
     <!-- Loading -->
     <div v-if="isLoading" class="text-center my-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+      <div class="spinner-border text-primary"></div>
       <p class="mt-2">Loading payments...</p>
     </div>
 
-    <!-- Payments Table -->
+    <!-- Table + Pagination -->
     <div v-else class="card shadow-sm">
       <div class="card-header bg-primary text-white fw-bold">All Payments</div>
-      <div class="card-body table-responsive ">
-        <table class="table table-hover align-middle ">
+      <div class="card-body table-responsive">
+        <table class="table table-hover align-middle">
           <thead>
             <tr>
               <th>#</th>
-              <th>Date</th>
               <th>Member</th>
-              <th>Plan</th>
-              <th>Amount</th>
+              <th>Amount (₹)</th>
               <th>Method</th>
+              <th>Date</th>
               <th>Status</th>
-              <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <template v-for="(payment, i) in filteredPayments" :key="payment.id">
-              <!-- Main Row -->
-              <tr @click="toggleExpand(payment.id)" style="cursor: pointer"
-                :class="{ 'table-active': expandedId === payment.id }">
-                <td>{{ i + 1 + (pagination.page - 1) * pagination.limit }}</td>
-                <td>{{ formatDate(payment.paymentDate) }}</td>
-                <td>{{ payment.member.name }}</td>
-                <td>{{ payment.plan }}</td>
-                <td>₹{{ payment.amount.toFixed(2) }}</td>
-                <td>
-                  <span class="badge" :class="getMethodBadge(payment.method)">
-                    {{ formatMethod(payment.method) }}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge bg-success">Paid</span>
-                </td>
-                <td class="text-center" @click.stop>
-                  <div class="dropdown" @click.stop="toggleDropdown(payment.id)">
-                    <button class="btn btn-light btn-sm border-0">...</button>
-                    <div v-if="openDropdownId === payment.id" class="dropdown-menu-custom shadow-sm">
-                      <a href="javascript:void(0)" @click="downloadBill(payment.membershipId)"
-                        class="dropdown-item-custom">Download Bill</a>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-
-              <!-- Expanded Row -->
-              <tr v-if="expandedId === payment.id">
-                <td colspan="8" class="bg-light">
-                  <div class="p-3">
-                    <div class="row g-3">
-                      <div class="col-md-6"><strong>Membership ID:</strong> {{ payment.membershipId }}</div>
-                      <div class="col-md-6"><strong>Email:</strong> {{ payment.member.email }}</div>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </template>
-            <tr v-if="filteredPayments.length === 0">
-              <td colspan="8" class="text-center text-muted py-4">No payments found</td>
+            <tr v-for="(p, i) in payments" :key="p.id">
+              <td>{{ (pagination.page - 1) * pagination.limit + i + 1 }}</td>
+              <td>{{ p.memberName }}</td>
+              <td>₹{{ p.amount }}</td>
+              <td class="text-capitalize">{{ p.method }}</td>
+              <td>{{ formatDate(p.createdAt) }}</td>
+              <td>
+                <span :class="[
+                  'badge',
+                  p.status === 'paid'
+                    ? 'bg-success'
+                    : p.status === 'pending'
+                      ? 'bg-warning text-dark'
+                      : 'bg-danger',
+                ]">
+                  {{ p.status }}
+                </span>
+              </td>
+            </tr>
+            <tr v-if="payments.length === 0">
+              <td colspan="6" class="text-center text-muted py-4">
+                No payments found
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
 
-    <!-- Pagination -->
-    <nav v-if="pagination.totalPages > 1" aria-label="Payment pagination" class="mt-4">
-      <ul class="pagination justify-content-center">
-        <li class="page-item" :class="{ disabled: pagination.page === 1 }">
-          <button class="page-link" @click="loadPayments(pagination.page - 1)"
-            :disabled="pagination.page === 1">Previous</button>
-        </li>
-        <li class="page-item" v-for="p in visiblePages" :key="p" :class="{ active: p === pagination.page }">
-          <template v-if="p === '...'">
-            <span class="page-link">...</span>
-          </template>
-          <template v-else>
-            <button class="page-link" @click="loadPayments(Number(p))">{{ p }}</button>
-          </template>
-        </li>
-        <li class="page-item" :class="{ disabled: pagination.page === pagination.totalPages }">
-          <button class="page-link" @click="loadPayments(pagination.page + 1)"
-            :disabled="pagination.page === pagination.totalPages">Next</button>
-        </li>
-      </ul>
-    </nav>
+      <!-- Pagination Footer -->
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <div>
+          Showing
+          {{ (pagination.page - 1) * pagination.limit + 1 }}
+          to
+          {{ Math.min(pagination.page * pagination.limit, pagination.total) }}
+          of
+          {{ pagination.total }}
+          payments
+        </div>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" :class="{ disabled: pagination.page <= 1 }">
+              <a class="page-link" href="javascript:void(0)" @click="goToPage(pagination.page - 1)">Prev</a>
+            </li>
+            <li v-for="p in visiblePages" :key="p" class="page-item" :class="{ active: p === pagination.page }">
+              <a class="page-link" href="javascript:void(0)" @click="typeof p === 'number' && goToPage(p)">{{ p }}</a>
+            </li>
+            <li class="page-item" :class="{ disabled: pagination.page >= pagination.totalPages }">
+              <a class="page-link" href="javascript:void(0)" @click="goToPage(pagination.page + 1)">Next</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
-// ──────────────────────────────────────────────────────────────
-// Interfaces
-// ──────────────────────────────────────────────────────────────
-interface MemberInfo {
-  id: number
-  name: string
-  email: string
-}
-
 interface Payment {
   id: number
+  memberName: string
   amount: number
-  paymentDate: string
   method: string
-  membershipId: number
-  member: MemberInfo
-  plan: string
+  createdAt: string
+  status: string
 }
 
 interface Pagination {
+  total: number
   page: number
   limit: number
-  total: number
   totalPages: number
 }
 
-// ──────────────────────────────────────────────────────────────
-// State
-// ──────────────────────────────────────────────────────────────
 const payments = ref<Payment[]>([])
-const isLoading = ref(true)
-const toastRef = ref<HTMLElement | null>(null)
-let toastInstance: Toast
+const pagination = ref<Pagination>({
+  total: 0,
+  page: 1,
+  limit: 10,
+  totalPages: 0,
+})
 
 const searchTerm = ref('')
 const startDate = ref('')
 const endDate = ref('')
-const method = ref<string | null>(null)
-const expandedId = ref<number | null>(null)
-const openDropdownId = ref<number | null>(null)
+const method = ref('')
+const isLoading = ref(true)
 
-const pagination = ref<Pagination>({
-  page: 1,
-  limit: 10,
-  total: 0,
-  totalPages: 1,
-})
-
-const paymentMethods = ['CASH', 'CARD', 'UPI', 'ONLINE'] as const
+const toastRef = ref<HTMLElement | null>(null)
+let toastInstance: Toast
 const toastMessage = ref('')
 
-// ──────────────────────────────────────────────────────────────
-// Computed
-// ──────────────────────────────────────────────────────────────
-const filteredPayments = computed(() => {
-  return payments.value.filter(p => {
-    const matchesSearch = p.member.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-      p.member.email.toLowerCase().includes(searchTerm.value.toLowerCase())
-    const matchesDate = (!startDate.value || p.paymentDate >= `${startDate.value}T00:00:00.000Z`) &&
-      (!endDate.value || p.paymentDate <= `${endDate.value}T23:59:59.999Z`)
-    const matchesMethod = !method.value || p.method === method.value
-    return matchesSearch && matchesDate && matchesMethod
-  })
-})
+const showToast = (msg: string, success = true) => {
+  toastMessage.value = msg
+  if (toastRef.value) {
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'
+      } border-0`
+    toastInstance?.show()
+  }
+  setTimeout(() => {
+    if (toastMessage.value === msg) hideToast()
+  }, 4000)
+}
+
+const hideToast = () => toastInstance?.hide()
 
 const visiblePages = computed(() => {
   const delta = 2
-  const range: (number | string)[] = []
-  for (let i = Math.max(2, pagination.value.page - delta); i <= Math.min(pagination.value.totalPages - 1, pagination.value.page + delta); i++) {
+  const range = []
+  for (
+    let i = Math.max(2, pagination.value.page - delta);
+    i <= Math.min(pagination.value.totalPages - 1, pagination.value.page + delta);
+    i++
+  )
     range.push(i)
-  }
   if (pagination.value.page - delta > 2) range.unshift('...')
   if (pagination.value.page + delta < pagination.value.totalPages - 1) range.push('...')
   range.unshift(1)
   if (pagination.value.totalPages > 1) range.push(pagination.value.totalPages)
-  return range.filter((v, i, a) => a.indexOf(v) === i)
+  return range
 })
 
-// ──────────────────────────────────────────────────────────────
-// Toast
-// ──────────────────────────────────────────────────────────────
-const showToast = (msg: string, success = true) => {
-  toastMessage.value = msg
-  if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
-    toastInstance?.show()
-  }
-  setTimeout(() => { if (toastMessage.value === msg) hideToast() }, 4000)
-}
-const hideToast = () => toastInstance?.hide()
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
 
-// ──────────────────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────────────────
-const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
-const formatMethod = (m: string) => m.charAt(0) + m.slice(1).toLowerCase()
-const getMethodBadge = (m: string) => {
-  const map: Record<string, string> = {
-    CASH: 'bg-secondary',
-    CARD: 'bg-primary',
-    UPI: 'bg-info',
-    ONLINE: 'bg-success'
-  }
-  return map[m] || 'bg-dark'
-}
-const toggleExpand = (id: number) => {
-  expandedId.value = expandedId.value === id ? null : id
-}
-const resetFilters = () => {
-  searchTerm.value = ''
-  startDate.value = ''
-  endDate.value = ''
-  method.value = null
-}
-
-// ──────────────────────────────────────────────────────────────
-// API
-// ──────────────────────────────────────────────────────────────
-const loadPayments = async (page: number = 1) => {
+const loadPayments = async (page = 1) => {
   isLoading.value = true
   try {
     const params: Record<string, any> = {
       page,
       limit: pagination.value.limit,
+      search: searchTerm.value || undefined,
+      startDate: startDate.value || undefined,
+      endDate: endDate.value || undefined,
+      method: method.value || undefined,
     }
-    if (searchTerm.value) params.search = searchTerm.value
-    if (startDate.value) params.startDate = startDate.value
-    if (endDate.value) params.endDate = endDate.value
-    if (method.value) params.method = method.value
 
     const res: AxiosResponse<{
+      success: boolean
       data: Payment[]
       pagination: Pagination
     }> = await api.get('/payments/history', { params })
 
-    payments.value = res.data.data || []
-    pagination.value = { ...res.data.pagination, page }
+    if (res.data.success) {
+      payments.value = res.data.data
+      pagination.value = res.data.pagination
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      showToast('Failed to load payments.', false)
+    }
   } catch (err: any) {
     console.error(err)
     showToast('Failed to load payments.', false)
@@ -294,66 +229,27 @@ const loadPayments = async (page: number = 1) => {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Download Bill
-// ──────────────────────────────────────────────────────────────
-const downloadBill = async (membershipId: number) => {
-  try {
-    const res = await api.get(`/memberships/download-bill/${membershipId}`, {
-      responseType: 'blob',
-    })
-
-    const blob = new Blob([res.data], { type: 'application/pdf' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `bill_${membershipId}.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-
-    showToast('Bill downloaded successfully!')
-  } catch (err: any) {
-    console.error(err)
-    showToast(err.response?.status === 401
-      ? 'Unauthorized: Please log in again.'
-      : 'Failed to download bill.', false)
-  }
+const goToPage = (page: number) => {
+  if (page < 1 || page > pagination.value.totalPages || page === pagination.value.page)
+    return
+  pagination.value.page = page
+  loadPayments(page)
 }
 
-// ──────────────────────────────────────────────────────────────
-// Dropdown
-// ──────────────────────────────────────────────────────────────
-const toggleDropdown = (id: number) => {
-  openDropdownId.value = openDropdownId.value === id ? null : id
-}
-const handleClickOutside = (e: MouseEvent) => {
-  if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null
+const resetPageAndLoad = () => {
+  pagination.value.page = 1
+  loadPayments(1)
 }
 
-// ──────────────────────────────────────────────────────────────
-// Lifecycle
-// ──────────────────────────────────────────────────────────────
-onMounted(() => {
+onMounted(async () => {
   if (toastRef.value) toastInstance = new Toast(toastRef.value)
-  document.addEventListener('click', handleClickOutside)
-  loadPayments()
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
+  await loadPayments()
 })
 </script>
-
 <style scoped>
 .table td,
 .table th {
   vertical-align: middle;
-}
-
-.table-active {
-  background-color: #f8f9fa !important;
 }
 
 .dropdown {
@@ -385,30 +281,44 @@ onBeforeUnmount(() => {
   background: #f8f9fa;
 }
 
+.dropdown-item-custom.text-danger {
+  color: #dc3545 !important;
+}
+
 .btn-sm.border-0 {
   font-size: 1.3rem;
   line-height: 1;
   padding: 0 .4rem;
 }
 
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
 .toast {
   min-width: 280px;
 }
 
-.page-link {
-  color: #495057;
+.modal-sm .modal-content {
+  border-radius: .5rem;
 }
 
-.page-item.active .page-link {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+input[readonly],
+.form-control-plaintext {
+  background-color: #f8f9fa !important;
 }
 
-.badge {
-  font-size: .75rem;
+.form-switch .form-check-input {
+  cursor: pointer;
 }
 
 .card-body {
   overflow: visible !important;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
 }
 </style>

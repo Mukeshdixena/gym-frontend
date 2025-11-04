@@ -17,7 +17,7 @@
           Plan</router-link>
         <router-link to="/members" class="nav-link text-light" active-class="active">Members</router-link>
         <router-link to="/trainers" class="nav-link text-light" active-class="active">Trainers</router-link>
-        <router-link to="/classes" class="nav-link text-light" active-class="active">Classes</router-link>
+        <!-- <router-link to="/classes" class="nav-link text-light" active-class="active">Classes</router-link> -->
         <router-link to="/plans" class="nav-link text-light" active-class="active">Your Plans</router-link>
         <router-link to="/addons" class="nav-link text-light" active-class="active">Addons</router-link>
         <router-link to="/payment-history" class="nav-link text-light" active-class="active">Payment
