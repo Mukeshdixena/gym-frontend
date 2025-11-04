@@ -2,7 +2,7 @@
   <div class="container-fluid mt-4">
     <h2 class="mb-4">Assign Membership Plans</h2>
 
-    <!-- Toast (same as PlansManagement) -->
+    <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 2000">
       <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
         aria-live="assertive" aria-atomic="true">
@@ -89,7 +89,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              {{ selectedMember?.memberships.some(ms => ms.status === 'ACTIVE') ? 'Renew' : 'Assign' }}
+              {{selectedMember?.memberships.some(ms => ms.status === 'ACTIVE') ? 'Renew' : 'Assign'}}
               Membership Plan
             </h5>
             <button type="button" class="btn-close" @click="closeAssignModal"></button>
@@ -101,6 +101,7 @@
                 {{ selectedMember?.firstName }} {{ selectedMember?.lastName }} ({{ selectedMember?.email }})
               </div>
 
+              <!-- Plan Selection -->
               <div class="mt-3">
                 <label class="form-label"><strong>Select Plan</strong></label>
                 <select v-model="enrollmentForm.planId" class="form-select" @change="updatePlanDates" required>
@@ -137,6 +138,41 @@
                       <label class="form-label">Pending (₹)</label>
                       <input type="number" class="form-control" :value="pendingAmount" readonly />
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Addon Selection -->
+              <div class="mt-4 border-top pt-3">
+                <h5>Select Addon (Optional)</h5>
+
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <label class="form-label">Addon</label>
+                    <select v-model="selectedAddonId" class="form-select">
+                      <option value="">-- Select Addon --</option>
+                      <option v-for="a in addons" :key="a.id" :value="a.id">{{ a.name }}</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Trainer ID</label>
+                    <input v-model="addonTrainerId" type="number" class="form-control" placeholder="Optional" />
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Start Date</label>
+                    <input v-model="addonStartDate" type="date" class="form-control" />
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">End Date</label>
+                    <input v-model="addonEndDate" type="date" class="form-control" />
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Price (₹)</label>
+                    <input v-model="addonPrice" type="number" class="form-control" placeholder="Optional" />
                   </div>
                 </div>
               </div>
@@ -188,6 +224,7 @@ interface Member {
 
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
+const addons = ref<Plan[]>([])
 const isLoading = ref(true)
 const isSubmitting = ref(false)
 
@@ -208,11 +245,16 @@ const enrollmentForm = ref({
   method: 'CASH' as 'CASH' | 'CARD' | 'UPI' | 'ONLINE'
 })
 
+// Addon assignment fields
+const selectedAddonId = ref<number | null>(null)
+const addonTrainerId = ref<number | null>(null)
+const addonStartDate = ref('')
+const addonEndDate = ref('')
+const addonPrice = ref<number | null>(null)
+
 const toastMessage = ref('')
 
-// ──────────────────────────────
-// Toast Helper (same as PlansManagement)
-// ──────────────────────────────
+// Toast helpers
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
@@ -222,9 +264,7 @@ const showToast = (msg: string, success = true) => {
 }
 const hideToast = () => toastInstance.hide()
 
-// ──────────────────────────────
 // Computed
-// ──────────────────────────────
 const selectedPlan = computed(() => plans.value.find(p => p.id === enrollmentForm.value.planId))
 const formattedEndDate = computed(() =>
   enrollmentForm.value.endDate ? new Date(enrollmentForm.value.endDate).toLocaleDateString('en-IN') : ''
@@ -297,6 +337,12 @@ const openAssignModal = (member: Member) => {
     method: 'CASH'
   }
 
+  selectedAddonId.value = null
+  addonTrainerId.value = null
+  addonStartDate.value = ''
+  addonEndDate.value = ''
+  addonPrice.value = null
+
   updatePlanDates()
   assignModal.show()
 }
@@ -327,6 +373,16 @@ const loadPlans = async () => {
   }
 }
 
+const loadAddons = async () => {
+  try {
+    const res: AxiosResponse<Plan[]> = await api.get('/addons/list-all?isActive=true&sortBy=createdAt&order=desc')
+    addons.value = Array.isArray(res.data) ? res.data : []
+  } catch (e) {
+    console.error('loadAddons error:', e)
+    showToast('Failed to load addons.', false)
+  }
+}
+
 const assignPlan = async () => {
   const { planId, startDate, endDate } = enrollmentForm.value
   if (!planId || !startDate || !endDate) {
@@ -353,13 +409,32 @@ const assignPlan = async () => {
   try {
     await api.post('/memberships', enrollmentForm.value)
     await loadMembers()
+
+    // Addon assign call if selected
+    if (selectedAddonId.value) {
+      try {
+        await api.post('/addons/assign', {
+          memberId: enrollmentForm.value.memberId,
+          addonId: selectedAddonId.value,
+          trainerId: addonTrainerId.value || undefined,
+          startDate: addonStartDate.value || enrollmentForm.value.startDate,
+          endDate: addonEndDate.value || enrollmentForm.value.endDate,
+          price: addonPrice.value || undefined
+        })
+        showToast('Membership and addon assigned successfully!')
+      } catch (err) {
+        console.error('Addon assign error →', err)
+        showToast('Membership assigned, but addon failed to assign.', false)
+      }
+    } else {
+      showToast('Membership assigned successfully!')
+    }
+
     closeAssignModal()
-    showToast('Membership assigned successfully!')
   } catch (e: any) {
     console.error('Assign plan error →', e)
 
     let message = 'Failed to assign plan.'
-
     if (e?.response?.status === 400 && e?.response?.data) {
       const apiMsg = e.response.data.message || e.response.data.error || ''
       if (apiMsg.includes('Membership dates overlap')) {
@@ -379,9 +454,6 @@ const assignPlan = async () => {
   }
 }
 
-// ──────────────────────────────
-// Lifecycle
-// ──────────────────────────────
 onMounted(async () => {
   if (assignModalRef.value)
     assignModal = new bootstrap.Modal(assignModalRef.value, { backdrop: 'static' })
@@ -392,7 +464,7 @@ onMounted(async () => {
       autohide: true
     })
 
-  await Promise.all([loadMembers(), loadPlans()])
+  await Promise.all([loadMembers(), loadPlans(), loadAddons()])
   isLoading.value = false
 })
 </script>
