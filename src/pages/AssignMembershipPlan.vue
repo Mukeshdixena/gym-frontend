@@ -149,30 +149,43 @@
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label class="form-label">Addon</label>
-                    <select v-model="selectedAddonId" class="form-select">
+                    <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect">
                       <option value="">-- Select Addon --</option>
-                      <option v-for="a in addons" :key="a.id" :value="a.id">{{ a.name }}</option>
+                      <option v-for="a in addons" :key="a.id" :value="a.id">
+                        {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
+                      </option>
                     </select>
                   </div>
+                </div>
 
-                  <div class="col-md-3">
-                    <label class="form-label">Trainer ID</label>
-                    <input v-model="addonTrainerId" type="number" class="form-control" placeholder="Optional" />
+                <!-- Addon Details (Only shown after selection) -->
+                <div v-if="selectedAddon" class="mt-4">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>Description:</strong> {{ selectedAddon.description }}</p>
+                      <p><strong>Duration:</strong> {{ selectedAddon.durationDays }} days</p>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label"><strong>Start Date:</strong></label>
+                      <input type="date" v-model="addonStartDate" class="form-control" @change="updateAddonEndDate"
+                        :min="enrollmentForm.startDate" required />
+                      <p class="mt-2"><strong>End Date:</strong> {{ formattedAddonEndDate }}</p>
+                    </div>
                   </div>
 
-                  <div class="col-md-3">
-                    <label class="form-label">Start Date</label>
-                    <input v-model="addonStartDate" type="date" class="form-control" />
-                  </div>
-
-                  <div class="col-md-3">
-                    <label class="form-label">End Date</label>
-                    <input v-model="addonEndDate" type="date" class="form-control" />
-                  </div>
-
-                  <div class="col-md-3">
-                    <label class="form-label">Price (₹)</label>
-                    <input v-model="addonPrice" type="number" class="form-control" placeholder="Optional" />
+                  <div class="row mt-3 g-3">
+                    <div class="col-md-4">
+                      <label class="form-label"><strong>Price (₹)</strong></label>
+                      <input type="number" class="form-control" :value="selectedAddon.price" readonly />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Trainer ID</label>
+                      <input v-model.number="addonTrainerId" type="number" class="form-control"
+                        placeholder="Optional" />
+                    </div>
+                    <div class="col-md-4">
+                      <!-- Empty for symmetry -->
+                    </div>
                   </div>
                 </div>
               </div>
@@ -190,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import * as bootstrap from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
@@ -245,12 +258,11 @@ const enrollmentForm = ref({
   method: 'CASH' as 'CASH' | 'CARD' | 'UPI' | 'ONLINE'
 })
 
-// Addon assignment fields
+// Addon fields
 const selectedAddonId = ref<number | null>(null)
 const addonTrainerId = ref<number | null>(null)
 const addonStartDate = ref('')
 const addonEndDate = ref('')
-const addonPrice = ref<number | null>(null)
 
 const toastMessage = ref('')
 
@@ -258,7 +270,8 @@ const toastMessage = ref('')
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
+    toastRef.value.classList.remove('bg-success', 'bg-danger')
+    toastRef.value.classList.add(success ? 'bg-success' : 'bg-danger')
     toastInstance.show()
   }
 }
@@ -266,33 +279,45 @@ const hideToast = () => toastInstance.hide()
 
 // Computed
 const selectedPlan = computed(() => plans.value.find(p => p.id === enrollmentForm.value.planId))
+const selectedAddon = computed(() => addons.value.find(a => a.id === selectedAddonId.value))
+
 const formattedEndDate = computed(() =>
   enrollmentForm.value.endDate ? new Date(enrollmentForm.value.endDate).toLocaleDateString('en-IN') : ''
 )
+
+const formattedAddonEndDate = computed(() =>
+  addonEndDate.value ? new Date(addonEndDate.value).toLocaleDateString('en-IN') : ''
+)
+
 const pendingAmount = computed(() => {
   if (!selectedPlan.value) return 0
-  const balance = selectedPlan.value.price - (enrollmentForm.value.paid + enrollmentForm.value.discount)
-  return balance > 0 ? balance : 0
+  const total = selectedPlan.value.price
+  const paid = enrollmentForm.value.paid || 0
+  const discount = enrollmentForm.value.discount || 0
+  return Math.max(total - paid - discount, 0)
 })
 
+// Members
 const inactiveMembers = computed(() =>
-  members.value.filter(
-    m => !m.memberships.length || m.memberships.every(ms => ms.status === 'EXPIRED' || ms.status === 'CANCELLED')
+  members.value.filter(m =>
+    !m.memberships.length ||
+    m.memberships.every(ms => ms.status === 'EXPIRED' || ms.status === 'CANCELLED')
   )
 )
 
 const activeMembers = computed(() =>
   members.value
-    .map(m => {
-      const active = m.memberships
+    .map(m => ({
+      ...m,
+      memberships: m.memberships
         .filter(ms => ms.status === 'ACTIVE')
         .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
-      return { ...m, memberships: active }
-    })
+    }))
     .filter(m => m.memberships.length > 0)
     .sort((a, b) => new Date(a.memberships[0].endDate).getTime() - new Date(b.memberships[0].endDate).getTime())
 )
 
+// Helpers
 const getPlanName = (id?: number) => plans.value.find(p => p.id === id)?.name ?? 'N/A'
 const formatDate = (dateStr?: string | null) =>
   dateStr ? new Date(dateStr).toLocaleDateString('en-IN') : 'N/A'
@@ -303,56 +328,108 @@ const getLastActiveEndDate = (list: Membership[]) => {
   return active.sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0].endDate
 }
 
+// Update plan end date
 const updatePlanDates = () => {
   const plan = selectedPlan.value
-  if (!plan || !enrollmentForm.value.startDate) return
+  if (!plan || !enrollmentForm.value.startDate) {
+    enrollmentForm.value.endDate = ''
+    return
+  }
   const start = new Date(enrollmentForm.value.startDate)
   const end = new Date(start)
   end.setDate(start.getDate() + plan.durationDays - 1)
   enrollmentForm.value.endDate = end.toISOString().split('T')[0]
+
+  // Auto-sync addon start date if not manually changed
+  if (selectedAddon.value && !addonStartDate.value) {
+    addonStartDate.value = enrollmentForm.value.startDate
+    updateAddonEndDate()
+  }
 }
 
+// Update addon end date
+const updateAddonEndDate = () => {
+  const addon = selectedAddon.value
+  if (!addon || !addonStartDate.value) {
+    addonEndDate.value = ''
+    return
+  }
+  const start = new Date(addonStartDate.value)
+  const end = new Date(start)
+  end.setDate(start.getDate() + addon.durationDays - 1)
+  addonEndDate.value = end.toISOString().split('T')[0]
+}
+
+// On addon select
+const onAddonSelect = () => {
+  const addon = selectedAddon.value
+  if (addon) {
+    // Set start date = plan start date (or today if no plan)
+    addonStartDate.value = enrollmentForm.value.startDate || new Date().toISOString().split('T')[0]
+    updateAddonEndDate()
+  } else {
+    addonStartDate.value = ''
+    addonEndDate.value = ''
+    addonTrainerId.value = null
+  }
+}
+
+// Reset addon fields
+const resetAddonFields = () => {
+  selectedAddonId.value = null
+  addonTrainerId.value = null
+  addonStartDate.value = ''
+  addonEndDate.value = ''
+}
+
+// Open Modal
 const openAssignModal = (member: Member) => {
   selectedMember.value = member
+
   const lastActive = member.memberships
     .filter(m => m.status === 'ACTIVE')
     .sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0]
 
-  let startDate: string
-  if (lastActive?.endDate) {
-    const nextDay = new Date(lastActive.endDate)
-    nextDay.setDate(nextDay.getDate() + 1)
-    startDate = nextDay.toISOString().split('T')[0]
-  } else {
-    startDate = new Date().toISOString().split('T')[0]
-  }
+  const today = new Date().toISOString().split('T')[0]
+  const nextDay = lastActive?.endDate
+    ? (() => {
+      const d = new Date(lastActive.endDate)
+      d.setDate(d.getDate() + 1)
+      return d.toISOString().split('T')[0]
+    })()
+    : today
 
   enrollmentForm.value = {
     memberId: member.id,
     planId: 0,
-    startDate,
+    startDate: nextDay,
     endDate: '',
     paid: 0,
     discount: 0,
     method: 'CASH'
   }
 
-  selectedAddonId.value = null
-  addonTrainerId.value = null
-  addonStartDate.value = ''
-  addonEndDate.value = ''
-  addonPrice.value = null
-
-  updatePlanDates()
+  resetAddonFields()
   assignModal.show()
 }
 
+// Close Modal
 const closeAssignModal = () => {
   assignModal.hide()
   selectedMember.value = null
-  enrollmentForm.value = { memberId: 0, planId: 0, startDate: '', endDate: '', paid: 0, discount: 0, method: 'CASH' }
+  enrollmentForm.value = {
+    memberId: 0,
+    planId: 0,
+    startDate: '',
+    endDate: '',
+    paid: 0,
+    discount: 0,
+    method: 'CASH'
+  }
+  resetAddonFields()
 }
 
+// API Calls
 const loadMembers = async () => {
   try {
     const res: AxiosResponse<{ data: Member[] }> = await api.get('/members')
@@ -383,6 +460,7 @@ const loadAddons = async () => {
   }
 }
 
+// Assign Plan + Addon
 const assignPlan = async () => {
   const { planId, startDate, endDate } = enrollmentForm.value
   if (!planId || !startDate || !endDate) {
@@ -390,64 +468,39 @@ const assignPlan = async () => {
     return
   }
 
-  const start = new Date(startDate)
-  const end = new Date(endDate)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  if (end <= start) {
-    showToast('End date must be after start date.', false)
-    return
-  }
-
-  if (end < today) {
-    showToast('End date cannot be in the past.', false)
-    return
-  }
-
   isSubmitting.value = true
   try {
     await api.post('/memberships', enrollmentForm.value)
-    await loadMembers()
 
-    // Addon assign call if selected
-    if (selectedAddonId.value) {
+    if (selectedAddonId.value && addonStartDate.value && addonEndDate.value) {
       try {
         await api.post('/addons/assign', {
           memberId: enrollmentForm.value.memberId,
           addonId: selectedAddonId.value,
           trainerId: addonTrainerId.value || undefined,
-          startDate: addonStartDate.value || enrollmentForm.value.startDate,
-          endDate: addonEndDate.value || enrollmentForm.value.endDate,
-          price: addonPrice.value || undefined
+          startDate: addonStartDate.value,
+          endDate: addonEndDate.value,
+          price: selectedAddon.value?.price
         })
         showToast('Membership and addon assigned successfully!')
-      } catch (err) {
-        console.error('Addon assign error →', err)
-        showToast('Membership assigned, but addon failed to assign.', false)
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || 'Addon assignment failed.'
+        showToast(`Membership assigned, but addon failed: ${msg}`, false)
       }
+    } else if (selectedAddonId.value) {
+      showToast('Addon selected but start date is missing.', false)
     } else {
       showToast('Membership assigned successfully!')
     }
 
+    await loadMembers()
     closeAssignModal()
   } catch (e: any) {
     console.error('Assign plan error →', e)
-
-    let message = 'Failed to assign plan.'
-    if (e?.response?.status === 400 && e?.response?.data) {
-      const apiMsg = e.response.data.message || e.response.data.error || ''
-      if (apiMsg.includes('Membership dates overlap')) {
-        message = 'Membership dates overlap with an existing membership for this member'
-      } else if (apiMsg) {
-        message = apiMsg
-      }
-    } else if (e?.response?.data?.message) {
-      message = e.response.data.message
-    } else if (e?.message) {
-      message = e.message
+    let message = e?.response?.data?.message || e?.message || 'Failed to assign plan.'
+    if (message.toLowerCase().includes('overlap')) {
+      message = 'Membership dates overlap with an existing plan.'
     }
-
     showToast(message, false)
   } finally {
     isSubmitting.value = false
@@ -455,15 +508,12 @@ const assignPlan = async () => {
 }
 
 onMounted(async () => {
-  if (assignModalRef.value)
+  if (assignModalRef.value) {
     assignModal = new bootstrap.Modal(assignModalRef.value, { backdrop: 'static' })
-
-  if (toastRef.value)
-    toastInstance = new bootstrap.Toast(toastRef.value, {
-      delay: 3000,
-      autohide: true
-    })
-
+  }
+  if (toastRef.value) {
+    toastInstance = new bootstrap.Toast(toastRef.value, { delay: 4000 })
+  }
   await Promise.all([loadMembers(), loadPlans(), loadAddons()])
   isLoading.value = false
 })
