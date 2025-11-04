@@ -462,39 +462,45 @@ const loadAddons = async () => {
 
 // Assign Plan + Addon
 const assignPlan = async () => {
-  const { planId, startDate, endDate } = enrollmentForm.value
+  const { planId, startDate, endDate } = enrollmentForm.value;
   if (!planId || !startDate || !endDate) {
-    showToast('Please select a plan and valid start date.', false)
-    return
+    showToast('Please select a plan and valid start date.', false);
+    return;
   }
 
-  isSubmitting.value = true
+  isSubmitting.value = true;
   try {
-    await api.post('/memberships', enrollmentForm.value)
+    // 1. Save membership (unchanged)
+    await api.post('/memberships', enrollmentForm.value);
 
+    // 2. Save addon **if selected**
     if (selectedAddonId.value && addonStartDate.value && addonEndDate.value) {
+      const addonPayload = {
+        memberId: enrollmentForm.value.memberId,
+        addonId: selectedAddonId.value,
+        trainerId: addonTrainerId.value ?? undefined,
+        startDate: addonStartDate.value,
+        endDate: addonEndDate.value,
+        paid: 0,               // you can make this editable later
+        discount: 0,               // you can make this editable later
+        // method: 'CASH' as const   // <-- uncomment if you want a default
+      };
+
       try {
-        await api.post('/addons/assign', {
-          memberId: enrollmentForm.value.memberId,
-          addonId: selectedAddonId.value,
-          trainerId: addonTrainerId.value || undefined,
-          startDate: addonStartDate.value,
-          endDate: addonEndDate.value,
-          price: selectedAddon.value?.price
-        })
-        showToast('Membership and addon assigned successfully!')
+        await api.post('/member-addons', addonPayload);
+        showToast('Membership **and** addon assigned successfully!');
       } catch (err: any) {
-        const msg = err?.response?.data?.message || 'Addon assignment failed.'
-        showToast(`Membership assigned, but addon failed: ${msg}`, false)
+        const msg = err?.response?.data?.message || 'Addon assignment failed.';
+        showToast(`Membership assigned, but addon failed: ${msg}`, false);
       }
     } else if (selectedAddonId.value) {
-      showToast('Addon selected but start date is missing.', false)
+      showToast('Addon selected but start date is missing.', false);
     } else {
-      showToast('Membership assigned successfully!')
+      showToast('Membership assigned successfully!');
     }
 
-    await loadMembers()
-    closeAssignModal()
+    await loadMembers();
+    closeAssignModal();
   } catch (e: any) {
     console.error('Assign plan error →', e)
     let message = e?.response?.data?.message || e?.message || 'Failed to assign plan.'
