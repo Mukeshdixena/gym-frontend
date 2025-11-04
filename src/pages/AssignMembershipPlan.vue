@@ -18,7 +18,7 @@
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <p class="mt-2">Loading members and plans...</p>
+      <p class="mt-2">Loading members, plans, addons, and trainers...</p>
     </div>
 
     <div v-else>
@@ -118,7 +118,7 @@
                 <div class="col-md-6">
                   <label class="form-label"><strong>Select Addon (Optional)</strong></label>
                   <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect">
-                    <option value="">-- Select Addon --</option>
+                    <option value="0">-- Select Addon --</option>
                     <option v-for="a in addons" :key="a.id" :value="a.id">
                       {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
                     </option>
@@ -141,7 +141,6 @@
                     <p class="mt-2"><strong>End Date:</strong> {{ formattedEndDate }}</p>
                   </div>
                 </div>
-
                 <div class="row mt-3 g-3">
                   <div class="col-md-4">
                     <label class="form-label"><strong>Price (₹)</strong></label>
@@ -180,8 +179,14 @@
                     <input type="number" class="form-control" :value="selectedAddon.price" readonly />
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Trainer ID</label>
-                    <input v-model.number="addonTrainerId" type="number" class="form-control" placeholder="Optional" />
+                    <label class="form-label">Trainer</label>
+                    <select v-model="addonTrainerId" class="form-select">
+                      <option :value="null">-- Select Trainer (Optional) --</option>
+                      <option v-for="trainer in trainers" :key="trainer.id" :value="trainer.id">
+                        {{ trainer.firstName }} {{ trainer.lastName }}
+                        <small class="text-muted">({{ trainer.speciality }})</small>
+                      </option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -218,6 +223,19 @@ interface Plan {
   description: string
 }
 
+// Updated Trainer interface to match actual response
+interface Trainer {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  speciality: string
+  createdAt: string
+  updatedAt: string
+  classes: any[]
+}
+
 interface Membership {
   id: number
   planId: number
@@ -240,6 +258,7 @@ interface Member {
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
 const addons = ref<Plan[]>([])
+const trainers = ref<Trainer[]>([])
 const isLoading = ref(true)
 const isSubmitting = ref(false)
 
@@ -431,7 +450,7 @@ const closeAssignModal = () => {
   resetAddonFields()
 }
 
-// API
+// API Calls
 const loadMembers = async () => {
   try {
     const res: AxiosResponse<{ data: Member[] }> = await api.get('/members')
@@ -462,6 +481,17 @@ const loadAddons = async () => {
   }
 }
 
+// Updated to handle { data: [...] } wrapper
+const loadTrainers = async () => {
+  try {
+    const res: AxiosResponse<{ data: Trainer[] }> = await api.get('/trainers')
+    trainers.value = Array.isArray(res.data.data) ? res.data.data : []
+  } catch (e) {
+    console.error('loadTrainers error:', e)
+    showToast('Failed to load trainers.', false)
+  }
+}
+
 const assignPlan = async () => {
   if (!isFormValid.value) {
     showToast('Please select at least a plan or addon with valid dates.', false)
@@ -486,7 +516,7 @@ const assignPlan = async () => {
       const payload = {
         memberId: enrollmentForm.value.memberId,
         addonId: selectedAddonId.value,
-        trainerId: addonTrainerId.value ?? undefined,
+        trainerId: addonTrainerId.value ?? undefined, // sends null if not selected
         startDate: addonStartDate.value,
         endDate: addonEndDate.value,
         paid: 0,
@@ -525,7 +555,7 @@ onMounted(async () => {
   if (toastRef.value) {
     toastInstance = new bootstrap.Toast(toastRef.value, { delay: 4000 })
   }
-  await Promise.all([loadMembers(), loadPlans(), loadAddons()])
+  await Promise.all([loadMembers(), loadPlans(), loadAddons(), loadTrainers()])
   isLoading.value = false
 })
 </script>
@@ -541,5 +571,10 @@ onMounted(async () => {
 
 .bg-light {
   background-color: #f8f9fa !important;
+}
+
+small.text-muted {
+  font-size: 0.7em;
+  margin-left: 4px;
 }
 </style>
