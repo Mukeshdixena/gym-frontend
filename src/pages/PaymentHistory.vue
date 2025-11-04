@@ -2,22 +2,24 @@
   <div class="container mt-4">
     <h3 class="mb-4">Payment History</h3>
 
-    <!-- Toast -->
+    <!-- Toast Notification -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert">
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+        aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
           <div class="toast-body">{{ toastMessage }}</div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+            @click="hideToast"></button>
         </div>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-4 align-items-end">
       <div class="col-md-3">
-        <label class="form-label"><strong>Search</strong></label>
-        <input v-model.trim="searchTerm" @input="resetPageAndLoad" type="text" class="form-control form-control-sm"
-          placeholder="Member name or ID" />
+        <label class="form-label"><strong>Search Member</strong></label>
+        <input v-model.trim="searchTerm" @input="onSearchInput" type="text" class="form-control form-control-sm"
+          placeholder="Name, email, or ID" />
       </div>
 
       <div class="col-md-2">
@@ -31,71 +33,131 @@
       </div>
 
       <div class="col-md-2">
-        <label class="form-label"><strong>Method</strong></label>
+        <label class="form-label"><strong>Payment Method</strong></label>
         <select v-model="method" @change="resetPageAndLoad" class="form-select form-select-sm">
-          <option value="">All</option>
+          <option value="">All Methods</option>
           <option value="CASH">Cash</option>
+          <option value="CARD">Card</option>
           <option value="UPI">UPI</option>
-          <!-- Add more if needed -->
+          <option value="ONLINE">Online</option>
         </select>
+      </div>
+
+      <div class="col-md-3">
+        <button @click="resetFilters" class="btn btn-outline-secondary btn-sm w-100">
+          Clear Filters
+        </button>
       </div>
     </div>
 
-    <!-- Loading -->
+    <!-- Loading State -->
     <div v-if="isLoading" class="text-center my-5">
-      <div class="spinner-border text-primary"></div>
-      <p class="mt-2">Loading payments...</p>
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2 text-muted">Loading payment history...</p>
     </div>
 
     <!-- Table + Pagination -->
-    <div v-else class="card shadow-sm">
-      <div class="card-header bg-primary text-white fw-bold">All Payments</div>
-      <div class="card-body table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
+    <div v-else-if="filteredPayments.length > 0" class="card shadow-sm">
+      <div class="card-header bg-primary text-white fw-bold">
+        Payment History
+      </div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
             <tr>
-              <th>#</th>
+              <th class="ps-3">#</th>
               <th>Member</th>
-              <th>Amount (₹)</th>
+              <th>Amount</th>
               <th>Method</th>
-              <th>Date</th>
+              <th>Date & Time</th>
               <th>Type</th>
+              <th>Details</th>
+              <th>Trainer</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(p, i) in payments" :key="p.id">
-              <td>{{ (pagination.page - 1) * pagination.limit + i + 1 }}</td>
-              <td>{{ p.member.name }}</td>
-              <td :class="{ 'text-danger': p.amount < 0, 'text-success': p.amount > 0 }">
-                ₹{{ Math.abs(p.amount) }} <small v-if="p.amount < 0">(Refund)</small>
+            <tr v-for="(p, i) in filteredPayments" :key="p.id">
+              <td class="ps-3">
+                {{ (pagination.page - 1) * pagination.limit + i + 1 }}
               </td>
-              <td class="text-capitalize">{{ p.method.toLowerCase() }}</td>
-              <td>{{ formatDate(p.paymentDate) }}</td>
+
+              <!-- Safe Member Display -->
               <td>
-                <span class="badge" :class="p.amount > 0 ? 'bg-success' : 'bg-danger'">
-                  {{ p.amount > 0 ? 'Received' : 'Refunded' }}
+                <div v-if="p.member">
+                  <strong>{{ p.member.name }}</strong>
+                  <small class="text-muted d-block">{{ p.member.email }}</small>
+                </div>
+                <em v-else class="text-muted">—</em>
+              </td>
+
+              <!-- Amount with Refund -->
+              <td>
+                <span :class="{
+                  'text-danger': p.amount < 0,
+                  'text-success': p.amount > 0,
+                }">
+                  ₹{{ Math.abs(p.amount).toLocaleString('en-IN') }}
+                  <small v-if="p.amount < 0">(Refund)</small>
                 </span>
               </td>
-            </tr>
-            <tr v-if="payments.length === 0">
-              <td colspan="6" class="text-center text-muted py-4">
-                No payments found
+
+              <!-- Method Badge -->
+              <td>
+                <span class="badge bg-light text-dark text-capitalize">
+                  {{ p.method.toLowerCase() }}
+                </span>
+              </td>
+
+              <!-- Date & Time -->
+              <td>
+                <div>
+                  {{ formatDate(p.paymentDate) }}
+                  <small class="text-muted d-block">
+                    {{ formatTime(p.paymentDate) }}
+                  </small>
+                </div>
+              </td>
+
+              <!-- Type Badge -->
+              <td>
+                <span class="badge" :class="p.type === 'membership' ? 'bg-primary' : 'bg-info'">
+                  {{ p.type === 'membership' ? 'Plan' : 'Addon' }}
+                </span>
+              </td>
+
+              <!-- Plan or Addon Name -->
+              <td>
+                <span v-if="p.type === 'membership' && p.plan" class="text-primary fw-semibold">
+                  {{ p.plan }}
+                </span>
+                <span v-else-if="p.type === 'addon' && p.addonName" class="text-info fw-semibold">
+                  {{ p.addonName }}
+                </span>
+                <span v-else class="text-muted">—</span>
+              </td>
+
+              <!-- Trainer -->
+              <td>
+                <span v-if="p.trainer" class="text-success fw-semibold">
+                  {{ p.trainer.name }}
+                </span>
+                <span v-else class="text-muted">—</span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Pagination Footer -->
-      <div class="card-footer d-flex justify-content-between align-items-center">
-        <div>
+      <!-- Pagination -->
+      <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center py-3">
+        <div class="text-muted small mb-2 mb-md-0">
           Showing
           {{ (pagination.page - 1) * pagination.limit + 1 }}
           to
           {{ Math.min(pagination.page * pagination.limit, pagination.total) }}
-          of
-          {{ pagination.total }}
-          payments
+          of {{ pagination.total }} payments
         </div>
         <nav>
           <ul class="pagination pagination-sm mb-0">
@@ -112,6 +174,14 @@
         </nav>
       </div>
     </div>
+
+    <!-- Empty State -->
+    <div v-else class="text-center py-5">
+      <p class="text-muted">No payments found matching your filters.</p>
+      <button @click="resetFilters" class="btn btn-outline-primary btn-sm">
+        Clear Filters
+      </button>
+    </div>
   </div>
 </template>
 
@@ -121,11 +191,16 @@ import { Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
-// Match the actual API structure
+// === INTERFACES ===
 interface Member {
   id: number
   name: string
   email: string
+}
+
+interface Trainer {
+  id: number
+  name: string
 }
 
 interface Payment {
@@ -133,9 +208,13 @@ interface Payment {
   amount: number
   paymentDate: string
   method: string
-  member: Member
-  plan: string
-  membershipId: number
+  type: 'membership' | 'addon' | 'unknown'
+  member: Member | null
+  plan: string | null
+  addonName: string | null
+  trainer: Trainer | null
+  membershipId: number | null
+  addonId: number | null
 }
 
 interface Pagination {
@@ -145,6 +224,7 @@ interface Pagination {
   totalPages: number
 }
 
+// === REACTIVE STATE ===
 const payments = ref<Payment[]>([])
 const pagination = ref<Pagination>({
   total: 0,
@@ -163,55 +243,116 @@ const toastRef = ref<HTMLElement | null>(null)
 let toastInstance: Toast | null = null
 const toastMessage = ref('')
 
+// === DEBOUNCE TIMER (Native) ===
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+// === FILTERED PAYMENTS (Client-side search) ===
+const filteredPayments = computed(() => {
+  let filtered = payments.value
+
+  if (searchTerm.value.trim()) {
+    const term = searchTerm.value.toLowerCase()
+    filtered = filtered.filter((p) => {
+      const memberName = p.member?.name?.toLowerCase() || ''
+      const memberEmail = p.member?.email?.toLowerCase() || ''
+      const memberId = p.member?.id?.toString() || ''
+      const plan = p.plan?.toLowerCase() || ''
+      const addon = p.addonName?.toLowerCase() || ''
+
+      return (
+        memberName.includes(term) ||
+        memberEmail.includes(term) ||
+        memberId.includes(term) ||
+        plan.includes(term) ||
+        addon.includes(term)
+      )
+    })
+  }
+
+  return filtered
+})
+
+// === TOAST HELPERS ===
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
+    toastRef.value.classList.remove('bg-success', 'bg-danger')
+    toastRef.value.classList.add(success ? 'bg-success' : 'bg-danger')
     toastInstance?.show()
   }
-  setTimeout(() => {
-    if (toastMessage.value === msg) hideToast()
-  }, 4000)
+  setTimeout(hideToast, 4000)
 }
 
 const hideToast = () => toastInstance?.hide()
 
-const visiblePages = computed(() => {
-  const delta = 2
-  const range: (number | string)[] = []
-  for (
-    let i = Math.max(2, pagination.value.page - delta);
-    i <= Math.min(pagination.value.totalPages - 1, pagination.value.page + delta);
-    i++
-  )
-    range.push(i)
-  if (pagination.value.page - delta > 2) range.unshift('...')
-  if (pagination.value.page + delta < pagination.value.totalPages - 1) range.push('...')
-  range.unshift(1)
-  if (pagination.value.totalPages > 1) range.push(pagination.value.totalPages)
-  return range
-})
-
+// === DATE & TIME FORMATTERS ===
 const formatDate = (dateStr: string) =>
   new Date(dateStr).toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+  })
+
+const formatTime = (dateStr: string) =>
+  new Date(dateStr).toLocaleTimeString('en-IN', {
     hour: '2-digit',
     minute: '2-digit',
   })
 
+// === PAGINATION LOGIC ===
+const visiblePages = computed(() => {
+  const delta = 2
+  const range: (number | string)[] = []
+  const { page, totalPages } = pagination.value
+
+  for (
+    let i = Math.max(2, page - delta);
+    i <= Math.min(totalPages - 1, page + delta);
+    i++
+  ) {
+    range.push(i)
+  }
+
+  if (page - delta > 2) range.unshift('...')
+  if (page + delta < totalPages - 1) range.push('...')
+
+  range.unshift(1)
+  if (totalPages > 1) range.push(totalPages)
+
+  return range
+})
+
+const goToPage = (page: number) => {
+  if (
+    page < 1 ||
+    page > pagination.value.totalPages ||
+    page === pagination.value.page
+  )
+    return
+  pagination.value.page = page
+  loadPayments(page)
+}
+
+// === DEBOUNCED SEARCH ===
+const onSearchInput = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    resetPageAndLoad()
+  }, 500)
+}
+
+// === API CALL ===
 const loadPayments = async (page = 1) => {
   isLoading.value = true
   try {
     const params: Record<string, any> = {
       page,
       limit: pagination.value.limit,
-      search: searchTerm.value || undefined,
-      startDate: startDate.value || undefined,
-      endDate: endDate.value || undefined,
-      method: method.value || undefined,
     }
+
+    if (startDate.value) params.startDate = startDate.value
+    if (endDate.value) params.endDate = endDate.value
+    if (method.value) params.method = method.value
 
     const res: AxiosResponse<{
       success: boolean
@@ -221,33 +362,38 @@ const loadPayments = async (page = 1) => {
 
     if (res.data.success) {
       payments.value = res.data.data
-      pagination.value = res.data.pagination
+      pagination.value = { ...res.data.pagination, page }
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
       showToast('Failed to load payments.', false)
     }
   } catch (err: any) {
-    console.error(err)
-    showToast('Failed to load payments.', false)
+    console.error('Payment history error:', err)
+    showToast('Network error. Please try again.', false)
   } finally {
     isLoading.value = false
   }
 }
 
-const goToPage = (page: number) => {
-  if (page < 1 || page > pagination.value.totalPages || page === pagination.value.page) return
-  pagination.value.page = page
-  loadPayments(page)
-}
-
+// === FILTER ACTIONS ===
 const resetPageAndLoad = () => {
   pagination.value.page = 1
   loadPayments(1)
 }
 
+const resetFilters = () => {
+  searchTerm.value = ''
+  startDate.value = ''
+  endDate.value = ''
+  method.value = ''
+  if (searchTimeout) clearTimeout(searchTimeout)
+  resetPageAndLoad()
+}
+
+// === LIFECYCLE ===
 onMounted(() => {
   if (toastRef.value) {
-    toastInstance = new Toast(toastRef.value)
+    toastInstance = new Toast(toastRef.value, { delay: 4000 })
   }
   loadPayments()
 })
@@ -257,6 +403,7 @@ onMounted(() => {
 .table td,
 .table th {
   vertical-align: middle;
+  font-size: 0.95rem;
 }
 
 .text-danger {
@@ -269,5 +416,26 @@ onMounted(() => {
 
 .badge {
   font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+}
+
+small {
+  font-size: 0.8rem;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+@media (max-width: 768px) {
+  .card-footer {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .pagination {
+    margin-top: 0.5rem;
+  }
 }
 </style>

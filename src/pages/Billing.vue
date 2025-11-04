@@ -149,8 +149,94 @@
             <button type="button" class="btn-close" @click="closeCollectModal"></button>
           </div>
           <div class="modal-body">
-            <!-- ... same form as before, just uses selectedBill ... -->
-            <!-- (see script for details) -->
+            <form @submit.prevent>
+              <div class="mb-3">
+                <strong>Member:</strong>
+                <span>{{ selectedMember?.firstName }} {{ selectedMember?.lastName }}</span>
+                ({{ selectedMember?.email }})
+              </div>
+
+              <div class="mt-4">
+                <h6>Membership Plan</h6>
+                <div class="form-control-plaintext p-2 bg-light rounded">
+                  {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }} <span v-if="billType === 'membership'">({{ selectedPlanDuration }} days)</span>
+                </div>
+
+                <div class="mt-3 row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label"><strong>Plan Price (₹)</strong></label>
+                    <input type="number" class="form-control" :value="selectedPlan?.price" readonly />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label text-primary"><strong>Discount (₹)</strong></label>
+                    <input type="number" class="form-control" :value="enrollmentForm.discount" readonly />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label"><strong>Already Paid (₹)</strong></label>
+                    <input type="number" class="form-control" :value="oldPaid" readonly />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label"><strong>Pending (Before) (₹)</strong></label>
+                    <input type="number" class="form-control" :value="oldPending" readonly />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label text-success"><strong>Paying Now (₹)</strong></label>
+                    <input type="number" class="form-control" v-model.number="newPaidNow" min="0" :max="oldPending"
+                      placeholder="Enter amount" @input="validatePayment" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label text-danger"><strong>Pending (After) (₹)</strong></label>
+                    <input type="number" class="form-control" :value="pendingAfterPayment" readonly />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label"><strong>Payment Method</strong></label>
+                    <select v-model="paymentMethod" class="form-select">
+                      <option value="CASH">Cash</option>
+                      <option value="CARD">Card</option>
+                      <option value="UPI">UPI</option>
+                      <option value="ONLINE">Online</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment History -->
+              <div v-if="selectedBill?.payments?.length" class="mt-4">
+                <h6>Payment History</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <th>#</th>
+                        <th>Amount (₹)</th>
+                        <th>Date</th>
+                        <th>Method</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(p, i) in selectedBill.payments" :key="p.id">
+                        <td>{{ i + 1 }}</td>
+                        <td>₹{{ p.amount }}</td>
+                        <td>{{ formatDateTime(p.paymentDate) }}</td>
+                        <td>{{ p.method }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div v-else class="mt-3 text-muted">No payments made yet.</div>
+
+              <div class="d-grid gap-2 mt-4">
+                <button type="button" class="btn btn-primary" @click="updatePayment"
+                  :disabled="isSubmitting || newPaidNow <= 0">
+                  {{ isSubmitting ? 'Updating...' : 'Update Payment' }}
+                </button>
+                <button v-if="!isPartialPayment" type="button" class="btn btn-success" @click="approvePayment"
+                  :disabled="isSubmitting || pendingAfterPayment > 0">
+                  {{ isSubmitting ? 'Approving...' : 'Approve Full Payment' }}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -165,7 +251,30 @@
             <button type="button" class="btn-close" @click="closeHistoryModal"></button>
           </div>
           <div class="modal-body">
-            <!-- same as before -->
+            <div v-if="selectedBill?.payments?.length">
+              <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Amount (₹)</th>
+                    <th>Date</th>
+                    <th>Method</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(p, i) in selectedBill.payments" :key="p.id">
+                    <td>{{ i + 1 }}</td>
+                    <td>₹{{ p.amount }}</td>
+                    <td>{{ formatDateTime(p.paymentDate) }}</td>
+                    <td>{{ p.method }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="text-muted">No payments found.</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" @click="closeHistoryModal">Close</button>
           </div>
         </div>
       </div>
@@ -297,6 +406,12 @@ const statusOptions = computed(() => {
   const set = new Set<string>()
     ;[...pendingBills.value, ...approvedBills.value].forEach(b => set.add(b.status))
   return Array.from(set).sort()
+})
+
+const selectedPlanDuration = computed(() => {
+  // Only return duration for membership plans; keep null for add-ons to avoid TS errors
+  if (billType.value !== 'membership' || !selectedPlan.value) return null
+  return (selectedPlan.value as Plan).durationDays ?? null
 })
 
 function applyFilters(list: Bill[]) {
