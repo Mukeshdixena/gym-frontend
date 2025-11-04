@@ -495,7 +495,11 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* (same as your original style – only tiny tweaks) */
+.table td,
+.table th {
+    vertical-align: middle;
+}
+
 .dropdown {
     position: relative;
     display: inline-block;
@@ -525,14 +529,36 @@ onBeforeUnmount(() => {
     background: #f8f9fa;
 }
 
+.dropdown-item-custom.text-danger {
+    color: #dc3545 !important;
+}
+
 .btn-sm.border-0 {
     font-size: 1.3rem;
     line-height: 1;
     padding: 0 .4rem;
 }
 
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
 .toast {
     min-width: 280px;
+}
+
+.modal-sm .modal-content {
+    border-radius: .5rem;
+}
+
+input[readonly],
+.form-control-plaintext {
+    background-color: #f8f9fa !important;
+}
+
+.form-switch .form-check-input {
+    cursor: pointer;
 }
 
 .card-body {

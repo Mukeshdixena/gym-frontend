@@ -4,8 +4,7 @@
 
     <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
-        aria-live="assertive" aria-atomic="true">
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert">
         <div class="d-flex">
           <div class="toast-body">{{ toastMessage }}</div>
           <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
@@ -13,46 +12,43 @@
       </div>
     </div>
 
-        <div class="row g-3 mb-3">
-          <div class="col-md-3">
-            <label class="form-label"><strong>Search</strong></label>
-            <input v-model.trim="filters.search" type="text" class="form-control form-control-sm"
-              placeholder="Name or description" @input="loadPlans" />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label"><strong>Status</strong></label>
-            <select v-model="filters.isActive" class="form-select form-select-sm" @change="loadPlans">
-              <option value="">All</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label"><strong>Min Price</strong></label>
-            <input v-model.number="filters.minPrice" type="number" class="form-control form-control-sm"
-              placeholder="Min ₹" @change="loadPlans" />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label"><strong>Max Price</strong></label>
-            <input v-model.number="filters.maxPrice" type="number" class="form-control form-control-sm"
-              placeholder="Max ₹" @change="loadPlans" />
-          </div>
-          <div class="col-md-3 d-flex align-items-end">
-            <button class="btn btn-primary btn-sm w-100" @click="openAddModal">
-              New Plan
-            </button>
-          </div>
-        </div>
+    <!-- Filters -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <label class="form-label"><strong>Search</strong></label>
+        <input v-model.trim="filters.search" @input="resetPageAndLoad" type="text" class="form-control form-control-sm"
+          placeholder="Name or description" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><strong>Status</strong></label>
+        <select v-model="filters.isActive" @change="resetPageAndLoad" class="form-select form-select-sm">
+          <option value="">All</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><strong>Min Price</strong></label>
+        <input v-model.number="filters.minPrice" @change="resetPageAndLoad" type="number"
+          class="form-control form-control-sm" placeholder="Min ₹" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label"><strong>Max Price</strong></label>
+        <input v-model.number="filters.maxPrice" @change="resetPageAndLoad" type="number"
+          class="form-control form-control-sm" placeholder="Max ₹" />
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-primary btn-sm w-100" @click="openAddModal">New Plan</button>
+      </div>
+    </div>
 
     <!-- Loading -->
     <div v-if="isLoading" class="text-center my-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+      <div class="spinner-border text-primary"></div>
       <p class="mt-2">Loading plans...</p>
     </div>
 
-    <!-- Plans Table -->
+    <!-- Table + Pagination -->
     <div v-else class="card shadow-sm">
       <div class="card-header bg-primary text-white fw-bold">All Plans</div>
       <div class="card-body table-responsive">
@@ -70,7 +66,7 @@
           </thead>
           <tbody>
             <tr v-for="(plan, i) in plans" :key="plan.id">
-              <td>{{ i + 1 }}</td>
+              <td>{{ (meta.page - 1) * meta.limit + i + 1 }}</td>
               <td>{{ plan.name }}</td>
               <td>{{ plan.description }}</td>
               <td>₹{{ plan.price }}</td>
@@ -91,9 +87,7 @@
                   <div v-if="openDropdownId === plan.id" class="dropdown-menu-custom shadow-sm">
                     <a href="javascript:void(0)" @click="editPlan(plan)" class="dropdown-item-custom">Edit</a>
                     <a href="javascript:void(0)" @click="confirmDelete(plan.id)"
-                      class="dropdown-item-custom text-danger">
-                      Delete
-                    </a>
+                      class="dropdown-item-custom text-danger">Delete</a>
                   </div>
                 </div>
               </td>
@@ -104,15 +98,36 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Footer -->
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <div>
+          Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }}
+          of {{ meta.total }} plans
+        </div>
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" :class="{ disabled: meta.page <= 1 }">
+              <a class="page-link" @click="goToPage(meta.page - 1)" href="javascript:void(0)">Prev</a>
+            </li>
+            <li class="page-item" v-for="p in visiblePages" :key="p" :class="{ active: p === meta.page }">
+              <a class="page-link" @click="typeof p === 'number' && goToPage(p)" href="javascript:void(0)">{{ p }}</a>
+            </li>
+            <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
+              <a class="page-link" @click="goToPage(meta.page + 1)" href="javascript:void(0)">Next</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
 
     <!-- Add/Edit Modal -->
-    <div class="modal fade" ref="modalRef" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" ref="modalRef" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">{{ editingPlan ? 'Edit Plan' : 'Add Plan' }}</h5>
-            <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+            <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent>
@@ -135,21 +150,17 @@
               <div class="row g-3 mt-2">
                 <div class="col-md-6">
                   <label class="form-label"><strong>Price (₹)</strong></label>
-                  <div v-if="editingPlan" class="form-control-plaintext">
-                    ₹{{ form.price }}
-                  </div>
-                  <input v-else v-model.number="form.price" type="number" class="form-control"
+                  <input v-if="!editingPlan" v-model.number="form.price" type="number" class="form-control"
                     :class="{ 'is-invalid': errors.price }" @blur="validateField('price')" min="1" required />
+                  <div v-else class="form-control-plaintext">₹{{ form.price }}</div>
                   <div v-if="errors.price" class="invalid-feedback">{{ errors.price }}</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label"><strong>Duration (Days)</strong></label>
-                  <div v-if="editingPlan" class="form-control-plaintext">
-                    {{ form.durationDays }} days
-                  </div>
-                  <input v-else v-model.number="form.durationDays" type="number" class="form-control"
+                  <input v-if="!editingPlan" v-model.number="form.durationDays" type="number" class="form-control"
                     :class="{ 'is-invalid': errors.durationDays }" @blur="validateField('durationDays')" min="1"
                     required />
+                  <div v-else class="form-control-plaintext">{{ form.durationDays }} days</div>
                   <div v-if="errors.durationDays" class="invalid-feedback">{{ errors.durationDays }}</div>
                 </div>
               </div>
@@ -175,7 +186,7 @@
       </div>
     </div>
 
-    <!-- SMALL CONFIRM MODAL -->
+    <!-- Confirm Delete -->
     <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" style="display: block;" v-if="isConfirmOpen"
       @click.self="resolveConfirm(false)">
       <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -185,8 +196,8 @@
             <button type="button" class="btn-close" @click="resolveConfirm(false)"></button>
           </div>
           <div class="modal-body pt-2 pb-3">
-            Are you sure you want to delete this plan?
-            <br><small class="text-muted">This action cannot be undone.</small>
+            Are you sure you want to delete this plan?<br>
+            <small class="text-muted">This action cannot be undone.</small>
           </div>
           <div class="modal-footer border-0 pt-0">
             <button type="button" class="btn btn-secondary btn-sm" @click="resolveConfirm(false)">Cancel</button>
@@ -200,38 +211,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { Modal, Toast } from 'bootstrap'
-import api from '@/api/axios'
-import type { AxiosResponse } from 'axios'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { Modal, Toast } from 'bootstrap';
+import api from '@/api/axios';
+import type { AxiosResponse } from 'axios';
 
-// ──────────────────────────────────────────────────────────────
-// Interfaces
-// ──────────────────────────────────────────────────────────────
+// ──────── Types ────────
 interface Plan {
-  id: number
-  name: string
-  description: string
-  price: number
-  durationDays: number
-  isActive: boolean
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  durationDays: number;
+  isActive: boolean;
 }
 
-// ──────────────────────────────────────────────────────────────
-// State
-// ──────────────────────────────────────────────────────────────
-const plans = ref<Plan[]>([])
-const isLoading = ref(true)
-const isToggling = ref(false)
+interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
-const modalRef = ref<HTMLElement | null>(null)
-const toastRef = ref<HTMLElement | null>(null)
+// ──────── State ────────
+const plans = ref<Plan[]>([]);
+const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 });
+const isLoading = ref(true);
+const isToggling = ref(false);
 
-let modal: Modal
-let toastInstance: Toast
+const modalRef = ref<HTMLElement | null>(null);
+const toastRef = ref<HTMLElement | null>(null);
+let modal: Modal;
+let toastInstance: Toast;
 
-const editingPlan = ref<Plan | null>(null)
-const openDropdownId = ref<number | null>(null)
+const editingPlan = ref<Plan | null>(null);
+const openDropdownId = ref<number | null>(null);
 
 const form = ref<Partial<Plan>>({
   name: '',
@@ -239,229 +253,231 @@ const form = ref<Partial<Plan>>({
   price: 0,
   durationDays: 0,
   isActive: true,
-})
-const originalForm = ref<Partial<Plan>>({})
-const errors = ref<Record<string, string>>({})
-const toastMessage = ref('')
+});
+const originalForm = ref<Partial<Plan>>({});
+const errors = ref<Record<string, string>>({});
+const toastMessage = ref('');
 
-// Filters
+// Filters + Pagination
 const filters = ref({
   search: '',
   isActive: '',
   minPrice: null as number | null,
   maxPrice: null as number | null,
-})
+});
+const pagination = ref({ page: 1, limit: 10 });
 
-// ──────────────────────────────────────────────────────────────
-// Computed
-// ──────────────────────────────────────────────────────────────
+// ──────── Computed ────────
 const isFormValid = computed(() => {
-  ;['name', 'description', 'price', 'durationDays'].forEach(validateField)
+  ['name', 'description', 'price', 'durationDays'].forEach(validateField);
   return (
     !!form.value.name &&
     !!form.value.description &&
     (form.value.price ?? 0) > 0 &&
     (form.value.durationDays ?? 0) > 0 &&
     !Object.values(errors.value).some(e => e)
-  )
-})
+  );
+});
 
-const isUnchanged = computed(() => {
-  return JSON.stringify(form.value) === JSON.stringify(originalForm.value)
-})
+const isUnchanged = computed(() => JSON.stringify(form.value) === JSON.stringify(originalForm.value));
 
-// ──────────────────────────────────────────────────────────────
-// Validation
-// ──────────────────────────────────────────────────────────────
+const visiblePages = computed(() => {
+  const delta = 2;
+  const range = [];
+  for (
+    let i = Math.max(2, meta.value.page - delta);
+    i <= Math.min(meta.value.totalPages - 1, meta.value.page + delta);
+    i++
+  ) range.push(i);
+  if (meta.value.page - delta > 2) range.unshift('...');
+  if (meta.value.page + delta < meta.value.totalPages - 1) range.push('...');
+  range.unshift(1);
+  if (meta.value.totalPages > 1) range.push(meta.value.totalPages);
+  return range;
+});
+
+// ──────── Validation ────────
 const validateField = (field: string) => {
-  const value = form.value[field as keyof Plan]
+  const v = form.value[field as keyof Plan];
   switch (field) {
     case 'name':
-      errors.value.name = value ? '' : 'Plan name is required.'
-      break
+      errors.value.name = v ? '' : 'Plan name is required.';
+      break;
     case 'description':
-      errors.value.description = value ? '' : 'Description is required.'
-      break
+      errors.value.description = v ? '' : 'Description is required.';
+      break;
     case 'price':
-      errors.value.price = !value || Number(value) <= 0 ? 'Enter a valid positive price.' : ''
-      break
+      errors.value.price = !v || Number(v) <= 0 ? 'Enter a valid positive price.' : '';
+      break;
     case 'durationDays':
-      errors.value.durationDays = !value || Number(value) <= 0 ? 'Enter a valid duration (days).' : ''
-      break
+      errors.value.durationDays = !v || Number(v) <= 0 ? 'Enter a valid duration (days).' : '';
+      break;
   }
-}
+};
 
-// ──────────────────────────────────────────────────────────────
-// Toast
-// ──────────────────────────────────────────────────────────────
+// ──────── Toast ────────
 const showToast = (msg: string, success = true) => {
-  toastMessage.value = msg
+  toastMessage.value = msg;
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
-    toastInstance?.show()
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`;
+    toastInstance?.show();
   }
-  setTimeout(() => { if (toastMessage.value === msg) hideToast() }, 4000)
-}
-const hideToast = () => toastInstance?.hide()
+  setTimeout(() => { if (toastMessage.value === msg) hideToast(); }, 4000);
+};
+const hideToast = () => toastInstance?.hide();
 
-// ──────────────────────────────────────────────────────────────
-// API
-// ──────────────────────────────────────────────────────────────
+// ──────── API ────────
+const buildQuery = () => ({
+  ...filters.value,
+  ...pagination.value,
+  minPrice: filters.value.minPrice ?? undefined,
+  maxPrice: filters.value.maxPrice ?? undefined,
+});
+
 const loadPlans = async () => {
-  isLoading.value = true
+  isLoading.value = true;
   try {
-    const params: Record<string, any> = {}
-    if (filters.value.search) params.search = filters.value.search
-    if (filters.value.isActive !== '') params.isActive = filters.value.isActive
-    if (filters.value.minPrice !== null) params.minPrice = filters.value.minPrice
-    if (filters.value.maxPrice !== null) params.maxPrice = filters.value.maxPrice
-
-    const res = await api.get('/plans', { params }) as AxiosResponse<Plan[] | { data: Plan[] }>
-    const payload = Array.isArray(res.data) ? res.data : (res.data && (res.data as any).data) || []
-    plans.value = payload
+    const res = await api.get('/plans', { params: buildQuery() }) as AxiosResponse<{
+      data: Plan[];
+      meta: PaginationMeta;
+    }>;
+    plans.value = res.data.data;
+    meta.value = res.data.meta;
   } catch (err: any) {
-    console.error(err)
-    showToast('Failed to load plans.', false)
+    console.error(err);
+    showToast('Failed to load plans.', false);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
-// ──────────────────────────────────────────────────────────────
-// Modals
-// ──────────────────────────────────────────────────────────────
+const resetPageAndLoad = () => {
+  pagination.value.page = 1;
+  loadPlans();
+};
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > meta.value.totalPages || page === meta.value.page) return;
+  pagination.value.page = page;
+  loadPlans();
+};
+
+// ──────── CRUD ────────
 const openAddModal = () => {
-  editingPlan.value = null
-  form.value = { name: '', description: '', price: 0, durationDays: 0, isActive: true }
-  originalForm.value = { ...form.value }
-  errors.value = {}
-  modal?.show()
-}
+  editingPlan.value = null;
+  form.value = { name: '', description: '', price: 0, durationDays: 0, isActive: true };
+  originalForm.value = { ...form.value };
+  errors.value = {};
+  modal?.show();
+};
 
 const editPlan = (plan: Plan) => {
-  editingPlan.value = plan
-  form.value = { ...plan }
-  originalForm.value = { ...plan }
-  errors.value = {}
-  modal?.show()
-}
+  editingPlan.value = plan;
+  form.value = { ...plan };
+  originalForm.value = { ...plan };
+  errors.value = {};
+  modal?.show();
+};
 
 const closeModal = () => {
-  modal?.hide()
-  editingPlan.value = null
-  form.value = {}
-  originalForm.value = {}
-  errors.value = {}
-}
+  modal?.hide();
+  editingPlan.value = null;
+  form.value = {};
+  originalForm.value = {};
+  errors.value = {};
+};
 
-// ──────────────────────────────────────────────────────────────
-// Actions
-// ──────────────────────────────────────────────────────────────
 const savePlan = async () => {
-  if (!isFormValid.value) {
-    showToast('Please fill all required fields correctly.', false)
-    return
-  }
+  if (!isFormValid.value) return showToast('Please fill all required fields correctly.', false);
 
   const payload: any = {
     name: form.value.name!.trim(),
     description: form.value.description!.trim(),
     isActive: form.value.isActive ?? true,
-  }
-
+  };
   if (!editingPlan.value) {
-    payload.price = form.value.price!
-    payload.durationDays = form.value.durationDays!
+    payload.price = form.value.price!;
+    payload.durationDays = form.value.durationDays!;
   }
 
   try {
     if (editingPlan.value) {
-      await api.put(`/plans/${editingPlan.value.id}`, payload)
-      showToast('Plan updated successfully!')
+      await api.put(`/plans/${editingPlan.value.id}`, payload);
+      showToast('Plan updated successfully!');
     } else {
-      const res = await api.post('/plans', payload)
-      plans.value.push(res.data)
-      showToast('Plan added successfully!')
+      const res = await api.post('/plans', payload);
+      plans.value.unshift(res.data);
+      showToast('Plan added successfully!');
     }
-    await loadPlans()
-    closeModal()
+    await loadPlans();
+    closeModal();
   } catch (err: any) {
-    showToast(err?.response?.data?.message || 'Failed to save plan.', false)
+    showToast(err?.response?.data?.message || 'Failed to save plan.', false);
   }
-}
+};
 
 const togglePlanStatus = async (id: number, event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked
-  isToggling.value = true
-
+  const checked = (event.target as HTMLInputElement).checked;
+  isToggling.value = true;
   try {
-    await api.patch(`/plans/${id}/status`, { isActive: checked })
-    const plan = plans.value.find(p => p.id === id)
-    if (plan) plan.isActive = checked
-    showToast(`Plan marked as ${checked ? 'Active' : 'Inactive'}`)
+    await api.patch(`/plans/${id}/status`, { isActive: checked });
+    const plan = plans.value.find(p => p.id === id);
+    if (plan) plan.isActive = checked;
+    showToast(`Plan marked as ${checked ? 'Active' : 'Inactive'}`);
   } catch (err: any) {
-    console.error(err)
-    showToast('Failed to update status.', false)
-    if (event.target) (event.target as HTMLInputElement).checked = !checked
+    showToast('Failed to update status.', false);
+    (event.target as HTMLInputElement).checked = !checked;
   } finally {
-    isToggling.value = false
+    isToggling.value = false;
   }
-}
+};
 
-// ──────────────────────────────────────────────────────────────
-// Dropdown
-// ──────────────────────────────────────────────────────────────
-const toggleDropdown = (id: number) => {
-  openDropdownId.value = openDropdownId.value === id ? null : id
-}
-const handleClickOutside = (e: MouseEvent) => {
-  if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null
-}
-
-// ──────────────────────────────────────────────────────────────
-// Confirm Delete
-// ──────────────────────────────────────────────────────────────
-const isConfirmOpen = ref(false)
-let resolveConfirm: (v: boolean) => void = () => { }
+// ──────── Delete ────────
+const isConfirmOpen = ref(false);
+let resolveConfirm: (v: boolean) => void = () => { };
 
 const showConfirm = (): Promise<boolean> => {
   return new Promise<boolean>(resolve => {
-    isConfirmOpen.value = true
+    isConfirmOpen.value = true;
     resolveConfirm = v => {
-      isConfirmOpen.value = false
-      resolve(v)
-    }
-  })
-}
+      isConfirmOpen.value = false;
+      resolve(v);
+    };
+  });
+};
 
 const confirmDelete = async (id: number) => {
-  const ok = await showConfirm()
-  if (!ok) return
-
+  const ok = await showConfirm();
+  if (!ok) return;
   try {
-    await api.delete(`/plans/${id}`)
-    plans.value = plans.value.filter(p => p.id !== id)
-    showToast('Plan deleted successfully!')
+    await api.delete(`/plans/${id}`);
+    plans.value = plans.value.filter(p => p.id !== id);
+    showToast('Plan deleted successfully!');
+    if (plans.value.length === 0 && meta.value.page > 1) goToPage(meta.value.page - 1);
   } catch (err: any) {
-    showToast(err?.response?.data?.message || 'Failed to delete plan.', false)
+    showToast(err?.response?.data?.message || 'Failed to delete plan.', false);
   }
-}
+};
 
-// ──────────────────────────────────────────────────────────────
-// Lifecycle
-// ──────────────────────────────────────────────────────────────
+// ──────── Dropdown ────────
+const toggleDropdown = (id: number) => {
+  openDropdownId.value = openDropdownId.value === id ? null : id;
+};
+const handleClickOutside = (e: MouseEvent) => {
+  if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null;
+};
+
+// ──────── Lifecycle ────────
 onMounted(async () => {
-  if (modalRef.value) modal = new Modal(modalRef.value)
-  if (toastRef.value) toastInstance = new Toast(toastRef.value)
-
-  document.addEventListener('click', handleClickOutside)
-
-  await loadPlans()
-})
+  if (modalRef.value) modal = new Modal(modalRef.value);
+  if (toastRef.value) toastInstance = new Toast(toastRef.value);
+  document.addEventListener('click', handleClickOutside);
+  await loadPlans();
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <style scoped>
