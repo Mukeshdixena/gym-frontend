@@ -11,6 +11,7 @@ import Plans from "@/pages/Plans.vue";
 import Billing from "@/pages/Billing.vue";
 import Login from "@/pages/Login.vue";
 import PaymentHistory from "@/pages/PaymentHistory.vue";
+import Addons from "@/pages/Addons.vue";
 
 // --- Routes ---
 const routes = [
@@ -62,6 +63,12 @@ const routes = [
     path: "/plans",
     name: "Plans",
     component: Plans,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/addons",
+    name: "Addons",
+    component: Addons,
     meta: { requiresAuth: true },
   },
   {
