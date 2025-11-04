@@ -41,7 +41,7 @@
               <td>{{ m.phone }}</td>
               <td>
                 <button class="btn btn-sm btn-primary" @click="openAssignModal(m)">
-                  Assign Plan
+                  Assign Plan / Addon
                 </button>
               </td>
             </tr>
@@ -74,7 +74,7 @@
               </td>
               <td>
                 <button class="btn btn-sm btn-warning" @click="openAssignModal(m)">
-                  Renew / Assign New Plan
+                  Renew / Assign New
                 </button>
               </td>
             </tr>
@@ -89,8 +89,8 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              {{selectedMember?.memberships.some(ms => ms.status === 'ACTIVE') ? 'Renew' : 'Assign'}}
-              Membership Plan
+              {{selectedMember?.memberships.some(ms => ms.status === 'ACTIVE') ? 'Renew / Update' : 'Assign'}}
+              Membership / Addon
             </h5>
             <button type="button" class="btn-close" @click="closeAssignModal"></button>
           </div>
@@ -101,98 +101,100 @@
                 {{ selectedMember?.firstName }} {{ selectedMember?.lastName }} ({{ selectedMember?.email }})
               </div>
 
-              <!-- Plan Selection -->
-              <div class="mt-3">
-                <label class="form-label"><strong>Select Plan</strong></label>
-                <select v-model="enrollmentForm.planId" class="form-select" @change="updatePlanDates" required>
-                  <option :value="0" disabled>-- Select Plan --</option>
-                  <option v-for="plan in plans" :key="plan.id" :value="plan.id">
-                    {{ plan.name }} - ₹{{ plan.price }} ({{ plan.durationDays }} days)
-                  </option>
-                </select>
+              <!-- SYMMETRICAL PLAN & ADDON SELECTORS -->
+              <div class="row g-3 align-items-end">
+                <!-- Plan Selection -->
+                <div class="col-md-6">
+                  <label class="form-label"><strong>Select Plan (Optional)</strong></label>
+                  <select v-model="enrollmentForm.planId" class="form-select" @change="updatePlanDates">
+                    <option :value="0">-- Select Plan --</option>
+                    <option v-for="plan in plans" :key="plan.id" :value="plan.id">
+                      {{ plan.name }} - ₹{{ plan.price }} ({{ plan.durationDays }} days)
+                    </option>
+                  </select>
+                </div>
 
-                <div v-if="selectedPlan" class="mt-4">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <p><strong>Description:</strong> {{ selectedPlan.description }}</p>
-                      <p><strong>Duration:</strong> {{ selectedPlan.durationDays }} days</p>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label"><strong>Start Date:</strong></label>
-                      <input type="date" v-model="enrollmentForm.startDate" class="form-control"
-                        @change="updatePlanDates" required />
-                      <p class="mt-2"><strong>End Date:</strong> {{ formattedEndDate }}</p>
-                    </div>
+                <!-- Addon Selection -->
+                <div class="col-md-6">
+                  <label class="form-label"><strong>Select Addon (Optional)</strong></label>
+                  <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect">
+                    <option value="">-- Select Addon --</option>
+                    <option v-for="a in addons" :key="a.id" :value="a.id">
+                      {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- PLAN DETAILS -->
+              <div v-if="selectedPlan" class="mt-4 p-3 border rounded bg-light">
+                <h6 class="mb-3 text-primary">Plan Details</h6>
+                <div class="row">
+                  <div class="col-md-6">
+                    <p><strong>Description:</strong> {{ selectedPlan.description }}</p>
+                    <p><strong>Duration:</strong> {{ selectedPlan.durationDays }} days</p>
                   </div>
+                  <div class="col-md-6">
+                    <label class="form-label"><strong>Start Date:</strong></label>
+                    <input type="date" v-model="enrollmentForm.startDate" class="form-control"
+                      @change="updatePlanDates" />
+                    <p class="mt-2"><strong>End Date:</strong> {{ formattedEndDate }}</p>
+                  </div>
+                </div>
 
-                  <div class="row mt-3 g-3">
-                    <div class="col-md-4">
-                      <label class="form-label"><strong>Plan Price (₹)</strong></label>
-                      <input type="number" class="form-control" :value="selectedPlan.price" readonly />
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Discount / Coupon (₹)</label>
-                      <input type="number" v-model.number="enrollmentForm.discount" class="form-control" min="0" />
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Pending (₹)</label>
-                      <input type="number" class="form-control" :value="pendingAmount" readonly />
-                    </div>
+                <div class="row mt-3 g-3">
+                  <div class="col-md-4">
+                    <label class="form-label"><strong>Price (₹)</strong></label>
+                    <input type="number" class="form-control" :value="selectedPlan.price" readonly />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Discount (₹)</label>
+                    <input type="number" v-model.number="enrollmentForm.discount" class="form-control" min="0" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Pending (₹)</label>
+                    <input type="number" class="form-control" :value="pendingAmount" readonly />
                   </div>
                 </div>
               </div>
 
-              <!-- Addon Selection -->
-              <div class="mt-4 border-top pt-3">
-                <h5>Select Addon (Optional)</h5>
-
-                <div class="row g-3">
-                  <div class="col-md-3">
-                    <label class="form-label">Addon</label>
-                    <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect">
-                      <option value="">-- Select Addon --</option>
-                      <option v-for="a in addons" :key="a.id" :value="a.id">
-                        {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
-                      </option>
-                    </select>
+              <!-- ADDON DETAILS -->
+              <div v-if="selectedAddon" class="mt-4 p-3 border rounded bg-light">
+                <h6 class="mb-3 text-success">Addon Details</h6>
+                <div class="row">
+                  <div class="col-md-6">
+                    <p><strong>Description:</strong> {{ selectedAddon.description }}</p>
+                    <p><strong>Duration:</strong> {{ selectedAddon.durationDays }} days</p>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label"><strong>Start Date:</strong></label>
+                    <input type="date" v-model="addonStartDate" class="form-control" @change="updateAddonEndDate"
+                      :min="minAddonStartDate" />
+                    <p class="mt-2"><strong>End Date:</strong> {{ formattedAddonEndDate }}</p>
                   </div>
                 </div>
 
-                <!-- Addon Details (Only shown after selection) -->
-                <div v-if="selectedAddon" class="mt-4">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <p><strong>Description:</strong> {{ selectedAddon.description }}</p>
-                      <p><strong>Duration:</strong> {{ selectedAddon.durationDays }} days</p>
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label"><strong>Start Date:</strong></label>
-                      <input type="date" v-model="addonStartDate" class="form-control" @change="updateAddonEndDate"
-                        :min="enrollmentForm.startDate" required />
-                      <p class="mt-2"><strong>End Date:</strong> {{ formattedAddonEndDate }}</p>
-                    </div>
+                <div class="row mt-3 g-3">
+                  <div class="col-md-4">
+                    <label class="form-label"><strong>Price (₹)</strong></label>
+                    <input type="number" class="form-control" :value="selectedAddon.price" readonly />
                   </div>
-
-                  <div class="row mt-3 g-3">
-                    <div class="col-md-4">
-                      <label class="form-label"><strong>Price (₹)</strong></label>
-                      <input type="number" class="form-control" :value="selectedAddon.price" readonly />
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Trainer ID</label>
-                      <input v-model.number="addonTrainerId" type="number" class="form-control"
-                        placeholder="Optional" />
-                    </div>
-                    <div class="col-md-4">
-                      <!-- Empty for symmetry -->
-                    </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Trainer ID</label>
+                    <input v-model.number="addonTrainerId" type="number" class="form-control" placeholder="Optional" />
                   </div>
                 </div>
               </div>
 
-              <button type="submit" class="btn btn-success w-100 mt-4"
-                :disabled="isSubmitting || !enrollmentForm.planId || !enrollmentForm.startDate">
-                {{ isSubmitting ? 'Saving...' : 'Save Plan' }}
+              <!-- Validation Alert -->
+              <div v-if="!isFormValid" class="alert alert-warning mt-3">
+                <small>
+                  <strong>Please select at least one:</strong> Plan or Addon with valid start date.
+                </small>
+              </div>
+
+              <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting || !isFormValid">
+                {{ isSubmitting ? 'Saving...' : 'Save' }}
               </button>
             </form>
           </div>
@@ -203,7 +205,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import * as bootstrap from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
@@ -258,7 +260,6 @@ const enrollmentForm = ref({
   method: 'CASH' as 'CASH' | 'CARD' | 'UPI' | 'ONLINE'
 })
 
-// Addon fields
 const selectedAddonId = ref<number | null>(null)
 const addonTrainerId = ref<number | null>(null)
 const addonStartDate = ref('')
@@ -266,7 +267,7 @@ const addonEndDate = ref('')
 
 const toastMessage = ref('')
 
-// Toast helpers
+// Toast
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
@@ -284,7 +285,6 @@ const selectedAddon = computed(() => addons.value.find(a => a.id === selectedAdd
 const formattedEndDate = computed(() =>
   enrollmentForm.value.endDate ? new Date(enrollmentForm.value.endDate).toLocaleDateString('en-IN') : ''
 )
-
 const formattedAddonEndDate = computed(() =>
   addonEndDate.value ? new Date(addonEndDate.value).toLocaleDateString('en-IN') : ''
 )
@@ -295,6 +295,14 @@ const pendingAmount = computed(() => {
   const paid = enrollmentForm.value.paid || 0
   const discount = enrollmentForm.value.discount || 0
   return Math.max(total - paid - discount, 0)
+})
+
+const minAddonStartDate = computed(() => enrollmentForm.value.startDate || new Date().toISOString().split('T')[0])
+
+const isFormValid = computed(() => {
+  const hasPlan = enrollmentForm.value.planId > 0 && enrollmentForm.value.startDate && enrollmentForm.value.endDate
+  const hasAddon = selectedAddonId.value && addonStartDate.value && addonEndDate.value
+  return hasPlan || hasAddon
 })
 
 // Members
@@ -328,7 +336,7 @@ const getLastActiveEndDate = (list: Membership[]) => {
   return active.sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0].endDate
 }
 
-// Update plan end date
+// Date Calculations
 const updatePlanDates = () => {
   const plan = selectedPlan.value
   if (!plan || !enrollmentForm.value.startDate) {
@@ -340,14 +348,12 @@ const updatePlanDates = () => {
   end.setDate(start.getDate() + plan.durationDays - 1)
   enrollmentForm.value.endDate = end.toISOString().split('T')[0]
 
-  // Auto-sync addon start date if not manually changed
   if (selectedAddon.value && !addonStartDate.value) {
     addonStartDate.value = enrollmentForm.value.startDate
     updateAddonEndDate()
   }
 }
 
-// Update addon end date
 const updateAddonEndDate = () => {
   const addon = selectedAddon.value
   if (!addon || !addonStartDate.value) {
@@ -360,11 +366,9 @@ const updateAddonEndDate = () => {
   addonEndDate.value = end.toISOString().split('T')[0]
 }
 
-// On addon select
 const onAddonSelect = () => {
   const addon = selectedAddon.value
   if (addon) {
-    // Set start date = plan start date (or today if no plan)
     addonStartDate.value = enrollmentForm.value.startDate || new Date().toISOString().split('T')[0]
     updateAddonEndDate()
   } else {
@@ -374,7 +378,6 @@ const onAddonSelect = () => {
   }
 }
 
-// Reset addon fields
 const resetAddonFields = () => {
   selectedAddonId.value = null
   addonTrainerId.value = null
@@ -382,7 +385,7 @@ const resetAddonFields = () => {
   addonEndDate.value = ''
 }
 
-// Open Modal
+// Modal
 const openAssignModal = (member: Member) => {
   selectedMember.value = member
 
@@ -413,7 +416,6 @@ const openAssignModal = (member: Member) => {
   assignModal.show()
 }
 
-// Close Modal
 const closeAssignModal = () => {
   assignModal.hide()
   selectedMember.value = null
@@ -429,7 +431,7 @@ const closeAssignModal = () => {
   resetAddonFields()
 }
 
-// API Calls
+// API
 const loadMembers = async () => {
   try {
     const res: AxiosResponse<{ data: Member[] }> = await api.get('/members')
@@ -460,54 +462,57 @@ const loadAddons = async () => {
   }
 }
 
-// Assign Plan + Addon
 const assignPlan = async () => {
-  const { planId, startDate, endDate } = enrollmentForm.value;
-  if (!planId || !startDate || !endDate) {
-    showToast('Please select a plan and valid start date.', false);
-    return;
+  if (!isFormValid.value) {
+    showToast('Please select at least a plan or addon with valid dates.', false)
+    return
   }
 
-  isSubmitting.value = true;
-  try {
-    // 1. Save membership (unchanged)
-    await api.post('/memberships', enrollmentForm.value);
+  isSubmitting.value = true
+  let successCount = 0
+  let errors: string[] = []
 
-    // 2. Save addon **if selected**
+  try {
+    if (enrollmentForm.value.planId > 0) {
+      try {
+        await api.post('/memberships', enrollmentForm.value)
+        successCount++
+      } catch (err: any) {
+        errors.push(`Plan: ${err?.response?.data?.message || 'Failed'}`)
+      }
+    }
+
     if (selectedAddonId.value && addonStartDate.value && addonEndDate.value) {
-      const addonPayload = {
+      const payload = {
         memberId: enrollmentForm.value.memberId,
         addonId: selectedAddonId.value,
         trainerId: addonTrainerId.value ?? undefined,
         startDate: addonStartDate.value,
         endDate: addonEndDate.value,
-        paid: 0,               // you can make this editable later
-        discount: 0,               // you can make this editable later
-        // method: 'CASH' as const   // <-- uncomment if you want a default
-      };
-
-      try {
-        await api.post('/member-addons', addonPayload);
-        showToast('Membership **and** addon assigned successfully!');
-      } catch (err: any) {
-        const msg = err?.response?.data?.message || 'Addon assignment failed.';
-        showToast(`Membership assigned, but addon failed: ${msg}`, false);
+        paid: 0,
+        discount: 0,
       }
-    } else if (selectedAddonId.value) {
-      showToast('Addon selected but start date is missing.', false);
-    } else {
-      showToast('Membership assigned successfully!');
+      try {
+        await api.post('/member-addons', payload)
+        successCount++
+      } catch (err: any) {
+        errors.push(`Addon: ${err?.response?.data?.message || 'Failed'}`)
+      }
     }
 
-    await loadMembers();
-    closeAssignModal();
+    const msg = successCount === 2
+      ? 'Plan and addon assigned!'
+      : successCount === 1
+        ? (enrollmentForm.value.planId > 0 ? 'Plan' : 'Addon') + ' assigned!'
+        : ''
+    showToast(msg || 'Saved.', true)
+
+    if (errors.length) showToast(errors.join(' | '), false)
+
+    await loadMembers()
+    closeAssignModal()
   } catch (e: any) {
-    console.error('Assign plan error →', e)
-    let message = e?.response?.data?.message || e?.message || 'Failed to assign plan.'
-    if (message.toLowerCase().includes('overlap')) {
-      message = 'Membership dates overlap with an existing plan.'
-    }
-    showToast(message, false)
+    showToast(e?.response?.data?.message || 'Error.', false)
   } finally {
     isSubmitting.value = false
   }
@@ -532,5 +537,9 @@ onMounted(async () => {
 
 .badge {
   font-size: 0.75rem;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
 }
 </style>
