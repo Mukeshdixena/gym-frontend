@@ -34,8 +34,9 @@
         <label class="form-label"><strong>Method</strong></label>
         <select v-model="method" @change="resetPageAndLoad" class="form-select form-select-sm">
           <option value="">All</option>
-          <option value="cash">Cash</option>
-          <option value="online">Online</option>
+          <option value="CASH">Cash</option>
+          <option value="UPI">UPI</option>
+          <!-- Add more if needed -->
         </select>
       </div>
     </div>
@@ -58,26 +59,21 @@
               <th>Amount (₹)</th>
               <th>Method</th>
               <th>Date</th>
-              <th>Status</th>
+              <th>Type</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(p, i) in payments" :key="p.id">
               <td>{{ (pagination.page - 1) * pagination.limit + i + 1 }}</td>
-              <td>{{ p.memberName }}</td>
-              <td>₹{{ p.amount }}</td>
-              <td class="text-capitalize">{{ p.method }}</td>
-              <td>{{ formatDate(p.createdAt) }}</td>
+              <td>{{ p.member.name }}</td>
+              <td :class="{ 'text-danger': p.amount < 0, 'text-success': p.amount > 0 }">
+                ₹{{ Math.abs(p.amount) }} <small v-if="p.amount < 0">(Refund)</small>
+              </td>
+              <td class="text-capitalize">{{ p.method.toLowerCase() }}</td>
+              <td>{{ formatDate(p.paymentDate) }}</td>
               <td>
-                <span :class="[
-                  'badge',
-                  p.status === 'paid'
-                    ? 'bg-success'
-                    : p.status === 'pending'
-                      ? 'bg-warning text-dark'
-                      : 'bg-danger',
-                ]">
-                  {{ p.status }}
+                <span class="badge" :class="p.amount > 0 ? 'bg-success' : 'bg-danger'">
+                  {{ p.amount > 0 ? 'Received' : 'Refunded' }}
                 </span>
               </td>
             </tr>
@@ -125,13 +121,21 @@ import { Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
+// Match the actual API structure
+interface Member {
+  id: number
+  name: string
+  email: string
+}
+
 interface Payment {
   id: number
-  memberName: string
   amount: number
+  paymentDate: string
   method: string
-  createdAt: string
-  status: string
+  member: Member
+  plan: string
+  membershipId: number
 }
 
 interface Pagination {
@@ -156,14 +160,13 @@ const method = ref('')
 const isLoading = ref(true)
 
 const toastRef = ref<HTMLElement | null>(null)
-let toastInstance: Toast
+let toastInstance: Toast | null = null
 const toastMessage = ref('')
 
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'
-      } border-0`
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
     toastInstance?.show()
   }
   setTimeout(() => {
@@ -175,7 +178,7 @@ const hideToast = () => toastInstance?.hide()
 
 const visiblePages = computed(() => {
   const delta = 2
-  const range = []
+  const range: (number | string)[] = []
   for (
     let i = Math.max(2, pagination.value.page - delta);
     i <= Math.min(pagination.value.totalPages - 1, pagination.value.page + delta);
@@ -194,6 +197,8 @@ const formatDate = (dateStr: string) =>
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   })
 
 const loadPayments = async (page = 1) => {
@@ -230,8 +235,7 @@ const loadPayments = async (page = 1) => {
 }
 
 const goToPage = (page: number) => {
-  if (page < 1 || page > pagination.value.totalPages || page === pagination.value.page)
-    return
+  if (page < 1 || page > pagination.value.totalPages || page === pagination.value.page) return
   pagination.value.page = page
   loadPayments(page)
 }
@@ -241,84 +245,29 @@ const resetPageAndLoad = () => {
   loadPayments(1)
 }
 
-onMounted(async () => {
-  if (toastRef.value) toastInstance = new Toast(toastRef.value)
-  await loadPayments()
+onMounted(() => {
+  if (toastRef.value) {
+    toastInstance = new Toast(toastRef.value)
+  }
+  loadPayments()
 })
 </script>
+
 <style scoped>
 .table td,
 .table th {
   vertical-align: middle;
 }
 
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-menu-custom {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
-  z-index: 2000;
-  min-width: 160px;
-}
-
-.dropdown-item-custom {
-  display: block;
-  padding: 8px 12px;
-  color: #333;
-  text-decoration: none;
-  font-size: .9rem;
-}
-
-.dropdown-item-custom:hover {
-  background: #f8f9fa;
-}
-
-.dropdown-item-custom.text-danger {
+.text-danger {
   color: #dc3545 !important;
 }
 
-.btn-sm.border-0 {
-  font-size: 1.3rem;
-  line-height: 1;
-  padding: 0 .4rem;
+.text-success {
+  color: #198754 !important;
 }
 
-.modal-body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.toast {
-  min-width: 280px;
-}
-
-.modal-sm .modal-content {
-  border-radius: .5rem;
-}
-
-input[readonly],
-.form-control-plaintext {
-  background-color: #f8f9fa !important;
-}
-
-.form-switch .form-check-input {
-  cursor: pointer;
-}
-
-.card-body {
-  overflow: visible !important;
-}
-
-.pagination .page-item.active .page-link {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
+.badge {
+  font-size: 0.75rem;
 }
 </style>
