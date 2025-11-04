@@ -17,7 +17,7 @@
     <div class="row g-3 mb-3">
       <div class="col-md-5">
         <input type="text" class="form-control form-control-sm" placeholder="Search by name or email"
-          v-model="searchTerm" />
+          v-model.trim="filters.search" @input="resetPageAndLoad" />
       </div>
       <div class="col-md-7 text-end">
         <button class="btn btn-primary btn-sm" @click="openAddModal">
@@ -52,11 +52,11 @@
             </tr>
           </thead>
           <tbody>
-            <template v-for="(member, i) in filteredMembers" :key="member.id">
+            <template v-for="(member, i) in members" :key="member.id">
               <!-- Main Row -->
               <tr @click="toggleExpand(member.id)" style="cursor: pointer"
                 :class="{ 'table-active': expandedMemberId === member.id }">
-                <td>{{ i + 1 }}</td>
+                <td>{{ (meta.page - 1) * meta.limit + i + 1 }}</td>
                 <td>{{ member.firstName }} {{ member.lastName }}</td>
                 <td>{{ member.email }}</td>
                 <td>{{ member.phone }}</td>
@@ -133,11 +133,32 @@
                 </td>
               </tr>
             </template>
-            <tr v-if="filteredMembers.length === 0">
+            <tr v-if="members.length === 0">
               <td colspan="8" class="text-center text-muted py-4">No members found</td>
             </tr>
           </tbody>
         </table>
+
+        <!-- Pagination (Minimal, inside card-body) -->
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div class="text-muted small">
+            Showing {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }}
+            of {{ meta.total }} members
+          </div>
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item" :class="{ disabled: meta.page <= 1 }">
+                <a class="page-link" @click="goToPage(meta.page - 1)" href="javascript:void(0)">Prev</a>
+              </li>
+              <li class="page-item" v-for="p in visiblePages" :key="p" :class="{ active: p === meta.page }">
+                <a class="page-link" @click="goToPage(p)" href="javascript:void(0)">{{ p }}</a>
+              </li>
+              <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
+                <a class="page-link" @click="goToPage(meta.page + 1)" href="javascript:void(0)">Next</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
       </div>
     </div>
 
@@ -340,12 +361,21 @@ interface Plan {
   name: string
 }
 
+interface PaginationMeta {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
 // ──────────────────────────────────────────────────────────────
 // State
 // ──────────────────────────────────────────────────────────────
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
-const searchTerm = ref('')
+const filters = ref({ search: '' })
+const pagination = ref({ page: 1, limit: 10 })
+const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 })
 const isLoading = ref(true)
 
 const toastRef = ref<HTMLElement | null>(null)
@@ -377,15 +407,6 @@ const toastMessage = ref('')
 // ──────────────────────────────────────────────────────────────
 // Computed
 // ──────────────────────────────────────────────────────────────
-const filteredMembers = computed(() => {
-  const term = searchTerm.value.toLowerCase().trim()
-  if (!term) return members.value
-  return members.value.filter(m =>
-    `${m.firstName} ${m.lastName}`.toLowerCase().includes(term) ||
-    m.email.toLowerCase().includes(term)
-  )
-})
-
 const isMemberFormValid = computed(() => {
   ;['firstName', 'lastName', 'email', 'phone', 'dateOfBirth'].forEach(validateMemberField)
   return (
@@ -406,6 +427,19 @@ const isMemberFormDirty = computed(() => {
     const original = (originalMemberForm.value[key] ?? '').toString().trim()
     return current !== original
   })
+})
+
+const visiblePages = computed(() => {
+  const delta = 2
+  const range: (number | string)[] = []
+  for (let i = Math.max(2, meta.value.page - delta); i <= Math.min(meta.value.totalPages - 1, meta.value.page + delta); i++) {
+    range.push(i)
+  }
+  if (meta.value.page - delta > 2) range.unshift('...')
+  if (meta.value.page + delta < meta.value.totalPages - 1) range.push('...')
+  range.unshift(1)
+  if (meta.value.totalPages > 1) range.push(meta.value.totalPages)
+  return range
 })
 
 const getPlanName = (id?: number) => plans.value.find(p => p.id === id)?.name ?? 'N/A'
@@ -467,24 +501,45 @@ const hideToast = () => toastInstance?.hide()
 // ──────────────────────────────────────────────────────────────
 // API
 // ──────────────────────────────────────────────────────────────
+const buildQuery = () => ({ ...filters.value, ...pagination.value })
+
 const loadMembers = async () => {
+  isLoading.value = true
   try {
-    const res: AxiosResponse<any> = await api.get('/members')
-    members.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
+    const res = await api.get('/members', { params: buildQuery() }) as AxiosResponse<{
+      data: Member[]
+      meta: PaginationMeta
+    }>
+    members.value = res.data.data
+    meta.value = res.data.meta
   } catch (err: any) {
     console.error(err)
     showToast('Failed to load members.', false)
+  } finally {
+    isLoading.value = false
   }
 }
 
 const loadPlans = async () => {
   try {
-    const res: AxiosResponse<any> = await api.get('/plans')
+    const res: AxiosResponse<any> = await api.get('/plans/list-all')
     plans.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch (err) {
     console.error(err)
   }
 }
+
+const resetPageAndLoad = () => {
+  pagination.value.page = 1
+  loadMembers()
+}
+
+const goToPage = (page: number | string) => {
+  if (typeof page !== 'number') return;
+  if (page < 1 || page > meta.value.totalPages || page === meta.value.page) return;
+  pagination.value.page = page;
+  loadMembers();
+};
 
 // ──────────────────────────────────────────────────────────────
 // Member Modals
@@ -643,6 +698,10 @@ const confirmDelete = async (member: Member) => {
     await api.delete(`/members/${member.id}`)
     members.value = members.value.filter(m => m.id !== member.id)
     showToast('Member deleted successfully!')
+    if (members.value.length === 0 && meta.value.page > 1) {
+      pagination.value.page--;
+      await loadMembers();   // ← add this line
+    }
   } catch (err: any) {
     showToast(err?.response?.data?.message || 'Failed to delete member.', false)
   }
@@ -746,7 +805,6 @@ onBeforeUnmount(() => {
 .card-body {
   overflow: visible !important;
 }
-
 
 .modal-sm .modal-content {
   border-radius: .5rem;
