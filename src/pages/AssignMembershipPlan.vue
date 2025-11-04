@@ -94,6 +94,7 @@
             </h5>
             <button type="button" class="btn-close" @click="closeAssignModal"></button>
           </div>
+
           <div class="modal-body">
             <form @submit.prevent="assignPlan">
               <div class="mb-3">
@@ -101,26 +102,33 @@
                 {{ selectedMember?.firstName }} {{ selectedMember?.lastName }} ({{ selectedMember?.email }})
               </div>
 
-              <!-- SYMMETRICAL PLAN & ADDON SELECTORS -->
-              <div class="row g-3 align-items-end">
-                <!-- Plan Selection -->
+              <div class="row g-3">
+                <!-- PLAN -->
                 <div class="col-md-6">
-                  <label class="form-label"><strong>Select Plan (Optional)</strong></label>
-                  <select v-model="enrollmentForm.planId" class="form-select" @change="updatePlanDates">
+                  <label class="form-label"><strong>Select Plan </strong></label>
+                  <select v-model="enrollmentForm.planId" class="form-select" @change="updatePlanDates"
+                    :disabled="plans.length === 0">
                     <option :value="0">-- Select Plan --</option>
                     <option v-for="plan in plans" :key="plan.id" :value="plan.id">
                       {{ plan.name }} - ₹{{ plan.price }} ({{ plan.durationDays }} days)
                     </option>
+                    <option v-if="plans.length === 0" value="" disabled style="color: #999; font-style: italic;">
+                      No plans available
+                    </option>
                   </select>
                 </div>
 
-                <!-- Addon Selection -->
+                <!-- ADDON -->
                 <div class="col-md-6">
-                  <label class="form-label"><strong>Select Addon (Optional)</strong></label>
-                  <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect">
-                    <option value="0">-- Select Addon --</option>
+                  <label class="form-label"><strong>Select Addon </strong></label>
+                  <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect"
+                    :disabled="addons.length === 0">
+                    <option :value="0">-- Select Addon --</option>
                     <option v-for="a in addons" :key="a.id" :value="a.id">
                       {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
+                    </option>
+                    <option v-if="addons.length === 0" value="" disabled style="color: #999; font-style: italic;">
+                      No addons available
                     </option>
                   </select>
                 </div>
@@ -141,6 +149,7 @@
                     <p class="mt-2"><strong>End Date:</strong> {{ formattedEndDate }}</p>
                   </div>
                 </div>
+
                 <div class="row mt-3 g-3">
                   <div class="col-md-4">
                     <label class="form-label"><strong>Price (₹)</strong></label>
@@ -193,9 +202,7 @@
 
               <!-- Validation Alert -->
               <div v-if="!isFormValid" class="alert alert-warning mt-3">
-                <small>
-                  <strong>Please select at least one:</strong> Plan or Addon with valid start date.
-                </small>
+                <small><strong>Please select at least one:</strong> Plan or Addon</small>
               </div>
 
               <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting || !isFormValid">
@@ -279,7 +286,7 @@ const enrollmentForm = ref({
   method: 'CASH' as 'CASH' | 'CARD' | 'UPI' | 'ONLINE'
 })
 
-const selectedAddonId = ref<number | null>(null)
+const selectedAddonId = ref<number>(0)
 const addonTrainerId = ref<number | null>(null)
 const addonStartDate = ref('')
 const addonEndDate = ref('')
@@ -398,7 +405,7 @@ const onAddonSelect = () => {
 }
 
 const resetAddonFields = () => {
-  selectedAddonId.value = null
+  selectedAddonId.value = 0
   addonTrainerId.value = null
   addonStartDate.value = ''
   addonEndDate.value = ''
