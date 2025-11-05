@@ -191,11 +191,26 @@
                 </div>
 
                 <div class="row mt-3 g-3">
-                  <div class="col-md-4">
+                  <div class="col-md-3">
                     <label class="form-label"><strong>Price (₹)</strong></label>
                     <input type="number" class="form-control" :value="selectedAddon.price" readonly />
                   </div>
-                  <div class="col-md-4">
+
+                  <div class="col-md-3">
+                    <label class="form-label">Discount (₹)</label>
+                    <input type="number" v-model.number="addonDiscount" class="form-control" min="0"
+                      :max="selectedAddon?.price || 0" @input="clampAddonDiscount" placeholder="0" />
+                    <small v-if="addonDiscountExceedsPrice" class="text-danger">
+                      Discount cannot exceed program price (₹{{ selectedAddon?.price }})
+                    </small>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label class="form-label">Pending (₹)</label>
+                    <input type="number" class="form-control" :value="addonPendingAmount" readonly />
+                  </div>
+
+                  <div class="col-md-3">
                     <label class="form-label">Trainer</label>
                     <select v-model="addonTrainerId" class="form-select">
                       <option :value="null">-- Select Trainer (Optional) --</option>
@@ -205,6 +220,7 @@
                     </select>
                   </div>
                 </div>
+
               </div>
 
               <!-- Validation Alert -->
@@ -311,6 +327,32 @@ const showToast = (msg: string, success = true) => {
   }
 }
 const hideToast = () => toastInstance.hide()
+const addonDiscount = ref<number>(0)
+
+const addonDiscountExceedsPrice = computed(() => {
+  return selectedAddon.value && addonDiscount.value > selectedAddon.value.price
+})
+
+const clampAddonDiscount = () => {
+  if (!selectedAddon.value) {
+    addonDiscount.value = 0
+    return
+  }
+  if (addonDiscount.value > selectedAddon.value.price) {
+    addonDiscount.value = selectedAddon.value.price
+  }
+  if (addonDiscount.value < 0) {
+    addonDiscount.value = 0
+  }
+}
+
+const addonPendingAmount = computed(() => {
+  if (!selectedAddon.value) return 0
+  const total = selectedAddon.value.price
+  const discount = addonDiscount.value || 0
+  const paid = 0 // update this if you add paid field for addons later
+  return Math.max(total - paid - discount, 0)
+})
 
 // Computed
 const selectedPlan = computed(() => plans.value.find(p => p.id === enrollmentForm.value.planId))
@@ -548,12 +590,13 @@ const assignPlan = async () => {
       const payload = {
         memberId: enrollmentForm.value.memberId,
         addonId: selectedAddonId.value,
-        trainerId: addonTrainerId.value ?? undefined, // sends null if not selected
+        trainerId: addonTrainerId.value ?? undefined,
         startDate: addonStartDate.value,
         endDate: addonEndDate.value,
         paid: 0,
-        discount: 0,
+        discount: addonDiscount.value,
       }
+
       try {
         await api.post('/member-addons', payload)
         successCount++
