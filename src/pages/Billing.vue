@@ -353,8 +353,6 @@ const pendingAfterPayment = computed(() => {
   return Math.max(net - total, 0)
 })
 
-// const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
-// const formatDateTime = (d: string) => new Date(d).toLocaleString('en-IN')
 const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString('en-IN') : '-'
 const formatDateTime = (d?: string) => d ? new Date(d).toLocaleString('en-IN') : '-'
 
