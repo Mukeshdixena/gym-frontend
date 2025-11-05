@@ -1,6 +1,6 @@
 <template>
     <div class="container mt-4">
-        <h3 class="mb-4">Addons Management</h3>
+        <h3 class="mb-4">Special Programs</h3>
 
         <!-- Toast -->
         <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">

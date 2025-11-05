@@ -193,7 +193,7 @@
                       <option :value="null">-- Select Trainer (Optional) --</option>
                       <option v-for="trainer in trainers" :key="trainer.id" :value="trainer.id">
                         {{ trainer.firstName }} {{ trainer.lastName }}
-                        <small class="text-muted">({{ trainer.speciality }})</small>
+                        ({{ trainer.speciality }})
                       </option>
                     </select>
                   </div>
