@@ -83,52 +83,103 @@
                 </td>
               </tr>
 
-              <!-- Expandable Membership Row -->
+              <!-- Expandable Membership & Addon Rows -->
               <tr v-if="expandedMemberId === member.id">
                 <td colspan="10" class="p-0 bg-light">
-                  <div v-if="member.memberships.length" class="p-3">
-                    <table class="table table-sm table-bordered mb-0">
-                      <thead class="table-light">
-                        <tr>
-                          <th>Plan</th>
-                          <th>Status</th>
-                          <th>Start</th>
-                          <th>End</th>
-                          <th>Paid</th>
-                          <th>Pending</th>
-                          <th>Discount</th>
-                          <th class="text-center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr v-for="ms in member.memberships" :key="ms.id">
-                          <td>{{ getPlanName(ms.planId) }}</td>
-                          <td>
-                            <span class="badge" :class="getStatusClass(ms.status)">
-                              {{ ms.status }}
-                            </span>
-                          </td>
-                          <td>{{ formatDate(ms.startDate) }}</td>
-                          <td>{{ formatDate(ms.endDate) }}</td>
-                          <td>₹{{ ms.paid }}</td>
-                          <td>₹{{ ms.pending }}</td>
-                          <td>₹{{ ms.discount ?? 0 }}</td>
-                          <td class="text-center" @click.stop>
-                            <button class="btn btn-sm btn-outline-primary me-1" @click="openEditMembershipModal(ms)">
-                              Edit
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" @click="openRefundModal(ms)">
-                              Refund
-                            </button>
-                            <button class="btn btn-sm btn-outline-dark ms-1" @click="confirmDeleteMembership(ms)">
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div class="p-3">
+
+                    <!-- Memberships Section -->
+                    <h6 class="fw-bold mb-2 text-primary">Memberships</h6>
+                    <div v-if="member.memberships.length">
+                      <table class="table table-sm table-bordered mb-3">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Paid</th>
+                            <th>Pending</th>
+                            <th>Discount</th>
+                            <!-- <th class="text-center">Actions</th> -->
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="ms in member.memberships" :key="'m-' + ms.id">
+                            <td>{{ getPlanName(ms.planId) }}</td>
+                            <td>
+                              <span class="badge" :class="getStatusClass(ms.status)">
+                                {{ ms.status }}
+                              </span>
+                            </td>
+                            <td>{{ formatDate(ms.startDate) }}</td>
+                            <td>{{ formatDate(ms.endDate) }}</td>
+                            <td>₹{{ ms.paid }}</td>
+                            <td>₹{{ ms.pending }}</td>
+                            <td>₹{{ ms.discount ?? 0 }}</td>
+                            <!-- <td class="text-center" @click.stop> -->
+                              <!-- <button class="btn btn-sm btn-outline-primary me-1" @click="openEditMembershipModal(ms)">
+                                Edit
+                              </button> -->
+                              <!-- <button class="btn btn-sm btn-outline-danger" @click="openRefundModal(ms)">
+                                Refund
+                              </button> -->
+                              <!-- <button class="btn btn-sm btn-outline-dark ms-1" @click="confirmDeleteMembership(ms)">
+                                Delete
+                              </button> -->
+                            <!-- </td> -->
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div v-else class="text-muted mb-3">No memberships</div>
+
+                    <!-- Addons Section -->
+                    <h6 class="fw-bold mb-2 text-success">Addons</h6>
+                    <div v-if="member.memberAddons && member.memberAddons.length">
+                      <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Addon</th>
+                            <th>Status</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Paid</th>
+                            <th>Pending</th>
+                            <th>Discount</th>
+                            <th>Trainer</th>
+                            <!-- <th class="text-center">Actions</th> -->
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="ad in member.memberAddons" :key="'a-' + ad.id">
+                            <td>{{ ad.addon?.name ?? 'N/A' }}</td>
+                            <td>
+                              <span class="badge" :class="getStatusClass(ad.status)">
+                                {{ ad.status }}
+                              </span>
+                            </td>
+                            <td>{{ formatDate(ad.startDate) }}</td>
+                            <td>{{ formatDate(ad.endDate) }}</td>
+                            <td>₹{{ ad.paid }}</td>
+                            <td>₹{{ ad.pending }}</td>
+                            <td>₹{{ ad.discount ?? 0 }}</td>
+                            <td>{{ ad.trainerId ? ad.trainerId : 'N/A' }}</td>
+                            <!-- <td class="text-center" @click.stop> -->
+                              <!-- <button class="btn btn-sm btn-outline-primary me-1" @click="editAddon(ad)">
+                                Edit
+                              </button> -->
+                              <!-- <button class="btn btn-sm btn-outline-danger" @click="deleteAddon(ad)">
+                                Delete
+                              </button> -->
+                            <!-- </td> -->
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div v-else class="text-muted">No addons</div>
+
                   </div>
-                  <div v-else class="text-muted p-3">No memberships</div>
                 </td>
               </tr>
             </template>
@@ -356,6 +407,27 @@ interface Membership {
   pending: number
   discount?: number
 }
+
+interface Addon {
+  id: number
+  addonId: number
+  trainerId?: number | null
+  startDate: string
+  endDate: string
+  price: number
+  status: string
+  discount?: number
+  paid: number
+  pending: number
+  addon?: {
+    id: number
+    name: string
+    description?: string
+    price: number
+    durationDays: number
+  }
+}
+
 interface Member {
   id: number
   firstName: string
@@ -367,11 +439,14 @@ interface Member {
   referralSource?: string
   notes?: string
   memberships: Membership[]
+  memberAddons: Addon[]
 }
+
 interface Plan {
   id: number
   name: string
 }
+
 interface PaginationMeta {
   total: number
   page: number
@@ -567,6 +642,24 @@ const saveMembership = async () => {
     closeMembershipModal()
   } catch (err: any) {
     showToast(err?.response?.data?.message || 'Failed to update membership.', false)
+  }
+}
+
+// ─────────────── Addon Actions ───────────────
+const editAddon = (addon: Addon) => {
+  showToast(`Edit Addon #${addon.id} clicked`)
+  // You can later add modal edit logic here
+}
+
+const deleteAddon = async (addon: Addon) => {
+  if (await showConfirm()) {
+    try {
+      await api.delete(`/member-addons/${addon.id}`)
+      showToast('Addon deleted!')
+      await loadMembers()
+    } catch {
+      showToast('Failed to delete addon.', false)
+    }
   }
 }
 
