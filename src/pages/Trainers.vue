@@ -12,11 +12,11 @@
       </div>
     </div>
 
-    <!-- Search & Add -->
+    <!-- Search + Add -->
     <div class="row g-3 mb-3">
       <div class="col-md-5">
         <input v-model.trim="filters.search" @input="resetPageAndLoad" type="text" class="form-control form-control-sm"
-          placeholder="Search by name or email" />
+          placeholder="Search by name, email or speciality" />
       </div>
       <div class="col-md-7 text-end">
         <button class="btn btn-primary btn-sm" @click="openAddModal">Add Trainer</button>
@@ -29,7 +29,7 @@
       <p class="mt-2">Loading trainers...</p>
     </div>
 
-    <!-- Table + Pagination -->
+    <!-- Table -->
     <div v-else class="card shadow-sm">
       <div class="card-header bg-primary text-white fw-bold">All Trainers</div>
       <div class="card-body table-responsive">
@@ -41,23 +41,31 @@
               <th>Email</th>
               <th>Phone</th>
               <th>Speciality</th>
-              <th>Classes</th>
+              <th>Salary (₹)</th>
+              <th>Joining Date</th>
+              <th>Programs</th>
+              <th>Address</th>
+              <th>Notes</th>
               <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(trainer, i) in trainers" :key="trainer.id">
+            <tr v-for="trainer in trainers" :key="trainer.id">
               <td>{{ trainer.id }}</td>
               <td>{{ trainer.firstName }} {{ trainer.lastName }}</td>
               <td>{{ trainer.email }}</td>
               <td>{{ trainer.phone }}</td>
               <td>
-                <span class="badge bg-info text-dark" v-if="trainer.speciality">
-                  {{ trainer.speciality }}
-                </span>
-                <span class="text-muted" v-else>—</span>
+                <span v-if="trainer.speciality" class="badge bg-info text-dark">{{ trainer.speciality }}</span>
+                <span v-else class="text-muted">—</span>
               </td>
-              <td>{{ trainer.classes?.length ?? 0 }}</td>
+              <td>{{ trainer.salary ? trainer.salary.toLocaleString() : '—' }}</td>
+              <td>
+                {{ trainer.joiningDate ? new Date(trainer.joiningDate).toLocaleDateString() : '—' }}
+              </td>
+              <td><span class="badge bg-secondary">{{ trainer.memberAddonsCount ?? 0 }}</span></td>
+              <td>{{ trainer.address || '—' }}</td>
+              <td>{{ trainer.notes || '—' }}</td>
               <td class="text-center" @click.stop>
                 <div class="dropdown" @click.stop="toggleDropdown(trainer.id)">
                   <button class="btn btn-light btn-sm border-0">...</button>
@@ -70,7 +78,7 @@
               </td>
             </tr>
             <tr v-if="trainers.length === 0">
-              <td colspan="7" class="text-center text-muted py-4">No trainers found</td>
+              <td colspan="11" class="text-center text-muted py-4">No trainers found</td>
             </tr>
           </tbody>
         </table>
@@ -79,15 +87,16 @@
       <!-- Pagination -->
       <div class="card-footer d-flex justify-content-between align-items-center">
         <div>
-          Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }}
-          of {{ meta.total }} trainers
+          Showing {{ (meta.page - 1) * meta.limit + 1 }} to
+          {{ Math.min(meta.page * meta.limit, meta.total) }} of {{ meta.total }} trainers
         </div>
         <nav>
           <ul class="pagination pagination-sm mb-0">
             <li class="page-item" :class="{ disabled: meta.page <= 1 }">
               <a class="page-link" @click="goToPage(meta.page - 1)" href="javascript:void(0)">Prev</a>
             </li>
-            <li v-for="p in visiblePages" :key="p" :class="[{ active: p === meta.page }, { disabled: p === '...' }]">
+            <li v-for="p in visiblePages" :key="p"
+              :class="{ active: typeof p === 'number' && p === meta.page, disabled: p === '...' }">
               <span v-if="p === '...'" class="page-link">...</span>
               <a v-else class="page-link" @click="goToPage(Number(p))" href="javascript:void(0)">{{ p }}</a>
             </li>
@@ -112,42 +121,56 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label"><strong>First Name</strong></label>
-                  <input v-model.trim="form.firstName" type="text" class="form-control"
-                    :class="{ 'is-invalid': errors.firstName }" @blur="validateField('firstName')" required />
-                  <div v-if="errors.firstName" class="invalid-feedback">{{ errors.firstName }}</div>
+                  <input v-model.trim="form.firstName" type="text" class="form-control" required />
                 </div>
                 <div class="col-md-6">
                   <label class="form-label"><strong>Last Name</strong></label>
-                  <input v-model.trim="form.lastName" type="text" class="form-control"
-                    :class="{ 'is-invalid': errors.lastName }" @blur="validateField('lastName')" required />
-                  <div v-if="errors.lastName" class="invalid-feedback">{{ errors.lastName }}</div>
+                  <input v-model.trim="form.lastName" type="text" class="form-control" required />
                 </div>
               </div>
 
               <div class="row g-3 mt-2">
                 <div class="col-md-6">
                   <label class="form-label"><strong>Email</strong></label>
-                  <input v-model.trim="form.email" type="email" class="form-control"
-                    :class="{ 'is-invalid': errors.email }" @blur="validateField('email')" required />
-                  <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
+                  <input v-model.trim="form.email" type="email" class="form-control" required />
                 </div>
                 <div class="col-md-6">
                   <label class="form-label"><strong>Phone</strong></label>
-                  <input v-model.trim="form.phone" type="text" class="form-control"
-                    :class="{ 'is-invalid': errors.phone }" @blur="validateField('phone')" required />
-                  <div v-if="errors.phone" class="invalid-feedback">{{ errors.phone }}</div>
+                  <input v-model.trim="form.phone" type="text" maxlength="10" class="form-control" required />
+                </div>
+              </div>
+
+              <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                  <label class="form-label">Speciality</label>
+                  <input v-model.trim="form.speciality" type="text" class="form-control"
+                    placeholder="e.g., Yoga, Zumba" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Salary (₹)</label>
+                  <input v-model.number="form.salary" type="number" class="form-control" placeholder="e.g., 35000" />
+                </div>
+              </div>
+
+              <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                  <label class="form-label">Joining Date</label>
+                  <input v-model="form.joiningDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Address</label>
+                  <input v-model.trim="form.address" type="text" class="form-control" placeholder="Full address" />
                 </div>
               </div>
 
               <div class="mt-3">
-                <label class="form-label">Speciality (Optional)</label>
-                <input v-model.trim="form.speciality" type="text" class="form-control"
-                  placeholder="e.g., Yoga, Zumba, Strength Training" />
+                <label class="form-label">Notes</label>
+                <textarea v-model.trim="form.notes" class="form-control" rows="2"
+                  placeholder="Trainer notes (optional)"></textarea>
               </div>
 
               <div class="d-grid gap-2 mt-4">
-                <button type="button" class="btn btn-primary" @click="saveTrainer"
-                  :disabled="!isFormValid || isSubmitting">
+                <button type="button" class="btn btn-primary" @click="saveTrainer" :disabled="isSubmitting">
                   <span v-if="isSubmitting" class="d-flex align-items-center justify-content-center">
                     <span class="spinner-border spinner-border-sm me-2"></span>
                     {{ editingTrainer ? 'Updating...' : 'Adding...' }}
@@ -193,15 +216,18 @@ import { Modal, Toast } from 'bootstrap';
 import api from '@/api/axios';
 import type { AxiosResponse } from 'axios';
 
-interface GymClass { id: number; name: string; startTime: string; endTime: string; }
 interface Trainer {
-  id: number;
+  id?: number;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  speciality?: string;
-  classes?: GymClass[];
+  address?: string | null;
+  salary?: number | null;
+  speciality?: string | null;
+  notes?: string | null;
+  joiningDate?: string | null;
+  memberAddonsCount?: number;
 }
 
 interface PaginationMeta {
@@ -211,76 +237,36 @@ interface PaginationMeta {
   totalPages: number;
 }
 
-// State
 const trainers = ref<Trainer[]>([]);
 const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 });
 const isLoading = ref(true);
 const isSubmitting = ref(false);
-
 const modalRef = ref<HTMLElement | null>(null);
 const toastRef = ref<HTMLElement | null>(null);
 let modal: Modal;
 let toastInstance: Toast;
+const toastMessage = ref('');
+const openDropdownId = ref<number | null>(null);
 
 const editingTrainer = ref<Trainer | null>(null);
 const trainerToDelete = ref<Trainer | null>(null);
-const openDropdownId = ref<number | null>(null);
+const isConfirmOpen = ref(false);
+let resolveConfirm: (v: boolean) => void = () => { };
 
-const form = ref<Partial<Trainer>>({ firstName: '', lastName: '', email: '', phone: '', speciality: '' });
-const errors = ref<Record<string, string>>({});
-const toastMessage = ref('');
-
-// Filters + Pagination
 const filters = ref({ search: '' });
 const pagination = ref({ page: 1, limit: 10 });
 
-// Computed
-const isFormValid = computed(() => {
-  ['firstName', 'lastName', 'email', 'phone'].forEach(validateField);
-  return (
-    !!form.value.firstName?.trim() &&
-    !!form.value.lastName?.trim() &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email || '') &&
-    /^[0-9]{10}$/.test(form.value.phone || '') &&
-    !Object.values(errors.value).some(e => e)
-  );
+const form = ref<Trainer>({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  address: '',
+  salary: null,
+  speciality: '',
+  notes: '',
+  joiningDate: '',
 });
-
-const visiblePages = computed(() => {
-  const delta = 2;
-  const range = [];
-  for (let i = Math.max(2, meta.value.page - delta); i <= Math.min(meta.value.totalPages - 1, meta.value.page + delta); i++) {
-    range.push(i);
-  }
-  if (meta.value.page - delta > 2) range.unshift('...');
-  if (meta.value.page + delta < meta.value.totalPages - 1) range.push('...');
-  range.unshift(1);
-  if (meta.value.totalPages > 1) range.push(meta.value.totalPages);
-  return range;
-});
-
-// Validation
-const validateField = (field: string) => {
-  const v = form.value[field as keyof Trainer];
-  switch (field) {
-    case 'firstName':
-      errors.value.firstName = v ? '' : 'First name is required.';
-      break;
-    case 'lastName':
-      errors.value.lastName = v ? '' : 'Last name is required.';
-      break;
-    case 'email':
-      if (!v) errors.value.email = 'Email is required.';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v))) errors.value.email = 'Enter a valid email.';
-      else errors.value.email = '';
-      break;
-    case 'phone':
-      if (!v) errors.value.phone = 'Phone number is required.';
-      else if (!/^[0-9]{10}$/.test(String(v))) errors.value.phone = 'Enter a valid 10-digit phone number.';
-      else errors.value.phone = '';
-      break;
-  }
-};
 
 // Toast
 const showToast = (msg: string, success = true) => {
@@ -289,102 +275,65 @@ const showToast = (msg: string, success = true) => {
     toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`;
     toastInstance?.show();
   }
-  setTimeout(() => { if (toastMessage.value === msg) hideToast(); }, 4000);
+  setTimeout(() => hideToast(), 4000);
 };
 const hideToast = () => toastInstance?.hide();
 
 // API
-const buildQuery = () => ({
-  ...filters.value,
-  ...pagination.value,
-});
+const buildQuery = () => ({ ...filters.value, ...pagination.value });
 
 const loadTrainers = async () => {
   isLoading.value = true;
   try {
-    const res = await api.get('/trainers', { params: buildQuery() }) as AxiosResponse<{
-      data: Trainer[];
-      meta: PaginationMeta;
-    }>;
+    const res = await api.get('/trainers', { params: buildQuery() }) as AxiosResponse<{ data: Trainer[]; meta: PaginationMeta; }>;
     trainers.value = res.data.data;
     meta.value = res.data.meta;
-  } catch (err: any) {
-    console.error(err);
+  } catch (err) {
     showToast('Failed to load trainers.', false);
   } finally {
     isLoading.value = false;
   }
 };
 
-const resetPageAndLoad = () => {
-  pagination.value.page = 1;
-  loadTrainers();
-};
-
-const goToPage = (page: number) => {
-  if (page < 1 || page > meta.value.totalPages || page === meta.value.page) return;
-  pagination.value.page = page;
-  loadTrainers();
-};
-
 // CRUD
 const openAddModal = () => {
   editingTrainer.value = null;
-  form.value = { firstName: '', lastName: '', email: '', phone: '', speciality: '' };
-  errors.value = {};
+  form.value = { firstName: '', lastName: '', email: '', phone: '', address: '', salary: null, speciality: '', notes: '', joiningDate: '' };
   modal?.show();
 };
 
 const editTrainer = (trainer: Trainer) => {
   editingTrainer.value = trainer;
   form.value = { ...trainer };
-  errors.value = {};
   modal?.show();
 };
 
 const closeModal = () => {
   modal?.hide();
   editingTrainer.value = null;
-  form.value = {};
-  errors.value = {};
 };
 
 const saveTrainer = async () => {
-  if (!isFormValid.value) return showToast('Please fill all required fields correctly.', false);
   isSubmitting.value = true;
-
-  const payload = {
-    firstName: form.value.firstName!.trim(),
-    lastName: form.value.lastName!.trim(),
-    email: form.value.email!.trim(),
-    phone: form.value.phone!.trim(),
-    speciality: form.value.speciality?.trim() || null,
-  };
-
   try {
+    const payload = { ...form.value };
     if (editingTrainer.value) {
       const res = await api.put(`/trainers/${editingTrainer.value.id}`, payload);
-      const idx = trainers.value.findIndex(t => t.id === editingTrainer.value!.id);
-      if (idx !== -1) trainers.value[idx] = res.data;
       showToast('Trainer updated successfully!');
     } else {
-      const res = await api.post('/trainers', payload);
-      trainers.value.unshift(res.data);
+      await api.post('/trainers', payload);
       showToast('Trainer added successfully!');
     }
     closeModal();
     await loadTrainers();
   } catch (err: any) {
-    showToast(err?.response?.data?.message || 'Save failed.', false);
+    showToast(err?.response?.data?.message || 'Failed to save trainer.', false);
   } finally {
     isSubmitting.value = false;
   }
 };
 
 // Delete
-const isConfirmOpen = ref(false);
-let resolveConfirm: (v: boolean) => void = () => { };
-
 const showConfirm = (): Promise<boolean> => {
   return new Promise(resolve => {
     isConfirmOpen.value = true;
@@ -399,19 +348,43 @@ const confirmDelete = async (trainer: Trainer) => {
   trainerToDelete.value = trainer;
   const ok = await showConfirm();
   if (!ok) return;
-
   try {
     await api.delete(`/trainers/${trainer.id}`);
     trainers.value = trainers.value.filter(t => t.id !== trainer.id);
     showToast('Trainer deleted successfully!');
-    if (trainers.value.length === 0 && meta.value.page > 1) goToPage(meta.value.page - 1);
-  } catch (err: any) {
-    showToast(err?.response?.data?.message || 'Failed to delete trainer.', false);
+    if (trainers.value.length === 0 && meta.value.page > 1) pagination.value.page--;
+    await loadTrainers();
+  } catch (err) {
+    showToast('Failed to delete trainer.', false);
   }
 };
 
+// Pagination
+const resetPageAndLoad = () => {
+  pagination.value.page = 1;
+  loadTrainers();
+};
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > meta.value.totalPages || page === meta.value.page) return;
+  pagination.value.page = page;
+  loadTrainers();
+};
+
+const visiblePages = computed(() => {
+  const delta = 2;
+  const range: (number | string)[] = [];
+  for (let i = Math.max(2, meta.value.page - delta); i <= Math.min(meta.value.totalPages - 1, meta.value.page + delta); i++) range.push(i);
+  if (meta.value.page - delta > 2) range.unshift('...');
+  if (meta.value.page + delta < meta.value.totalPages - 1) range.push('...');
+  range.unshift(1);
+  if (meta.value.totalPages > 1) range.push(meta.value.totalPages);
+  return range;
+});
+
 // Dropdown
-const toggleDropdown = (id: number) => {
+const toggleDropdown = (id: number | undefined) => {
+  if (id === undefined) return;
   openDropdownId.value = openDropdownId.value === id ? null : id;
 };
 const handleClickOutside = (e: MouseEvent) => {
@@ -425,17 +398,14 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
   await loadTrainers();
 });
-
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
 <style scoped>
-/* Same as before */
 .dropdown {
   position: relative;
-  display: inline-block;
 }
 
 .dropdown-menu-custom {
@@ -466,10 +436,9 @@ onBeforeUnmount(() => {
   color: #dc3545 !important;
 }
 
-.btn-sm.border-0 {
-  font-size: 1.3rem;
-  line-height: 1;
-  padding: 0 .4rem;
+.table th,
+.table td {
+  vertical-align: middle;
 }
 
 .modal-body {
