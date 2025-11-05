@@ -161,7 +161,11 @@
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Discount (₹)</label>
-                    <input type="number" v-model.number="enrollmentForm.discount" class="form-control" min="0" />
+                    <input type="number" v-model.number="enrollmentForm.discount" class="form-control" min="0"
+                      :max="selectedPlan?.price || 0" @input="clampDiscount" placeholder="0" />
+                    <small v-if="discountExceedsPrice" class="text-danger">
+                      Discount cannot exceed plan price (₹{{ selectedPlan?.price }})
+                    </small>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Pending (₹)</label>
@@ -342,7 +346,24 @@ const inactiveMembers = computed(() =>
     m.memberships.every(ms => ms.status === 'EXPIRED' || ms.status === 'CANCELLED')
   )
 )
+// Add this computed property
+const discountExceedsPrice = computed(() => {
+  return selectedPlan.value && enrollmentForm.value.discount > selectedPlan.value.price
+})
 
+// Add this method
+const clampDiscount = () => {
+  if (!selectedPlan.value) {
+    enrollmentForm.value.discount = 0
+    return
+  }
+  if (enrollmentForm.value.discount > selectedPlan.value.price) {
+    enrollmentForm.value.discount = selectedPlan.value.price
+  }
+  if (enrollmentForm.value.discount < 0) {
+    enrollmentForm.value.discount = 0
+  }
+}
 const activeMembers = computed(() =>
   members.value
     .map(m => ({
