@@ -55,7 +55,7 @@
         <table class="table table-hover align-middle">
           <thead>
             <tr>
-              <th>#</th>
+              <th>Id</th>
               <th>Name</th>
               <th>Description</th>
               <th>Price</th>
@@ -66,7 +66,7 @@
           </thead>
           <tbody>
             <tr v-for="(plan, i) in plans" :key="plan.id">
-              <td>{{ (meta.page - 1) * meta.limit + i + 1 }}</td>
+              <td>{{ plan.id }}</td>
               <td>{{ plan.name }}</td>
               <td>{{ plan.description }}</td>
               <td>₹{{ plan.price }}</td>

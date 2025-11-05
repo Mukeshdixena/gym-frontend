@@ -41,7 +41,7 @@
         <table class="table table-hover align-middle">
           <thead>
             <tr>
-              <th>#</th>
+              <th>Id</th>
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
@@ -57,7 +57,7 @@
             <template v-for="(member, i) in members" :key="member.id">
               <tr @click="toggleExpand(member.id)" style="cursor: pointer"
                 :class="{ 'table-active': expandedMemberId === member.id }">
-                <td>{{ (meta.page - 1) * meta.limit + i + 1 }}</td>
+                <td>{{ member.id }}</td>
                 <td>{{ member.firstName }} {{ member.lastName }}</td>
                 <td>{{ member.email }}</td>
                 <td>{{ member.phone }}</td>

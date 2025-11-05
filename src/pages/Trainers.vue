@@ -36,7 +36,7 @@
         <table class="table table-hover align-middle">
           <thead>
             <tr>
-              <th>#</th>
+              <th>Id</th>
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
@@ -47,7 +47,7 @@
           </thead>
           <tbody>
             <tr v-for="(trainer, i) in trainers" :key="trainer.id">
-              <td>{{ (meta.page - 1) * meta.limit + i + 1 }}</td>
+              <td>{{ trainer.id }}</td>
               <td>{{ trainer.firstName }} {{ trainer.lastName }}</td>
               <td>{{ trainer.email }}</td>
               <td>{{ trainer.phone }}</td>

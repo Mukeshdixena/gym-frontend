@@ -59,7 +59,7 @@
         <table class="table table-hover align-middle">
           <thead>
             <tr>
-              <th>#</th>
+              <th>Id</th>
               <th>Member</th>
               <th>Amount</th>
               <th>Method</th>
@@ -71,7 +71,7 @@
           </thead>
           <tbody>
             <tr v-for="(p, i) in payments" :key="p.id">
-              <td>{{ (meta.page - 1) * meta.limit + i + 1 }}</td>
+              <td>{{ p.id }}</td>
               <td>
                 <div v-if="p.member">
                   <strong>{{ p.member.name }}</strong>

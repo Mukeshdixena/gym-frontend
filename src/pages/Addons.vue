@@ -55,7 +55,7 @@
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>Id</th>
                             <th>Name</th>
                             <th>Description</th>
                             <th>Price</th>
@@ -66,7 +66,7 @@
                     </thead>
                     <tbody>
                         <tr v-for="(addon, i) in addons" :key="addon.id">
-                            <td>{{ (meta.page - 1) * meta.limit + i + 1 }}</td>
+                            <td>{{ addon.id }}</td>
                             <td>{{ addon.name }}</td>
                             <td>{{ addon.description }}</td>
                             <td>₹{{ addon.price }}</td>
