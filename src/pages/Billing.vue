@@ -227,16 +227,17 @@
               </div>
               <div v-else class="mt-3 text-muted">No payments made yet.</div>
 
-              <div class="d-grid gap-2 mt-4">
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-secondary" @click="closeCollectModal" :disabled="isSubmitting">
+                  Cancel
+                </button>
+
                 <button type="button" class="btn btn-primary" @click="updatePayment"
                   :disabled="isSubmitting || newPaidNow <= 0">
                   {{ isSubmitting ? 'Updating...' : 'Update Payment' }}
                 </button>
-                <button v-if="!isPartialPayment" type="button" class="btn btn-success" @click="approvePayment"
-                  :disabled="isSubmitting || pendingAfterPayment > 0">
-                  {{ isSubmitting ? 'Approving...' : 'Approve Full Payment' }}
-                </button>
               </div>
+
             </form>
           </div>
         </div>
