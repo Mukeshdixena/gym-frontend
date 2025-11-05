@@ -282,7 +282,7 @@
     </div>
 
     <!-- Confirm Modal -->
-    <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" v-if="isConfirmOpen"
+    <div class="modal fade" :class="{ show: isConfirmOpen, 'd-block': isConfirmOpen }" tabindex="-1" role="dialog"
       @click.self="resolveConfirm(false)">
       <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
