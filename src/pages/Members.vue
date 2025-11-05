@@ -16,7 +16,7 @@
     <!-- Search & Add -->
     <div class="row g-3 mb-3">
       <div class="col-md-5">
-        <input type="text" class="form-control form-control-sm" placeholder="Search by name or email"
+        <input type="text" class="form-control form-control-sm" placeholder="Search by name, email or phone"
           v-model.trim="filters.search" @input="resetPageAndLoad" />
       </div>
       <div class="col-md-7 text-end">
@@ -45,7 +45,9 @@
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>DOB</th>
+              <th>Gender</th>
+              <th>Referral</th>
+              <th>Notes</th>
               <th>Status</th>
               <th>Plan</th>
               <th class="text-center">Actions</th>
@@ -53,24 +55,21 @@
           </thead>
           <tbody>
             <template v-for="(member, i) in members" :key="member.id">
-              <!-- Main Row -->
               <tr @click="toggleExpand(member.id)" style="cursor: pointer"
                 :class="{ 'table-active': expandedMemberId === member.id }">
                 <td>{{ (meta.page - 1) * meta.limit + i + 1 }}</td>
                 <td>{{ member.firstName }} {{ member.lastName }}</td>
                 <td>{{ member.email }}</td>
                 <td>{{ member.phone }}</td>
-                <td>
-                  {{ member.dateOfBirth ? formatDate(member.dateOfBirth) : 'N/A' }}
-                </td>
+                <td>{{ member.gender || 'N/A' }}</td>
+                <td>{{ member.referralSource || 'N/A' }}</td>
+                <td>{{ member.notes || 'N/A' }}</td>
                 <td>
                   <span class="badge" :class="getStatusClass(member.memberships[0]?.status)">
                     {{ member.memberships[0]?.status ?? 'N/A' }}
                   </span>
                 </td>
-                <td>
-                  {{ getPlanName(member.memberships[0]?.planId) }}
-                </td>
+                <td>{{ getPlanName(member.memberships[0]?.planId) }}</td>
                 <td class="text-center" @click.stop>
                   <div class="dropdown" @click.stop="toggleDropdown(member.id)">
                     <button class="btn btn-light btn-sm border-0">...</button>
@@ -86,7 +85,7 @@
 
               <!-- Expandable Membership Row -->
               <tr v-if="expandedMemberId === member.id">
-                <td colspan="8" class="p-0 bg-light">
+                <td colspan="10" class="p-0 bg-light">
                   <div v-if="member.memberships.length" class="p-3">
                     <table class="table table-sm table-bordered mb-0">
                       <thead class="table-light">
@@ -133,13 +132,14 @@
                 </td>
               </tr>
             </template>
+
             <tr v-if="members.length === 0">
-              <td colspan="8" class="text-center text-muted py-4">No members found</td>
+              <td colspan="10" class="text-center text-muted py-4">No members found</td>
             </tr>
           </tbody>
         </table>
 
-        <!-- Pagination (Minimal, inside card-body) -->
+        <!-- Pagination -->
         <div class="d-flex justify-content-between align-items-center mt-3">
           <div class="text-muted small">
             Showing {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }}
@@ -170,7 +170,7 @@
             <h5 class="modal-title">
               {{ editingMember ? 'Edit Member' : 'Add Member' }}
             </h5>
-            <button type="button" class="btn-close" @click="closeMemberModal" aria-label="Close"></button>
+            <button type="button" class="btn-close" @click="closeMemberModal"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent>
@@ -210,12 +210,26 @@
                 <textarea v-model.trim="memberForm.address" class="form-control" rows="2"></textarea>
               </div>
 
-              <div class="mt-3">
-                <label class="form-label"><strong>Date of Birth</strong></label>
-                <input v-model="memberForm.dateOfBirth" type="date" class="form-control"
-                  :class="{ 'is-invalid': memberErrors.dateOfBirth }" @blur="validateMemberField('dateOfBirth')"
-                  required />
-                <div v-if="memberErrors.dateOfBirth" class="invalid-feedback">{{ memberErrors.dateOfBirth }}</div>
+              <div class="row g-3 mt-3">
+                <div class="col-md-4">
+                  <label class="form-label"><strong>Gender</strong></label>
+                  <select v-model="memberForm.gender" class="form-select">
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label"><strong>Referral Source</strong></label>
+                  <input v-model.trim="memberForm.referralSource" type="text" class="form-control"
+                    placeholder="E.g. Friend, Ad" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label"><strong>Notes</strong></label>
+                  <input v-model.trim="memberForm.notes" type="text" class="form-control"
+                    placeholder="Optional notes" />
+                </div>
               </div>
 
               <div class="d-grid gap-2 mt-4">
@@ -301,18 +315,18 @@
       </div>
     </div>
 
-    <!-- Confirm Delete Membership -->
+    <!-- Confirm Delete -->
     <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" style="display: block;" v-if="isConfirmOpen"
       @click.self="resolveConfirm(false)">
       <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-0 pb-2">
-            <h5 class="modal-title fs-6">Delete Membership?</h5>
+            <h5 class="modal-title fs-6">Confirm Delete</h5>
             <button type="button" class="btn-close" @click="resolveConfirm(false)"></button>
           </div>
           <div class="modal-body pt-2 pb-3">
-            Delete membership permanently?
-            <br><small class="text-muted">This cannot be undone.</small>
+            Are you sure you want to delete this item?
+            <br><small class="text-muted">This action cannot be undone.</small>
           </div>
           <div class="modal-footer border-0 pt-0">
             <button type="button" class="btn btn-secondary btn-sm" @click="resolveConfirm(false)">Cancel</button>
@@ -331,9 +345,7 @@ import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
-// ──────────────────────────────────────────────────────────────
-// Interfaces
-// ──────────────────────────────────────────────────────────────
+// ─────────────── Interfaces ───────────────
 interface Membership {
   id: number
   planId: number
@@ -344,7 +356,6 @@ interface Membership {
   pending: number
   discount?: number
 }
-
 interface Member {
   id: number
   firstName: string
@@ -352,15 +363,15 @@ interface Member {
   email: string
   phone: string
   address?: string
-  dateOfBirth?: string
+  gender?: string
+  referralSource?: string
+  notes?: string
   memberships: Membership[]
 }
-
 interface Plan {
   id: number
   name: string
 }
-
 interface PaginationMeta {
   total: number
   page: number
@@ -368,9 +379,7 @@ interface PaginationMeta {
   totalPages: number
 }
 
-// ──────────────────────────────────────────────────────────────
-// State
-// ──────────────────────────────────────────────────────────────
+// ─────────────── State ───────────────
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
 const filters = ref({ search: '' })
@@ -382,7 +391,6 @@ const toastRef = ref<HTMLElement | null>(null)
 const memberModalRef = ref<HTMLElement | null>(null)
 const membershipModalRef = ref<HTMLElement | null>(null)
 const refundModalRef = ref<HTMLElement | null>(null)
-
 let toastInstance: Toast
 let memberModal: Modal
 let membershipModal: Modal
@@ -391,73 +399,59 @@ let refundModal: Modal
 const editingMember = ref<Member | null>(null)
 const editingMembership = ref<Membership | null>(null)
 const refundMembership = ref<Membership | null>(null)
-
 const expandedMemberId = ref<number | null>(null)
 const openDropdownId = ref<number | null>(null)
-
 const memberForm = ref<Partial<Member>>({})
 const memberErrors = ref<Record<string, string>>({})
 const originalMemberForm = ref<Partial<Member>>({})
-
 const membershipForm = ref<Partial<Membership>>({})
 const refundForm = ref({ amount: 0, reason: '', method: 'CASH' })
-
 const toastMessage = ref('')
 
-// ──────────────────────────────────────────────────────────────
-// Computed
-// ──────────────────────────────────────────────────────────────
+// ─────────────── Computed ───────────────
 const isMemberFormValid = computed(() => {
-  ;['firstName', 'lastName', 'email', 'phone', 'dateOfBirth'].forEach(validateMemberField)
+  ;['firstName', 'lastName', 'email', 'phone'].forEach(validateMemberField)
   return (
     memberForm.value.firstName &&
     memberForm.value.lastName &&
     memberForm.value.email &&
     memberForm.value.phone &&
-    memberForm.value.dateOfBirth &&
     !Object.values(memberErrors.value).some(err => err)
   )
 })
-
 const isMemberFormDirty = computed(() => {
   if (!editingMember.value) return true
-  const keys: (keyof Member)[] = ['firstName', 'lastName', 'email', 'phone', 'address', 'dateOfBirth']
+  const keys: (keyof Member)[] = ['firstName', 'lastName', 'email', 'phone', 'address', 'gender', 'referralSource', 'notes']
   return keys.some(key => {
     const current = (memberForm.value[key] ?? '').toString().trim()
     const original = (originalMemberForm.value[key] ?? '').toString().trim()
     return current !== original
   })
 })
-
 const visiblePages = computed(() => {
   const delta = 2
   const range: (number | string)[] = []
-  for (let i = Math.max(2, meta.value.page - delta); i <= Math.min(meta.value.totalPages - 1, meta.value.page + delta); i++) {
+  for (let i = Math.max(2, meta.value.page - delta); i <= Math.min(meta.value.totalPages - 1, meta.value.page + delta); i++)
     range.push(i)
-  }
   if (meta.value.page - delta > 2) range.unshift('...')
   if (meta.value.page + delta < meta.value.totalPages - 1) range.push('...')
   range.unshift(1)
   if (meta.value.totalPages > 1) range.push(meta.value.totalPages)
   return range
 })
-
 const getPlanName = (id?: number) => plans.value.find(p => p.id === id)?.name ?? 'N/A'
 const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
-
 const getStatusClass = (status?: string) => {
   if (!status) return 'bg-secondary'
   return {
-    'ACTIVE': 'bg-success',
-    'PARTIAL_PAID': 'bg-warning text-dark',
-    'EXPIRED': 'bg-danger',
-    'CANCELLED': 'bg-dark'
+    ACTIVE: 'bg-success',
+    PARTIAL_PAID: 'bg-warning text-dark',
+    EXPIRED: 'bg-danger',
+    CANCELLED: 'bg-dark',
   }[status] || 'bg-secondary'
 }
 
-// ──────────────────────────────────────────────────────────────
-// Validation
-// ──────────────────────────────────────────────────────────────
+// ─────────────── Validation ───────────────
 const validateMemberField = (field: string) => {
   const value = memberForm.value[field as keyof Member]
   switch (field) {
@@ -479,15 +473,10 @@ const validateMemberField = (field: string) => {
         memberErrors.value.phone = 'Enter a valid 10-digit phone number.'
       else memberErrors.value.phone = ''
       break
-    case 'dateOfBirth':
-      memberErrors.value.dateOfBirth = value ? '' : 'Date of birth is required.'
-      break
   }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Toast
-// ──────────────────────────────────────────────────────────────
+// ─────────────── Toast ───────────────
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
@@ -498,110 +487,66 @@ const showToast = (msg: string, success = true) => {
 }
 const hideToast = () => toastInstance?.hide()
 
-// ──────────────────────────────────────────────────────────────
-// API
-// ──────────────────────────────────────────────────────────────
+// ─────────────── API ───────────────
 const buildQuery = () => ({ ...filters.value, ...pagination.value })
-
 const loadMembers = async () => {
   isLoading.value = true
   try {
-    const res = await api.get('/members', { params: buildQuery() }) as AxiosResponse<{
-      data: Member[]
-      meta: PaginationMeta
-    }>
+    const res = await api.get('/members', { params: buildQuery() }) as AxiosResponse<{ data: Member[], meta: PaginationMeta }>
     members.value = res.data.data
     meta.value = res.data.meta
   } catch (err: any) {
-    console.error(err)
     showToast('Failed to load members.', false)
   } finally {
     isLoading.value = false
   }
 }
-
 const loadPlans = async () => {
   try {
     const res: AxiosResponse<any> = await api.get('/plans/list-all')
     plans.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
-  } catch (err) {
-    console.error(err)
-  }
+  } catch { }
 }
-
-const resetPageAndLoad = () => {
-  pagination.value.page = 1
+const resetPageAndLoad = () => { pagination.value.page = 1; loadMembers() }
+const goToPage = (page: number | string) => {
+  if (typeof page !== 'number' || page < 1 || page > meta.value.totalPages || page === meta.value.page) return
+  pagination.value.page = page
   loadMembers()
 }
 
-const goToPage = (page: number | string) => {
-  if (typeof page !== 'number') return;
-  if (page < 1 || page > meta.value.totalPages || page === meta.value.page) return;
-  pagination.value.page = page;
-  loadMembers();
-};
-
-// ──────────────────────────────────────────────────────────────
-// Member Modals
-// ──────────────────────────────────────────────────────────────
+// ─────────────── Member Modals ───────────────
 const openAddModal = () => {
   editingMember.value = null
-  memberForm.value = { firstName: '', lastName: '', email: '', phone: '', address: '', dateOfBirth: '' }
-  originalMemberForm.value = {}
+  memberForm.value = { firstName: '', lastName: '', email: '', phone: '', address: '', gender: '', referralSource: '', notes: '' }
   memberErrors.value = {}
   memberModal?.show()
 }
-
-const editMember = (member: Member) => {
-  editingMember.value = member
-  memberForm.value = { ...member }
-  originalMemberForm.value = { ...member }
+const editMember = (m: Member) => {
+  editingMember.value = m
+  memberForm.value = { ...m }
+  originalMemberForm.value = { ...m }
   memberErrors.value = {}
   memberModal?.show()
 }
-
-const closeMemberModal = () => {
-  memberModal?.hide()
-  editingMember.value = null
-  memberForm.value = {}
-  originalMemberForm.value = {}
-  memberErrors.value = {}
-}
-
+const closeMemberModal = () => { memberModal?.hide(); editingMember.value = null }
 const saveMember = async () => {
-  if (!isMemberFormValid.value) {
-    showToast('Please fill all required fields correctly.', false)
-    return
-  }
-
-  const payload = {
-    firstName: memberForm.value.firstName!.trim(),
-    lastName: memberForm.value.lastName!.trim(),
-    email: memberForm.value.email!.trim(),
-    phone: memberForm.value.phone!.trim(),
-    address: memberForm.value.address?.trim(),
-    dateOfBirth: memberForm.value.dateOfBirth,
-  }
-
+  if (!isMemberFormValid.value) return showToast('Please fill required fields.', false)
   try {
+    const payload = { ...memberForm.value }
     if (editingMember.value) {
       await api.put(`/members/${editingMember.value.id}`, payload)
-      showToast('Member updated successfully!')
+      showToast('Member updated!')
     } else {
       await api.post('/members', payload)
-      showToast('Member added successfully!')
+      showToast('Member added!')
     }
-    await loadMembers()
-    closeMemberModal()
+    await loadMembers(); closeMemberModal()
   } catch (err: any) {
-    const msg = err?.response?.data?.message || 'Failed to save member.'
-    showToast(Array.isArray(msg) ? msg.join(', ') : msg, false)
+    showToast(err?.response?.data?.message || 'Failed to save.', false)
   }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Membership Edit Modal
-// ──────────────────────────────────────────────────────────────
+// ─────────────── Membership Actions ───────────────
 const openEditMembershipModal = (ms: Membership) => {
   editingMembership.value = ms
   membershipForm.value = {
@@ -612,18 +557,12 @@ const openEditMembershipModal = (ms: Membership) => {
   }
   membershipModal?.show()
 }
-
-const closeMembershipModal = () => {
-  membershipModal?.hide()
-  editingMembership.value = null
-}
-
+const closeMembershipModal = () => { membershipModal?.hide(); editingMembership.value = null }
 const saveMembership = async () => {
   if (!editingMembership.value) return
-
   try {
     await api.patch(`/memberships/${editingMembership.value.id}`, membershipForm.value)
-    showToast('Membership updated successfully!')
+    showToast('Membership updated!')
     await loadMembers()
     closeMembershipModal()
   } catch (err: any) {
@@ -631,117 +570,41 @@ const saveMembership = async () => {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Refund Modal
-// ──────────────────────────────────────────────────────────────
-const openRefundModal = (ms: Membership) => {
-  refundMembership.value = ms
-  refundForm.value = { amount: 0, reason: '', method: 'CASH' }
-  refundModal?.show()
-}
-
-const closeRefundModal = () => {
-  refundModal?.hide()
-  refundMembership.value = null
-}
-
+// ─────────────── Refund Actions ───────────────
+const openRefundModal = (ms: Membership) => { refundMembership.value = ms; refundModal?.show() }
+const closeRefundModal = () => { refundModal?.hide(); refundMembership.value = null }
 const processRefund = async () => {
-  if (!refundMembership.value || refundForm.value.amount <= 0) {
-    showToast('Enter valid refund amount.', false)
-    return
-  }
-
+  if (!refundMembership.value || refundForm.value.amount <= 0) return showToast('Enter valid amount.', false)
   try {
     await api.post(`/memberships/${refundMembership.value.id}/refund`, refundForm.value)
-    showToast('Refund processed successfully!')
-    await loadMembers()
-    closeRefundModal()
-  } catch (err: any) {
-    showToast(err?.response?.data?.message || 'Refund failed.', false)
-  }
+    showToast('Refund processed!')
+    closeRefundModal(); await loadMembers()
+  } catch (err: any) { showToast(err?.response?.data?.message || 'Refund failed.', false) }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Delete Membership
-// ──────────────────────────────────────────────────────────────
+// ─────────────── Delete Confirmation ───────────────
 const isConfirmOpen = ref(false)
 let resolveConfirm: (v: boolean) => void = () => { }
+const showConfirm = (): Promise<boolean> => new Promise(resolve => { isConfirmOpen.value = true; resolveConfirm = v => { isConfirmOpen.value = false; resolve(v) } })
+const confirmDeleteMembership = async (ms: Membership) => { if (await showConfirm()) try { await api.delete(`/memberships/${ms.id}`); showToast('Membership deleted!'); loadMembers() } catch { showToast('Failed.', false) } }
+const confirmDelete = async (m: Member) => { if (await showConfirm()) try { await api.delete(`/members/${m.id}`); showToast('Member deleted!'); loadMembers() } catch { showToast('Failed.', false) } }
 
-const showConfirm = (msg: string): Promise<boolean> => {
-  return new Promise<boolean>(resolve => {
-    isConfirmOpen.value = true
-    resolveConfirm = v => {
-      isConfirmOpen.value = false
-      resolve(v)
-    }
-  })
-}
+// ─────────────── UI Helpers ───────────────
+const toggleExpand = (id: number) => { expandedMemberId.value = expandedMemberId.value === id ? null : id }
+const toggleDropdown = (id: number) => { openDropdownId.value = openDropdownId.value === id ? null : id }
+const handleClickOutside = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null }
 
-const confirmDeleteMembership = async (ms: Membership) => {
-  const ok = await showConfirm('Delete this membership?')
-  if (!ok) return
-
-  try {
-    await api.delete(`/memberships/${ms.id}`)
-    showToast('Membership deleted!')
-    await loadMembers()
-  } catch (err: any) {
-    showToast(err?.response?.data?.message || 'Failed to delete.', false)
-  }
-}
-
-const confirmDelete = async (member: Member) => {
-  const ok = await showConfirm(`Delete ${member.firstName} ${member.lastName} permanently?`)
-  if (!ok) return
-
-  try {
-    await api.delete(`/members/${member.id}`)
-    members.value = members.value.filter(m => m.id !== member.id)
-    showToast('Member deleted successfully!')
-    if (members.value.length === 0 && meta.value.page > 1) {
-      pagination.value.page--;
-      await loadMembers();   // ← add this line
-    }
-  } catch (err: any) {
-    showToast(err?.response?.data?.message || 'Failed to delete member.', false)
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-// Expand / Collapse
-// ──────────────────────────────────────────────────────────────
-const toggleExpand = (id: number) => {
-  expandedMemberId.value = expandedMemberId.value === id ? null : id
-}
-
-// ──────────────────────────────────────────────────────────────
-// Dropdown
-// ──────────────────────────────────────────────────────────────
-const toggleDropdown = (id: number) => {
-  openDropdownId.value = openDropdownId.value === id ? null : id
-}
-const handleClickOutside = (e: MouseEvent) => {
-  if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null
-}
-
-// ──────────────────────────────────────────────────────────────
-// Lifecycle
-// ──────────────────────────────────────────────────────────────
+// ─────────────── Lifecycle ───────────────
 onMounted(async () => {
   if (toastRef.value) toastInstance = new Toast(toastRef.value)
   if (memberModalRef.value) memberModal = new Modal(memberModalRef.value)
   if (membershipModalRef.value) membershipModal = new Modal(membershipModalRef.value)
   if (refundModalRef.value) refundModal = new Modal(refundModalRef.value)
-
   document.addEventListener('click', handleClickOutside)
-
   await Promise.all([loadMembers(), loadPlans()])
   isLoading.value = false
 })
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <style scoped>
