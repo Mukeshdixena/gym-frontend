@@ -19,7 +19,7 @@
         <label class="btn btn-outline-primary" for="type-membership">Membership</label>
 
         <input type="radio" class="btn-check" id="type-addon" value="addon" v-model="billType">
-        <label class="btn btn-outline-primary" for="type-addon">Add-on</label>
+        <label class="btn btn-outline-primary" for="type-addon">Special Program</label>
       </div>
       <button class="btn btn-sm btn-outline-secondary ms-auto" @click="resetFilters">Clear Filters</button>
     </div>
@@ -32,9 +32,8 @@
       </div>
       <div class="col-md-3">
         <select class="form-select form-select-sm" v-model="filterPlan">
-          <option :value="null">All {{ billType === 'membership' ? 'Plans' : 'Add-ons' }}</option>
+          <option :value="null">All {{ billType === 'membership' ? 'Plans' : 'Special Programs' }}</option>
           <option v-for="p in uniquePlans" :key="p?.id" :value="p?.id">{{ p?.name || 'Unnamed' }}</option>
-
         </select>
       </div>
       <div class="col-md-3">
@@ -48,7 +47,7 @@
     <!-- Pending Bills -->
     <div class="card mb-4 shadow-sm">
       <div class="card-header bg-warning text-dark fw-bold">
-        Pending {{ billType === 'membership' ? 'Membership' : 'Add-on' }} Bills
+        Pending {{ billType === 'membership' ? 'Membership' : 'Special Program' }} Bills
       </div>
       <div class="card-body table-responsive">
         <table class="table table-hover align-middle">
@@ -56,7 +55,7 @@
             <tr>
               <th>#</th>
               <th>Member</th>
-              <th>{{ billType === 'membership' ? 'Plan' : 'Add-on' }}</th>
+              <th>{{ billType === 'membership' ? 'Plan' : 'Special Program' }}</th>
               <th>Price</th>
               <th>Paid</th>
               <th>Pending</th>
@@ -86,7 +85,7 @@
     <!-- Approved Bills -->
     <div class="card shadow-sm">
       <div class="card-header bg-success text-white fw-bold">
-        Approved {{ billType === 'membership' ? 'Memberships' : 'Add-ons' }}
+        Approved {{ billType === 'membership' ? 'Memberships' : 'Special Programs' }}
       </div>
       <div class="card-body table-responsive">
         <table class="table table-hover align-middle">
@@ -94,7 +93,7 @@
             <tr>
               <th>#</th>
               <th>Member</th>
-              <th>{{ billType === 'membership' ? 'Plan' : 'Add-on' }}</th>
+              <th>{{ billType === 'membership' ? 'Plan' : 'Special Program' }}</th>
               <th>Price</th>
               <th>Paid</th>
               <th>Pending</th>
@@ -141,12 +140,13 @@
       </div>
     </div>
 
-    <!-- Collect Payment Modal (same for both) -->
+    <!-- Collect Payment Modal -->
     <div class="modal fade" ref="collectModalRef" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Collect Payment – {{ billType === 'membership' ? 'Membership' : 'Add-on' }}</h5>
+            <h5 class="modal-title">Collect Payment – {{ billType === 'membership' ? 'Membership' : 'Special Program' }}
+            </h5>
             <button type="button" class="btn-close" @click="closeCollectModal"></button>
           </div>
           <div class="modal-body">
@@ -158,15 +158,15 @@
               </div>
 
               <div class="mt-4">
-                <h6>Membership Plan</h6>
+                <h6>{{ billType === 'membership' ? 'Membership Plan' : 'Special Program' }}</h6>
                 <div class="form-control-plaintext p-2 bg-light rounded">
-                  {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }} <span v-if="billType === 'membership'">({{
-                    selectedPlanDuration }} days)</span>
+                  {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }}
+                  <span v-if="billType === 'membership'">({{ selectedPlanDuration }} days)</span>
                 </div>
 
                 <div class="mt-3 row g-3">
                   <div class="col-md-4">
-                    <label class="form-label"><strong>Plan Price (₹)</strong></label>
+                    <label class="form-label"><strong>Price (₹)</strong></label>
                     <input type="number" class="form-control" :value="selectedPlan?.price" readonly />
                   </div>
                   <div class="col-md-4">

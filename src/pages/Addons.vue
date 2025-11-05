@@ -38,19 +38,19 @@
                     class="form-control form-control-sm" placeholder="Max ₹" />
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-primary btn-sm w-100" @click="openAddModal">New Addon</button>
+                <button class="btn btn-primary btn-sm w-100" @click="openAddModal">New Special Program</button>
             </div>
         </div>
 
         <!-- Loading -->
         <div v-if="isLoading" class="text-center my-5">
             <div class="spinner-border text-primary"></div>
-            <p class="mt-2">Loading addons...</p>
+            <p class="mt-2">Loading special programs...</p>
         </div>
 
         <!-- Table -->
         <div v-else class="card shadow-sm">
-            <div class="card-header bg-primary text-white fw-bold">All Addons</div>
+            <div class="card-header bg-primary text-white fw-bold">All Special Programs</div>
             <div class="card-body table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>
@@ -95,7 +95,7 @@
                             </td>
                         </tr>
                         <tr v-if="addons.length === 0">
-                            <td colspan="7" class="text-center text-muted py-4">No addons found</td>
+                            <td colspan="7" class="text-center text-muted py-4">No special programs found</td>
                         </tr>
                     </tbody>
                 </table>
@@ -105,7 +105,7 @@
             <div class="card-footer d-flex justify-content-between align-items-center">
                 <div>
                     Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }}
-                    of {{ meta.total }} addons
+                    of {{ meta.total }} special programs
                 </div>
                 <nav>
                     <ul class="pagination pagination-sm mb-0">
@@ -129,14 +129,14 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">{{ editingAddon ? 'Edit Addon' : 'Add Addon' }}</h5>
+                        <h5 class="modal-title">{{ editingAddon ? 'Edit Special Program' : 'Add Special Program' }}</h5>
                         <button type="button" class="btn-close" @click="closeModal"></button>
                     </div>
                     <div class="modal-body">
                         <form @submit.prevent>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label"><strong>Addon Name</strong></label>
+                                    <label class="form-label"><strong>Special Program Name</strong></label>
                                     <input v-model.trim="form.name" type="text" class="form-control"
                                         :class="{ 'is-invalid': errors.name }" @blur="validateField('name')" required />
                                     <div v-if="errors.name" class="invalid-feedback">{{ errors.name }}</div>
@@ -185,7 +185,7 @@
                             <div class="d-grid gap-2 mt-4">
                                 <button type="button" class="btn btn-primary" @click="saveAddon"
                                     :disabled="!isFormValid || isUnchanged">
-                                    {{ editingAddon ? 'Update Addon' : 'Add Addon' }}
+                                    {{ editingAddon ? 'Update Special Program' : 'Add Special Program' }}
                                 </button>
                             </div>
                         </form>
@@ -204,7 +204,7 @@
                         <button type="button" class="btn-close" @click="resolveConfirm(false)"></button>
                     </div>
                     <div class="modal-body pt-2 pb-3">
-                        Are you sure you want to delete this addon?<br>
+                        Are you sure you want to delete this special program?<br>
                         <small class="text-muted">This action cannot be undone.</small>
                     </div>
                     <div class="modal-footer border-0 pt-0">

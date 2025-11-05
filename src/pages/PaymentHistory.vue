@@ -123,11 +123,11 @@
               <!-- Type Badge -->
               <td>
                 <span class="badge" :class="p.type === 'membership' ? 'bg-primary' : 'bg-info'">
-                  {{ p.type === 'membership' ? 'Plan' : 'Addon' }}
+                  {{ p.type === 'membership' ? 'Plan' : 'Special Program' }}
                 </span>
               </td>
 
-              <!-- Plan or Addon Name -->
+              <!-- Plan or Special Program Name -->
               <td>
                 <span v-if="p.type === 'membership' && p.plan" class="text-primary fw-semibold">
                   {{ p.plan }}

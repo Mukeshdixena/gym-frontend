@@ -18,7 +18,7 @@
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <p class="mt-2">Loading members, plans, addons, and trainers...</p>
+      <p class="mt-2">Loading members, plans, special programs, and trainers...</p>
     </div>
 
     <div v-else>
@@ -41,7 +41,7 @@
               <td>{{ m.phone }}</td>
               <td>
                 <button class="btn btn-sm btn-primary" @click="openAssignModal(m)">
-                  Assign Plan / Addon
+                  Assign Plan / Special Program
                 </button>
               </td>
             </tr>
@@ -89,8 +89,12 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              {{selectedMember?.memberships.some(ms => ms.status === 'ACTIVE') ? 'Renew / Update' : 'Assign'}}
-              Membership / Addon
+              {{
+                selectedMember?.memberships.some(ms => ms.status === 'ACTIVE')
+                  ? 'Renew / Update'
+                  : 'Assign'
+              }}
+              Membership / Special Program
             </h5>
             <button type="button" class="btn-close" @click="closeAssignModal"></button>
           </div>
@@ -118,17 +122,17 @@
                   </select>
                 </div>
 
-                <!-- ADDON -->
+                <!-- SPECIAL PROGRAM -->
                 <div class="col-md-6">
-                  <label class="form-label"><strong>Select Addon </strong></label>
+                  <label class="form-label"><strong>Select Special Program </strong></label>
                   <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect"
                     :disabled="addons.length === 0">
-                    <option :value="0">-- Select Addon --</option>
+                    <option :value="0">-- Select Special Program --</option>
                     <option v-for="a in addons" :key="a.id" :value="a.id">
                       {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
                     </option>
                     <option v-if="addons.length === 0" value="" disabled style="color: #999; font-style: italic;">
-                      No addons available
+                      No special programs available
                     </option>
                   </select>
                 </div>
@@ -166,9 +170,9 @@
                 </div>
               </div>
 
-              <!-- ADDON DETAILS -->
+              <!-- SPECIAL PROGRAM DETAILS -->
               <div v-if="selectedAddon" class="mt-4 p-3 border rounded bg-light">
-                <h6 class="mb-3 text-success">Addon Details</h6>
+                <h6 class="mb-3 text-success">Special Program Details</h6>
                 <div class="row">
                   <div class="col-md-6">
                     <p><strong>Description:</strong> {{ selectedAddon.description }}</p>
@@ -192,8 +196,7 @@
                     <select v-model="addonTrainerId" class="form-select">
                       <option :value="null">-- Select Trainer (Optional) --</option>
                       <option v-for="trainer in trainers" :key="trainer.id" :value="trainer.id">
-                        {{ trainer.firstName }} {{ trainer.lastName }}
-                        ({{ trainer.speciality }})
+                        {{ trainer.firstName }} {{ trainer.lastName }} ({{ trainer.speciality }})
                       </option>
                     </select>
                   </div>
@@ -202,7 +205,7 @@
 
               <!-- Validation Alert -->
               <div v-if="!isFormValid" class="alert alert-warning mt-3">
-                <small><strong>Please select at least one:</strong> Plan or Addon</small>
+                <small><strong>Please select at least one:</strong> Plan or Special Program</small>
               </div>
 
               <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting || !isFormValid">
@@ -215,6 +218,7 @@
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
