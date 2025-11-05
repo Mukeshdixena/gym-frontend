@@ -135,12 +135,12 @@
                     <div v-else class="text-muted mb-3">No memberships</div>
 
                     <!-- Addons Section -->
-                    <h6 class="fw-bold mb-2 text-success">Addons</h6>
+                    <h6 class="fw-bold mb-2 text-success">Special Programs</h6>
                     <div v-if="member.memberAddons && member.memberAddons.length">
                       <table class="table table-sm table-bordered">
                         <thead class="table-light">
                           <tr>
-                            <th>Addon</th>
+                            <th>Name</th>
                             <th>Status</th>
                             <th>Start</th>
                             <th>End</th>
