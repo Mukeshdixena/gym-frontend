@@ -202,7 +202,6 @@
                 </div>
               </div>
 
-              <!-- Payment History -->
               <div v-if="selectedBill?.payments?.length" class="mt-4">
                 <h6>Payment History</h6>
                 <div class="table-responsive">
@@ -309,48 +308,24 @@ import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
-// ──────────────────────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────────────────────
 type BillType = 'membership' | 'addon'
 
-interface Member { id: number; firstName: string; lastName: string; email: string }
-interface Plan { id: number; name: string; price: number; durationDays?: number }
-interface Addon { id: number; name: string; price: number; description?: string }
-interface Trainer { id: number; name: string }
-interface Payment { id: number; amount: number; paymentDate: string; method: string }
-
-interface BaseBill {
-  id: number
-  memberId: number
-  startDate: string
-  endDate: string
-  price: number
-  status: string
-  discount: number
-  paid?: number
-  pending?: number
-  member: Member
-  payments: Payment[]
-}
+interface Member { id: number; firstName: string; lastName: string; email: string; phone?: string; address?: string; dateOfBirth?: string; createdAt?: string; updatedAt?: string }
+interface Plan { id: number; name: string; price: number; durationDays?: number; isActive?: boolean; createdAt?: string; updatedAt?: string }
+interface Addon { id: number; name: string; price: number; description?: string; durationDays?: number; isActive?: boolean; createdAt?: string; updatedAt?: string }
+interface Trainer { id: number; userId?: number; firstName?: string; lastName?: string; email?: string; phone?: string; speciality?: string; createdAt?: string; updatedAt?: string }
+interface Payment { id: number; amount: number; paymentDate: string; method: string; createdAt?: string }
+interface BaseBill { id: number; memberId: number; startDate: string; endDate?: string; price?: number; status: string; discount: number; paid?: number; pending?: number; member: Member; payments: Payment[]; createdAt?: string; updatedAt?: string }
 interface Membership extends BaseBill { planId: number; plan: Plan }
 interface MemberAddon extends BaseBill { addonId: number; addon: Addon; trainerId?: number | null; trainer?: Trainer | null }
-
 type Bill = Membership | MemberAddon
 
-// ──────────────────────────────────────────────────────────────
-// State
-// ──────────────────────────────────────────────────────────────
 const billType = ref<BillType>('membership')
 const pendingBills = ref<Bill[]>([])
 const approvedBills = ref<Bill[]>([])
-
-// Filters
 const filterMember = ref('')
 const filterPlan = ref<number | null>(null)
 const filterStatus = ref<string | null>(null)
-
-// Modals / Toast
 const collectModalRef = ref<HTMLElement | null>(null)
 const historyModalRef = ref<HTMLElement | null>(null)
 const toastRef = ref<HTMLElement | null>(null)
@@ -359,11 +334,9 @@ let collectModal: Modal
 let historyModal: Modal
 let toastInstance: Toast
 
-// Selected bill
 const selectedBill = ref<Bill | null>(null)
 const selectedMember = ref<Member | null>(null)
 const selectedPlan = ref<Plan | Addon | null>(null)
-
 const enrollmentForm = ref({ id: 0, discount: 0 })
 const oldPaid = ref(0)
 const oldPending = ref(0)
@@ -371,99 +344,39 @@ const newPaidNow = ref(0)
 const paymentMethod = ref<'CASH' | 'CARD' | 'UPI' | 'ONLINE'>('CASH')
 const isPartialPayment = ref(false)
 const isSubmitting = ref(false)
-
 const toastMessage = ref('')
 
-// ──────────────────────────────────────────────────────────────
-// Computed
-// ──────────────────────────────────────────────────────────────
 const pendingAfterPayment = computed(() => {
   if (!selectedPlan.value) return 0
   const total = oldPaid.value + newPaidNow.value
-  const net = selectedPlan.value.price - enrollmentForm.value.discount
+  const net = (selectedPlan.value.price ?? 0) - (enrollmentForm.value.discount ?? 0)
   return Math.max(net - total, 0)
 })
 
-const latestPaymentDate = (b: Bill): Date => {
-  if (b.payments?.length) return new Date(Math.max(...b.payments.map(p => new Date(p.paymentDate).getTime())))
-  return new Date((b as any).updatedAt || (b as any).createdAt)
+// const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
+// const formatDateTime = (d: string) => new Date(d).toLocaleString('en-IN')
+const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString('en-IN') : '-'
+const formatDateTime = (d?: string) => d ? new Date(d).toLocaleString('en-IN') : '-'
+
+const totalPaid = (b: Bill) => {
+  if (!Array.isArray(b.payments) || b.payments.length === 0) return 0
+  return b.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
 }
-
-const filteredPendingBills = computed(() => applyFilters(pendingBills.value))
-const filteredApprovedBills = computed(() => {
-  const sorted = [...approvedBills.value].sort((a, b) => latestPaymentDate(b).getTime() - latestPaymentDate(a).getTime())
-  return applyFilters(sorted)
-})
-
-const uniquePlans = computed(() => {
-  const map = new Map<number, Plan | Addon>()
-    ;[...pendingBills.value, ...approvedBills.value].forEach(b => {
-      const plan = billType.value === 'membership'
-        ? (b as Membership).plan
-        : (b as MemberAddon).addon
-
-      if (plan && plan.id) {        // ✅ safety check added
-        map.set(plan.id, plan)
-      }
-    })
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
-})
-
-
-const statusOptions = computed(() => {
-  const set = new Set<string>()
-    ;[...pendingBills.value, ...approvedBills.value].forEach(b => set.add(b.status))
-  return Array.from(set).sort()
-})
-
-const selectedPlanDuration = computed(() => {
-  // Only return duration for membership plans; keep null for add-ons to avoid TS errors
-  if (billType.value !== 'membership' || !selectedPlan.value) return null
-  return (selectedPlan.value as Plan).durationDays ?? null
-})
-
-function applyFilters(list: Bill[]) {
-  return list.filter(b => {
-    const memberMatch = !filterMember.value ||
-      `${b.member.firstName} ${b.member.lastName}`.toLowerCase().includes(filterMember.value.toLowerCase()) ||
-      b.member.email.toLowerCase().includes(filterMember.value.toLowerCase())
-
-    const planMatch = filterPlan.value === null ||
-      (billType.value === 'membership' ? (b as Membership).plan.id : (b as MemberAddon).addon.id) === filterPlan.value
-
-    const statusMatch = filterStatus.value === null || b.status === filterStatus.value
-
-    return memberMatch && planMatch && statusMatch
-  })
+const getPrice = (b: Bill) => {
+  if (billType.value === 'membership') return (b as Membership).plan?.price ?? 0
+  else return (b as MemberAddon).price ?? (b as MemberAddon).addon?.price ?? 0
 }
-
-const resetFilters = () => {
-  filterMember.value = ''
-  filterPlan.value = null
-  filterStatus.value = null
-}
-
-// ──────────────────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────────────────
-const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
-const formatDateTime = (d: string) => new Date(d).toLocaleString('en-IN')
-
-const totalPaid = (b: Bill) => b.payments.reduce((s, p) => s + p.amount, 0)
-const pendingForBill = (b: Bill) => Math.max(b.price - b.discount - totalPaid(b), 0)
+const pendingForBill = (b: Bill) => Math.max(getPrice(b) - (b.discount ?? 0) - totalPaid(b), 0)
 
 const getPlanName = (b: Bill) => billType.value === 'membership' ? (b as Membership).plan?.name : (b as MemberAddon).addon?.name
 
-const getPrice = (b: Bill) => billType.value === 'membership' ? (b as Membership).plan?.price : b.price
-
 const validatePayment = () => {
+  if (!isFinite(Number(newPaidNow.value))) newPaidNow.value = 0
+  if (!isFinite(Number(oldPending.value))) oldPending.value = Number(pendingForBill(selectedBill.value!))
   if (newPaidNow.value > oldPending.value) newPaidNow.value = oldPending.value
   if (newPaidNow.value < 0) newPaidNow.value = 0
 }
 
-// ──────────────────────────────────────────────────────────────
-// Toast
-// ──────────────────────────────────────────────────────────────
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
@@ -474,78 +387,48 @@ const showToast = (msg: string, success = true) => {
 }
 const hideToast = () => toastInstance?.hide()
 
-// ──────────────────────────────────────────────────────────────
-// API Base URL
-// ──────────────────────────────────────────────────────────────
 const baseUrl = computed(() => billType.value === 'membership' ? '/memberships' : '/member-addons')
 
-// ──────────────────────────────────────────────────────────────
-// Load Data
-// ──────────────────────────────────────────────────────────────
 const loadBills = async () => {
   try {
     const res: AxiosResponse<Bill[]> = await api.get(baseUrl.value)
     const data = Array.isArray(res.data) ? res.data : []
     approvedBills.value = data.filter(b => ['ACTIVE', 'PARTIAL_PAID'].includes(b.status))
     pendingBills.value = data.filter(b => !['ACTIVE', 'PARTIAL_PAID'].includes(b.status))
-  } catch (err: any) {
-    showToast('Failed to load bills.', false)
-  }
+  } catch { showToast('Failed to load bills.', false) }
 }
 
-// Watch type change → reload
-watch(billType, () => {
-  resetFilters()
-  loadBills()
-})
-
-// ──────────────────────────────────────────────────────────────
-// Modals
-// ──────────────────────────────────────────────────────────────
-const openAssignModal = (bill: Bill) => { setupModal(bill, false); collectModal?.show() }
-const openCollectModal = (bill: Bill) => { setupModal(bill, true); collectModal?.show() }
+watch(billType, () => { resetFilters(); loadBills() })
 
 const setupModal = (bill: Bill, partial: boolean) => {
   selectedBill.value = bill
   selectedMember.value = bill.member
   selectedPlan.value = billType.value === 'membership' ? (bill as Membership).plan : (bill as MemberAddon).addon
-  enrollmentForm.value = { id: billType.value === 'membership' ? (bill as Membership).planId : (bill as MemberAddon).addonId, discount: bill.discount }
+  enrollmentForm.value = { id: billType.value === 'membership' ? (bill as Membership).planId : (bill as MemberAddon).addonId, discount: bill.discount ?? 0 }
   oldPaid.value = totalPaid(bill)
   oldPending.value = pendingForBill(bill)
-  newPaidNow.value = 0
+  newPaidNow.value = partial ? 0 : oldPending.value
   paymentMethod.value = 'CASH'
   isPartialPayment.value = partial
 }
 
+const openAssignModal = (bill: Bill) => { setupModal(bill, false); collectModal?.show() }
+const openCollectModal = (bill: Bill) => { setupModal(bill, true); collectModal?.show() }
 const closeCollectModal = () => { collectModal?.hide(); resetForm() }
 const openHistoryModal = (bill: Bill) => { selectedBill.value = bill; historyModal?.show() }
 const closeHistoryModal = () => historyModal?.hide()
-const resetForm = () => {
-  selectedBill.value = null
-  selectedMember.value = null
-  selectedPlan.value = null
-  newPaidNow.value = 0
-  isSubmitting.value = false
-}
+const resetForm = () => { selectedBill.value = null; selectedMember.value = null; selectedPlan.value = null; newPaidNow.value = 0; isSubmitting.value = false }
 
-// ──────────────────────────────────────────────────────────────
-// Actions
-// ──────────────────────────────────────────────────────────────
 const updatePayment = async () => {
   if (newPaidNow.value <= 0) return showToast('Enter a valid amount.', false)
   isSubmitting.value = true
   try {
     await api.patch(`${baseUrl.value}/payment/${selectedBill.value!.id}`, {
-      amount: newPaidNow.value,
-      method: paymentMethod.value,
-      status: pendingAfterPayment.value === 0 ? 'ACTIVE' : 'PARTIAL_PAID',
+      amount: newPaidNow.value, method: paymentMethod.value, status: pendingAfterPayment.value === 0 ? 'ACTIVE' : 'PARTIAL_PAID'
     })
-    await loadBills()
-    showToast('Payment updated!')
-    closeCollectModal()
-  } catch (err: any) {
-    showToast(err.response?.data?.message || 'Update failed.', false)
-  } finally { isSubmitting.value = false }
+    await loadBills(); showToast('Payment updated!'); closeCollectModal()
+  } catch (err: any) { showToast(err.response?.data?.message || 'Update failed.', false) }
+  finally { isSubmitting.value = false }
 }
 
 const approvePayment = async () => {
@@ -555,28 +438,18 @@ const approvePayment = async () => {
   isSubmitting.value = true
   try {
     await api.patch(`${baseUrl.value}/payment/${selectedBill.value!.id}`, {
-      amount: newPaidNow.value,
-      method: paymentMethod.value,
-      status: 'ACTIVE',
+      amount: newPaidNow.value, method: paymentMethod.value, status: 'ACTIVE'
     })
-    await loadBills()
-    showToast('Approved!')
-    closeCollectModal()
-  } catch (err: any) {
-    showToast(err.response?.data?.message || 'Failed.', false)
-  } finally { isSubmitting.value = false }
+    await loadBills(); showToast('Approved!'); closeCollectModal()
+  } catch (err: any) { showToast(err.response?.data?.message || 'Failed.', false) }
+  finally { isSubmitting.value = false }
 }
 
 const rejectBill = async (id: number) => {
   const ok = await showConfirm('Reject this bill?')
   if (!ok) return
-  try {
-    await api.delete(`${baseUrl.value}/${id}`)
-    await loadBills()
-    showToast('Rejected.')
-  } catch (err: any) {
-    showToast('Failed.', false)
-  }
+  try { await api.delete(`${baseUrl.value}/${id}`); await loadBills(); showToast('Rejected.') }
+  catch { showToast('Failed.', false) }
 }
 
 const downloadBill = async (id: number) => {
@@ -585,38 +458,55 @@ const downloadBill = async (id: number) => {
     const blob = new Blob([res.data], { type: 'application/pdf' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = `${billType.value}_bill_${id}.pdf`
-    a.click()
+    a.href = url; a.download = `${billType.value}_bill_${id}.pdf`; a.click()
     window.URL.revokeObjectURL(url)
-  } catch (err) {
-    showToast('Download failed.', false)
-  }
+  } catch { showToast('Download failed.', false) }
 }
 
-// ──────────────────────────────────────────────────────────────
-// Dropdown & Confirm
-// ──────────────────────────────────────────────────────────────
 const openDropdownId = ref<number | null>(null)
 const toggleDropdown = (id: number) => openDropdownId.value = openDropdownId.value === id ? null : id
-const handleClickOutside = (e: MouseEvent) => {
-  if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null
-}
+const handleClickOutside = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.dropdown')) openDropdownId.value = null }
 
 const isConfirmOpen = ref(false)
 const confirmMessage = ref('')
 let resolveConfirm: (v: boolean) => void = () => { }
-const showConfirm = (msg: string): Promise<boolean> => {
-  return new Promise(resolve => {
-    confirmMessage.value = msg
-    isConfirmOpen.value = true
-    resolveConfirm = v => { isConfirmOpen.value = false; resolve(v) }
+const showConfirm = (msg: string): Promise<boolean> => new Promise(resolve => {
+  confirmMessage.value = msg; isConfirmOpen.value = true; resolveConfirm = v => { isConfirmOpen.value = false; resolve(v) }
+})
+
+const uniquePlans = computed(() => {
+  const map = new Map<number, Plan | Addon>()
+    ;[...pendingBills.value, ...approvedBills.value].forEach(b => {
+      const plan = billType.value === 'membership' ? (b as Membership).plan : (b as MemberAddon).addon
+      if (plan?.id) map.set(plan.id, plan)
+    })
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+})
+const statusOptions = computed(() => {
+  const set = new Set<string>()
+    ;[...pendingBills.value, ...approvedBills.value].forEach(b => set.add(b.status))
+  return Array.from(set).sort()
+})
+const selectedPlanDuration = computed(() => billType.value !== 'membership' ? null : (selectedPlan.value as Plan)?.durationDays ?? null)
+
+function applyFilters(list: Bill[]) {
+  return list.filter(b => {
+    const memberMatch = !filterMember.value || `${b.member.firstName} ${b.member.lastName}`.toLowerCase().includes(filterMember.value.toLowerCase()) || b.member.email.toLowerCase().includes(filterMember.value.toLowerCase())
+    const planMatch = filterPlan.value === null || (billType.value === 'membership' ? (b as Membership).plan.id : (b as MemberAddon).addon.id) === filterPlan.value
+    const statusMatch = filterStatus.value === null || b.status === filterStatus.value
+    return memberMatch && planMatch && statusMatch
   })
 }
+const filteredPendingBills = computed(() => {
+  const sorted = [...pendingBills.value].sort((a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime())
+  return applyFilters(sorted)
+})
+const filteredApprovedBills = computed(() => {
+  const sorted = [...approvedBills.value].sort((a, b) => new Date(b.updatedAt || '').getTime() - new Date(a.updatedAt || '').getTime())
+  return applyFilters(sorted)
+})
+const resetFilters = () => { filterMember.value = ''; filterPlan.value = null; filterStatus.value = null }
 
-// ──────────────────────────────────────────────────────────────
-// Lifecycle
-// ──────────────────────────────────────────────────────────────
 onMounted(async () => {
   collectModal = new Modal(collectModalRef.value!)
   historyModal = new Modal(historyModalRef.value!)
@@ -624,7 +514,6 @@ onMounted(async () => {
   document.addEventListener('click', handleClickOutside)
   await loadBills()
 })
-
 onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
