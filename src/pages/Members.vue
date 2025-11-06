@@ -16,37 +16,18 @@
           Refresh
         </button>
 
-        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path
-              d="M.5 9.9a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5zM7.5 3.9a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-7 6a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5z" />
+        <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 1v14m7-7H1" />
           </svg>
-          Export
+          + New Enrollment
         </button>
-
-        <div class="dropdown">
-          <button class="btn btn-primary btn-sm dropdown-toggle d-flex align-items-center gap-1"
-            data-bs-toggle="dropdown">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
-            </svg>
-            Bulk Action
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="#">Delete Selected</a></li>
-            <li><a class="dropdown-item" href="#">Export Selected</a></li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li><a class="dropdown-item text-danger" href="#">Cancel Memberships</a></li>
-          </ul>
-        </div>
       </div>
     </div>
 
-    <!-- Filters -->
+    <!-- Search Filter -->
     <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-      <div class="input-group input-group-sm" style="width: 280px;">
+      <div class="input-group input-group-sm" style="width: 320px;">
         <span class="input-group-text">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
             <path
@@ -57,7 +38,7 @@
           placeholder="Search by name, email, or phone" />
       </div>
 
-      <!-- Filter Chips -->
+      <!-- Filter Chip -->
       <div v-if="filters.search" class="badge bg-light text-dark d-flex align-items-center gap-1 px-2 py-1">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
           <path d="M2.5 2.5A.5.5 0 0 1 3 2h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5v-1z" />
@@ -89,9 +70,6 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="bg-light text-muted small fw-semibold sticky-top" style="z-index: 10;">
           <tr>
-            <th class="ps-3">
-              <input type="checkbox" class="form-check-input" />
-            </th>
             <th>ID</th>
             <th>
               Name
@@ -113,9 +91,6 @@
           <template v-for="member in members" :key="member.id">
             <tr @click="toggleExpand(member.id)" style="cursor: pointer;"
               :class="{ 'table-active': expandedMemberId === member.id }">
-              <td class="ps-3">
-                <input type="checkbox" class="form-check-input" />
-              </td>
               <td class="small text-muted">{{ member.id }}</td>
               <td class="fw-semibold">{{ member.firstName }} {{ member.lastName }}</td>
               <td class="small">{{ member.email }}</td>
@@ -151,7 +126,7 @@
 
             <!-- Expanded Row -->
             <tr v-if="expandedMemberId === member.id">
-              <td colspan="8" class="p-0 bg-light">
+              <td colspan="7" class="p-0 bg-light">
                 <div class="p-4">
                   <div class="row g-4">
                     <div class="col-md-6">
@@ -224,7 +199,7 @@
           </template>
 
           <tr v-if="!members.length">
-            <td colspan="8" class="text-center text-muted py-5">No members found</td>
+            <td colspan="7" class="text-center text-muted py-5">No members found</td>
           </tr>
         </tbody>
       </table>
@@ -442,51 +417,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
-// ─────────────── Interfaces ───────────────
+// Interfaces
 interface Plan { id: number; name: string }
 interface Membership {
-  id: number
-  planId: number
-  startDate: string
-  endDate: string
-  status: string
-  discount?: number
-  paid: number
-  pending: number
-  plan?: Plan
+  id: number; planId: number; startDate: string; endDate: string; status: string;
+  discount?: number; paid: number; pending: number; plan?: Plan
 }
 interface Addon {
-  id: number
-  addonId: number
-  startDate: string
-  endDate: string
-  status: string
-  paid: number
-  pending: number
-  trainerId?: number | null
-  addon?: { name: string }
+  id: number; addonId: number; startDate: string; endDate: string; status: string;
+  paid: number; pending: number; trainerId?: number | null; addon?: { name: string }
 }
 interface Member {
-  id: number
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address?: string
-  gender?: string
-  referralSource?: string
-  notes?: string
-  memberships: Membership[]
-  memberAddons: Addon[]
+  id: number; firstName: string; lastName: string; email: string; phone: string;
+  address?: string; gender?: string; referralSource?: string; notes?: string;
+  memberships: Membership[]; memberAddons: Addon[]
 }
 interface PaginationMeta { total: number; page: number; limit: number; totalPages: number }
 
-// ─────────────── State ───────────────
+// State
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
 const filters = ref({ search: '' })
@@ -514,7 +467,7 @@ const membershipForm = ref<Partial<Membership>>({})
 const refundForm = ref({ amount: 0, reason: '', method: 'CASH' })
 const toastMessage = ref('')
 
-// ─────────────── Computed ───────────────
+// Computed
 const isMemberFormValid = computed(() => {
   ;['firstName', 'lastName', 'email', 'phone'].forEach(validateMemberField)
   return !!memberForm.value.firstName && !!memberForm.value.lastName && !!memberForm.value.email && !!memberForm.value.phone && !Object.values(memberErrors.value).some(err => err)
@@ -549,7 +502,7 @@ const canDeleteMember = (member: Member) => {
   return !hasActive && (member.memberships?.length ?? 0) === 0 && (member.memberAddons?.length ?? 0) === 0
 }
 
-// ─────────────── Validation ───────────────
+// Validation
 const validateMemberField = (field: string) => {
   const value = memberForm.value[field as keyof Member]
   switch (field) {
@@ -560,7 +513,7 @@ const validateMemberField = (field: string) => {
   }
 }
 
-// ─────────────── Toast ───────────────
+// Toast
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
   if (toastRef.value) {
@@ -571,7 +524,7 @@ const showToast = (msg: string, success = true) => {
 }
 const hideToast = () => toastInstance?.hide()
 
-// ─────────────── API ───────────────
+// API
 const buildQuery = () => ({ ...filters.value, ...pagination.value })
 const loadMembers = async () => {
   isLoading.value = true
@@ -595,7 +548,7 @@ const goToPage = (page: number | string) => {
   loadMembers()
 }
 
-// ─────────────── Member Modals ───────────────
+// Member Modal
 const openAddModal = () => {
   editingMember.value = null
   memberForm.value = { firstName: '', lastName: '', email: '', phone: '', address: '', gender: '', referralSource: '', notes: '' }
@@ -625,7 +578,7 @@ const saveMember = async () => {
   } catch { showToast('Save failed.', false) }
 }
 
-// ─────────────── Membership Actions ───────────────
+// Membership Actions
 const openEditMembershipModal = (ms: Membership) => {
   editingMembership.value = ms
   membershipForm.value = {
@@ -646,7 +599,7 @@ const saveMembership = async () => {
   } catch { showToast('Update failed.', false) }
 }
 
-// ─────────────── Refund Actions ───────────────
+// Refund
 const openRefundModal = (ms: Membership) => { refundMembership.value = ms; refundModal?.show() }
 const closeRefundModal = () => { refundModal?.hide(); refundMembership.value = null }
 const processRefund = async () => {
@@ -658,7 +611,7 @@ const processRefund = async () => {
   } catch { showToast('Refund failed.', false) }
 }
 
-// ─────────────── Delete Confirmation ───────────────
+// Delete
 const isConfirmOpen = ref(false)
 let resolveConfirm: (v: boolean) => void = () => { }
 const showConfirm = (): Promise<boolean> => new Promise(resolve => {
@@ -675,10 +628,10 @@ const confirmDelete = async (m: Member) => {
   }
 }
 
-// ─────────────── UI Helpers ───────────────
+// UI
 const toggleExpand = (id: number) => { expandedMemberId.value = expandedMemberId.value === id ? null : id }
 
-// ─────────────── Lifecycle ───────────────
+// Lifecycle
 onMounted(async () => {
   if (toastRef.value) toastInstance = new Toast(toastRef.value)
   if (memberModalRef.value) memberModal = new Modal(memberModalRef.value)
@@ -697,7 +650,6 @@ onMounted(async () => {
   font-family: 'Inter', sans-serif;
 }
 
-/* Table */
 .table {
   --bs-table-hover-bg: #f1f5f9;
   margin-bottom: 0;
@@ -723,7 +675,6 @@ onMounted(async () => {
   background-color: var(--bs-table-hover-bg);
 }
 
-/* Status Badges */
 .status-badge {
   font-size: 0.75rem;
   font-weight: 600;
@@ -758,7 +709,6 @@ onMounted(async () => {
   color: #4b5563;
 }
 
-/* Icons */
 .icon-btn {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -776,7 +726,6 @@ onMounted(async () => {
   border-color: #cbd5e1;
 }
 
-/* Sticky */
 .sticky-top {
   position: sticky;
   top: 0;
@@ -789,7 +738,6 @@ onMounted(async () => {
   background: #fff;
 }
 
-/* Pagination */
 .pagination .page-link {
   color: #495057;
   border-radius: 6px;
@@ -803,7 +751,6 @@ onMounted(async () => {
   color: white;
 }
 
-/* Input Group */
 .input-group-text {
   background: #f8f9fa;
   border-right: 0;
@@ -819,7 +766,6 @@ onMounted(async () => {
   border-color: #4361ee;
 }
 
-/* Badge Chips */
 .badge {
   font-weight: 500;
 }
