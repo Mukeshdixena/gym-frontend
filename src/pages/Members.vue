@@ -25,27 +25,20 @@
       </div>
     </div>
 
-    <!-- Search Filter -->
-    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-      <div class="input-group input-group-sm" style="width: 320px;">
-        <span class="input-group-text">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path
-              d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-          </svg>
-        </span>
-        <input v-model.trim="filters.search" @input="resetPageAndLoad" type="text" class="form-control"
-          placeholder="Search by name, email, or phone" />
-      </div>
+    <!-- Filter Bar (Sticky) -->
+    <div class="filter-bar">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
 
-      <!-- Filter Chip -->
-      <div v-if="filters.search" class="badge bg-light text-dark d-flex align-items-center gap-1 px-2 py-1">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M2.5 2.5A.5.5 0 0 1 3 2h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5v-1z" />
-          <path d="M3 5h10v1H3z" />
-        </svg>
-        {{ filters.search }}
-        <button @click="filters.search = ''; resetPageAndLoad()" class="btn-close btn-close-sm"></button>
+        <!-- Filter Chips -->
+        <div v-for="(value, key) in activeFilters" :key="key"
+          class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M2.5 2.5A.5.5 0 0 1 3 2h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5v-1z" />
+            <path d="M3 5h10v1H3z" />
+          </svg>
+          <strong>{{ filterLabels[key] }}:</strong> {{ value }}
+          <button @click="clearFilter(key)" class="btn-close btn-close-sm"></button>
+        </div>
       </div>
     </div>
 
@@ -66,20 +59,118 @@
     </div>
 
     <!-- Table Container -->
-    <div v-else class="table-responsive rounded-3 overflow-hidden shadow-sm border">
-      <!-- Table Wrapper -->
-      <!-- Scrollable Table Container -->
+    <div v-else class="table-responsive rounded-3 overflow-hidden">
       <div class="table-scroll-container">
-        <div class="table-container border rounded-3 shadow-sm">
+        <div class="table-container border rounded-3 ">
           <table class="table table-hover align-middle mb-0">
             <thead class="bg-light text-muted small fw-semibold sticky-top" style="z-index: 10;">
               <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Plan</th>
-                <th>Status</th>
+                <!-- ID -->
+                <th class="position-relative">
+                  <div class="d-flex align-items-center justify-content-between">
+                    ID
+                    <button v-if="!columnFilters.id" @click.stop="columnFilters.id = true" class="btn btn-sm p-0 ms-2"
+                      title="Search ID">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                      </svg>
+                    </button>
+                    <input v-if="columnFilters.id" v-model.trim="filters.id" @input="resetPageAndLoad" type="text"
+                      class="form-control form-control-sm w-auto ms-2" placeholder="ID" @blur="handleBlur('id')" />
+                  </div>
+                </th>
+
+                <!-- Name -->
+                <th class="position-relative">
+                  <div class="d-flex align-items-center justify-content-between">
+                    Name
+                    <button v-if="!columnFilters.name" @click.stop="columnFilters.name = true"
+                      class="btn btn-sm p-0 ms-2" title="Search Name">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                      </svg>
+                    </button>
+                    <input v-if="columnFilters.name" v-model.trim="filters.name" @input="resetPageAndLoad" type="text"
+                      class="form-control form-control-sm w-auto ms-2" placeholder="Name" @blur="handleBlur('name')" />
+                  </div>
+                </th>
+
+                <!-- Email -->
+                <th class="position-relative">
+                  <div class="d-flex align-items-center justify-content-between">
+                    Email
+                    <button v-if="!columnFilters.email" @click.stop="columnFilters.email = true"
+                      class="btn btn-sm p-0 ms-2" title="Search Email">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                      </svg>
+                    </button>
+                    <input v-if="columnFilters.email" v-model.trim="filters.email" @input="resetPageAndLoad" type="text"
+                      class="form-control form-control-sm w-auto ms-2" placeholder="Email"
+                      @blur="handleBlur('email')" />
+                  </div>
+                </th>
+
+                <!-- Phone -->
+                <th class="position-relative">
+                  <div class="d-flex align-items-center justify-content-between">
+                    Phone
+                    <button v-if="!columnFilters.phone" @click.stop="columnFilters.phone = true"
+                      class="btn btn-sm p-0 ms-2" title="Search Phone">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                      </svg>
+                    </button>
+                    <input v-if="columnFilters.phone" v-model.trim="filters.phone" @input="resetPageAndLoad" type="text"
+                      class="form-control form-control-sm w-auto ms-2" placeholder="Phone"
+                      @blur="handleBlur('phone')" />
+                  </div>
+                </th>
+
+                <!-- Plan -->
+                <th class="position-relative">
+                  <div class="d-flex align-items-center justify-content-between">
+                    Plan
+                    <button v-if="!columnFilters.plan" @click.stop="columnFilters.plan = true"
+                      class="btn btn-sm p-0 ms-2" title="Search Plan">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                      </svg>
+                    </button>
+                    <input v-if="columnFilters.plan" v-model.trim="filters.plan" @input="resetPageAndLoad" type="text"
+                      class="form-control form-control-sm w-auto ms-2" placeholder="Plan" @blur="handleBlur('plan')" />
+                  </div>
+                </th>
+
+                <!-- Status -->
+                <th class="position-relative">
+                  <div class="d-flex align-items-center justify-content-between">
+                    Status
+                    <button v-if="!columnFilters.status" @click.stop="columnFilters.status = true"
+                      class="btn btn-sm p-0 ms-2" title="Search Status">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                      </svg>
+                    </button>
+                    <input v-if="columnFilters.status" v-model.trim="filters.status" @input="resetPageAndLoad"
+                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Status"
+                      @blur="handleBlur('status')" />
+                  </div>
+                </th>
+
+                <!-- Action -->
                 <th class="text-center">Action</th>
               </tr>
             </thead>
@@ -121,7 +212,7 @@
                   </td>
                 </tr>
 
-                <!-- Expanded row section same as before -->
+                <!-- Expanded row -->
                 <tr v-if="expandedMemberId === member.id">
                   <td colspan="7" class="p-0 bg-light">
                     <div class="p-4">
@@ -139,19 +230,25 @@
                                   <th>Paid</th>
                                   <th>Pending</th>
                                   <th>Discount</th>
+                                  <!-- <th>Actions</th> -->
                                 </tr>
                               </thead>
                               <tbody>
                                 <tr v-for="ms in member.memberships" :key="'m-' + ms.id">
                                   <td>{{ ms.plan?.name ?? 'N/A' }}</td>
                                   <td><span class="status-badge" :class="getStatusClass(ms.status)">{{ ms.status
-                                  }}</span>
-                                  </td>
+                                  }}</span></td>
                                   <td>{{ formatDate(ms.startDate) }}</td>
                                   <td>{{ formatDate(ms.endDate) }}</td>
                                   <td>₹{{ ms.paid }}</td>
                                   <td>₹{{ ms.pending }}</td>
                                   <td>₹{{ ms.discount ?? 0 }}</td>
+                                  <!-- <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1"
+                                      @click.stop="openEditMembershipModal(ms)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-success"
+                                      @click.stop="openRefundModal(ms)">Refund</button>
+                                  </td> -->
                                 </tr>
                               </tbody>
                             </table>
@@ -178,8 +275,7 @@
                                 <tr v-for="ad in member.memberAddons" :key="'a-' + ad.id">
                                   <td>{{ ad.addon?.name ?? 'N/A' }}</td>
                                   <td><span class="status-badge" :class="getStatusClass(ad.status)">{{ ad.status
-                                  }}</span>
-                                  </td>
+                                  }}</span></td>
                                   <td>{{ formatDate(ad.startDate) }}</td>
                                   <td>{{ formatDate(ad.endDate) }}</td>
                                   <td>₹{{ ad.paid }}</td>
@@ -228,7 +324,6 @@
           </nav>
         </div>
       </footer>
-
     </div>
 
     <!-- Add/Edit Member Modal -->
@@ -442,14 +537,34 @@ interface Member {
 }
 interface PaginationMeta { total: number; page: number; limit: number; totalPages: number }
 
+// Filter Keys
+// type FilterKey = keyof typeof filters.value
+type FilterKey = keyof typeof columnFilters.value
+
 // State
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
-const filters = ref({ search: '' })
+const filters = ref({
+  id: '',
+  name: '',
+  email: '',
+  phone: '',
+  plan: '',
+  status: ''
+})
+const columnFilters = ref({
+  id: false,
+  name: false,
+  email: false,
+  phone: false,
+  plan: false,
+  status: false
+})
 const pagination = ref({ page: 1, limit: 10 })
 const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 })
 const isLoading = ref(true)
 
+// Toast & Modals
 const toastRef = ref<HTMLElement | null>(null)
 const memberModalRef = ref<HTMLElement | null>(null)
 const membershipModalRef = ref<HTMLElement | null>(null)
@@ -469,6 +584,38 @@ const originalMemberForm = ref<Partial<Member>>({})
 const membershipForm = ref<Partial<Membership>>({})
 const refundForm = ref({ amount: 0, reason: '', method: 'CASH' })
 const toastMessage = ref('')
+
+// Filter Labels
+const filterLabels: Record<FilterKey, string> = {
+  id: 'ID',
+  name: 'Name',
+  email: 'Email',
+  phone: 'Phone',
+  plan: 'Plan',
+  status: 'Status'
+}
+
+// Active Filters (for chips)
+const activeFilters = computed(() => {
+  const active: Partial<typeof filters.value> = {}
+  Object.entries(filters.value).forEach(([k, v]) => {
+    if (v) (active as any)[k] = v
+  })
+  return active
+})
+
+// Handle blur for column filters
+const handleBlur = (key: FilterKey) => {
+  if (!filters.value[key]) {
+    columnFilters.value[key] = false
+  }
+}
+
+const clearFilter = (key: FilterKey) => {
+  filters.value[key] = ''
+  columnFilters.value[key] = false
+  resetPageAndLoad()
+}
 
 // Computed
 const isMemberFormValid = computed(() => {
@@ -527,24 +674,42 @@ const showToast = (msg: string, success = true) => {
 }
 const hideToast = () => toastInstance?.hide()
 
-// API
-const buildQuery = () => ({ ...filters.value, ...pagination.value })
+// API: Build query
+const buildQuery = () => {
+  const query: Record<string, any> = {}
+  Object.entries(filters.value).forEach(([k, v]) => {
+    if (v) query[k] = v
+  })
+  query.page = pagination.value.page
+  query.limit = pagination.value.limit
+  return query
+}
+
 const loadMembers = async () => {
   isLoading.value = true
   try {
     const res = await api.get('/members', { params: buildQuery() }) as AxiosResponse<{ data: Member[], meta: PaginationMeta }>
     members.value = res.data.data
     meta.value = res.data.meta
-  } catch { showToast('Failed to load members.', false) }
-  finally { isLoading.value = false }
+  } catch {
+    showToast('Failed to load members.', false)
+  } finally {
+    isLoading.value = false
+  }
 }
+
 const loadPlans = async () => {
   try {
     const res: AxiosResponse<any> = await api.get('/plans/list-all')
     plans.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch { }
 }
-const resetPageAndLoad = () => { pagination.value.page = 1; loadMembers() }
+
+const resetPageAndLoad = () => {
+  pagination.value.page = 1
+  loadMembers()
+}
+
 const goToPage = (page: number | string) => {
   if (typeof page !== 'number' || page < 1 || page > meta.value.totalPages || page === meta.value.page) return
   pagination.value.page = page
@@ -649,10 +814,45 @@ onMounted(async () => {
 .members-container {
   padding: 1.5rem;
   background: #f8f9fa;
-  /* min-height: 100vh; */
   font-family: 'Inter', sans-serif;
 }
 
+/* Filter Bar */
+.filter-bar {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 15;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #dee2e6;
+  backdrop-filter: blur(4px);
+}
+
+.search-input-wrapper .input-group {
+  width: 300px;
+}
+
+.filter-chip {
+  background: #e9ecef;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  color: #495057;
+  transition: background 0.2s;
+}
+
+.filter-chip:hover {
+  background: #dee2e6;
+}
+
+.filter-chip .btn-close {
+  opacity: 0.7;
+}
+
+.filter-chip .btn-close:hover {
+  opacity: 1;
+}
+
+/* Table */
 .table {
   --bs-table-hover-bg: #f1f5f9;
   margin-bottom: 0;
@@ -735,12 +935,6 @@ onMounted(async () => {
   background: #f8f9fa;
 }
 
-.sticky-bottom {
-  position: sticky;
-  bottom: 0;
-  background: #fff;
-}
-
 .pagination .page-link {
   color: #495057;
   border-radius: 6px;
@@ -769,45 +963,28 @@ onMounted(async () => {
   border-color: #4361ee;
 }
 
-.badge {
-  font-weight: 500;
-}
-
-.table-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
 .table-container {
   max-height: calc(100vh - 240px);
-  /* scrollable area */
   overflow-y: auto;
   background: white;
 }
 
-/* Fixed footer outside the card */
 .pagination-footer {
   position: fixed;
   bottom: 10px;
-  /* raised slightly from bottom */
   left: 240px;
-  /* same as sidebar width */
   right: 0;
   background: #fff;
   padding: 0.65rem 1rem;
   z-index: 1040;
   display: flex;
   justify-content: center;
-  /* centers pagination horizontally */
   align-items: center;
 }
 
 .pagination-footer>div {
   width: 100%;
   max-width: 900px;
-  /* optional: keeps centered area narrower */
   display: flex;
   justify-content: space-between;
   align-items: center;
