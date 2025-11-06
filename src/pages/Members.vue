@@ -1,6 +1,42 @@
 <template>
-  <div class="container mt-4">
-    <h3 class="mb-4">Members Management</h3>
+  <div class="members-container">
+    <!-- Top header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-semibold mb-0">Members Management</h2>
+        <p class="text-muted small mb-0">Manage members, memberships and special programs.</p>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        <button class="btn btn-outline-secondary btn-sm" @click="loadMembers" title="Refresh">
+          <!-- refresh svg -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z"/>
+            <path d="M8 1v3h3"/>
+          </svg>
+        </button>
+
+        <button class="btn btn-primary btn-sm" @click="openAddModal">
+          + New Enrollment
+        </button>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="card card-body shadow-sm border-0 mb-3 py-2">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <input
+          v-model.trim="filters.search"
+          @input="resetPageAndLoad"
+          type="text"
+          class="form-control form-control-sm search-input"
+          placeholder="Search by name, email, or phone"
+        />
+        <div class="ms-auto text-muted small">
+          Showing {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }} of {{ meta.total }}
+        </div>
+      </div>
+    </div>
 
     <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
@@ -13,216 +49,162 @@
       </div>
     </div>
 
-    <!-- Search & Add -->
-    <div class="row g-3 mb-3">
-      <div class="col-md-5">
-        <input type="text" class="form-control form-control-sm" placeholder="Search by name, email or phone"
-          v-model.trim="filters.search" @input="resetPageAndLoad" />
-      </div>
-      <div class="col-md-7 text-end">
-        <button class="btn btn-primary btn-sm" @click="openAddModal">
-          New Enrollment
-        </button>
-      </div>
+    <!-- Loading -->
+    <div v-if="isLoading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+      <div class="mt-2 text-muted">Loading members and plans...</div>
     </div>
 
-    <!-- Loading Spinner -->
-    <div v-if="isLoading" class="text-center my-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <p class="mt-2">Loading members and plans...</p>
-    </div>
-
-    <!-- Members Table -->
-    <div v-else class="card shadow-sm">
-      <div class="card-header bg-primary text-white fw-bold">All Members</div>
-      <div class="card-body table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
+    <!-- Table -->
+    <div v-else class="card shadow-sm border-0">
+      <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0 table-modern">
+          <thead class="bg-light">
             <tr>
-              <th>Id</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Gender</th>
-              <th>Referral</th>
-              <th>Notes</th>
-              <th>Status</th>
-              <th>Plan</th>
-              <th class="text-center">Actions</th>
+              <th class="text-muted small fw-semibold">ID</th>
+              <th class="text-muted small fw-semibold">Name</th>
+              <th class="text-muted small fw-semibold">Email</th>
+              <th class="text-muted small fw-semibold">Phone</th>
+              <th class="text-muted small fw-semibold">Plan</th>
+              <th class="text-muted small fw-semibold">Status</th>
+              <th class="text-muted small fw-semibold text-center">Action</th>
             </tr>
           </thead>
+
           <tbody>
-            <template v-for="(member, i) in members" :key="member.id">
-              <tr @click="toggleExpand(member.id)" style="cursor: pointer"
-                :class="{ 'table-active': expandedMemberId === member.id }">
-                <td>{{ member.id }}</td>
-                <td>{{ member.firstName }} {{ member.lastName }}</td>
-                <td>{{ member.email }}</td>
-                <td>{{ member.phone }}</td>
-                <td>{{ member.gender || 'N/A' }}</td>
-                <td>{{ member.referralSource || 'N/A' }}</td>
-                <td>{{ member.notes || 'N/A' }}</td>
+            <template v-for="member in members" :key="member.id">
+              <tr :class="{ 'table-active': expandedMemberId === member.id }" @click="toggleExpand(member.id)" style="cursor:pointer">
+                <td class="small text-muted">{{ member.id }}</td>
+                <td class="fw-semibold">{{ member.firstName }} {{ member.lastName }}</td>
+                <td class="small">{{ member.email }}</td>
+                <td class="small">{{ member.phone }}</td>
+                <td class="small">{{ member.memberships[0]?.plan?.name ?? 'N/A' }}</td>
                 <td>
-                  <span class="badge" :class="getStatusClass(member.memberships[0]?.status)">
+                  <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
                     {{ member.memberships[0]?.status ?? 'N/A' }}
                   </span>
                 </td>
-                <td>{{ getPlanName(member.memberships[0]?.planId) }}</td>
                 <td class="text-center" @click.stop>
-                  <div class="dropdown" @click.stop="toggleDropdown(member.id)">
-                    <button class="btn btn-light btn-sm border-0">...</button>
-                    <div v-if="openDropdownId === member.id" class="dropdown-menu-custom shadow-sm">
-                      <a href="javascript:void(0)" @click="editMember(member)" class="dropdown-item-custom">Edit
-                        Member</a>
-                      <a v-if="canDeleteMember(member)" href="javascript:void(0)" @click="confirmDelete(member)"
-                        class="dropdown-item-custom text-danger">
-                        Delete Member
-                      </a>
-                    </div>
+                  <div class="d-flex justify-content-center gap-2">
+                    <button class="icon-btn" title="Edit" @click.stop="editMember(member)">
+                      <!-- pencil -->
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708L4.207 13.5 2 14l.5-2.207L12.146.146zM11.207 2L3 10.207V12h1.793L13 3.793 11.207 2z"/>
+                      </svg>
+                    </button>
+
+                    <button class="icon-btn text-danger" :disabled="!canDeleteMember(member)" title="Delete" @click.stop="confirmDelete(member)">
+                      <!-- trash -->
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5v7h1v-7h-1zm3 0v7h1v-7h-1z"/>
+                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4H2.5a1 1 0 1 1 0-2H5l.5-1h5l.5 1h2.5a1 1 0 0 1 1 1z"/>
+                      </svg>
+                    </button>
                   </div>
                 </td>
               </tr>
 
-              <!-- Expandable Membership & Addon Rows -->
+              <!-- Expanded details -->
               <tr v-if="expandedMemberId === member.id">
-                <td colspan="10" class="p-0 bg-light">
+                <td colspan="7" class="bg-light p-0">
                   <div class="p-3">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <h6 class="fw-bold text-primary">Memberships</h6>
+                        <div v-if="member.memberships?.length">
+                          <table class="table table-sm table-bordered mt-2">
+                            <thead class="table-light small">
+                              <tr>
+                                <th>Plan</th><th>Status</th><th>Start</th><th>End</th><th>Paid</th><th>Pending</th><th>Discount</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr v-for="ms in member.memberships" :key="'m-'+ms.id">
+                                <td>{{ ms.plan?.name ?? 'N/A' }}</td>
+                                <td><span class="status-badge" :class="getStatusClass(ms.status)">{{ ms.status }}</span></td>
+                                <td>{{ formatDate(ms.startDate) }}</td>
+                                <td>{{ formatDate(ms.endDate) }}</td>
+                                <td>₹{{ ms.paid }}</td>
+                                <td>₹{{ ms.pending }}</td>
+                                <td>₹{{ ms.discount ?? 0 }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div v-else class="text-muted small mt-2">No memberships</div>
+                      </div>
 
-                    <!-- Memberships Section -->
-                    <h6 class="fw-bold mb-2 text-primary">Memberships</h6>
-                    <div v-if="member.memberships.length">
-                      <table class="table table-sm table-bordered mb-3">
-                        <thead class="table-light">
-                          <tr>
-                            <th>Plan</th>
-                            <th>Status</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>Paid</th>
-                            <th>Pending</th>
-                            <th>Discount</th>
-                            <!-- <th class="text-center">Actions</th> -->
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="ms in member.memberships" :key="'m-' + ms.id">
-                            <td>{{ getPlanName(ms.planId) }}</td>
-                            <td>
-                              <span class="badge" :class="getStatusClass(ms.status)">
-                                {{ ms.status }}
-                              </span>
-                            </td>
-                            <td>{{ formatDate(ms.startDate) }}</td>
-                            <td>{{ formatDate(ms.endDate) }}</td>
-                            <td>₹{{ ms.paid }}</td>
-                            <td>₹{{ ms.pending }}</td>
-                            <td>₹{{ ms.discount ?? 0 }}</td>
-                            <!-- <td class="text-center" @click.stop> -->
-                            <!-- <button class="btn btn-sm btn-outline-primary me-1" @click="openEditMembershipModal(ms)">
-                                Edit
-                              </button> -->
-                            <!-- <button class="btn btn-sm btn-outline-danger" @click="openRefundModal(ms)">
-                                Refund
-                              </button> -->
-                            <!-- <button class="btn btn-sm btn-outline-dark ms-1" @click="confirmDeleteMembership(ms)">
-                                Delete
-                              </button> -->
-                            <!-- </td> -->
-                          </tr>
-                        </tbody>
-                      </table>
+                      <div class="col-md-6">
+                        <h6 class="fw-bold text-success">Special Programs</h6>
+                        <div v-if="member.memberAddons?.length">
+                          <table class="table table-sm table-bordered mt-2">
+                            <thead class="table-light small">
+                              <tr>
+                                <th>Name</th><th>Status</th><th>Start</th><th>End</th><th>Paid</th><th>Pending</th><th>Trainer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr v-for="ad in member.memberAddons" :key="'a-'+ad.id">
+                                <td>{{ ad.addon?.name ?? 'N/A' }}</td>
+                                <td><span class="status-badge" :class="getStatusClass(ad.status)">{{ ad.status }}</span></td>
+                                <td>{{ formatDate(ad.startDate) }}</td>
+                                <td>{{ formatDate(ad.endDate) }}</td>
+                                <td>₹{{ ad.paid }}</td>
+                                <td>₹{{ ad.pending }}</td>
+                                <td>{{ ad.trainerId ?? 'N/A' }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div v-else class="text-muted small mt-2">No add-ons</div>
+                      </div>
                     </div>
-                    <div v-else class="text-muted mb-3">No memberships</div>
-
-                    <!-- Addons Section -->
-                    <h6 class="fw-bold mb-2 text-success">Special Programs</h6>
-                    <div v-if="member.memberAddons && member.memberAddons.length">
-                      <table class="table table-sm table-bordered">
-                        <thead class="table-light">
-                          <tr>
-                            <th>Name</th>
-                            <th>Status</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>Paid</th>
-                            <th>Pending</th>
-                            <th>Discount</th>
-                            <th>Trainer</th>
-                            <!-- <th class="text-center">Actions</th> -->
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr v-for="ad in member.memberAddons" :key="'a-' + ad.id">
-                            <td>{{ ad.addon?.name ?? 'N/A' }}</td>
-                            <td>
-                              <span class="badge" :class="getStatusClass(ad.status)">
-                                {{ ad.status }}
-                              </span>
-                            </td>
-                            <td>{{ formatDate(ad.startDate) }}</td>
-                            <td>{{ formatDate(ad.endDate) }}</td>
-                            <td>₹{{ ad.paid }}</td>
-                            <td>₹{{ ad.pending }}</td>
-                            <td>₹{{ ad.discount ?? 0 }}</td>
-                            <td>{{ ad.trainerId ? ad.trainerId : 'N/A' }}</td>
-                            <!-- <td class="text-center" @click.stop> -->
-                            <!-- <button class="btn btn-sm btn-outline-primary me-1" @click="editAddon(ad)">
-                                Edit
-                              </button> -->
-                            <!-- <button class="btn btn-sm btn-outline-danger" @click="deleteAddon(ad)">
-                                Delete
-                              </button> -->
-                            <!-- </td> -->
-                          </tr>
-                        </tbody>
-                      </table>
+                    <!-- membership-level actions (edit/refund/delete) -->
+                    <div class="mt-3 d-flex gap-2">
+                      <button v-if="editingMembership" class="btn btn-outline-secondary btn-sm" @click="openEditMembershipModal(editingMembership)">
+                        Edit open membership
+                      </button>
                     </div>
-                    <div v-else class="text-muted">No addons</div>
-
                   </div>
                 </td>
               </tr>
             </template>
 
-            <tr v-if="members.length === 0">
-              <td colspan="10" class="text-center text-muted py-4">No members found</td>
+            <tr v-if="!members.length">
+              <td colspan="7" class="text-center text-muted py-4">No members found</td>
             </tr>
           </tbody>
         </table>
+      </div>
 
-        <!-- Pagination -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <div class="text-muted small">
-            Showing {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }}
-            of {{ meta.total }} members
-          </div>
-          <nav>
-            <ul class="pagination pagination-sm mb-0">
-              <li class="page-item" :class="{ disabled: meta.page <= 1 }">
-                <a class="page-link" @click="goToPage(meta.page - 1)" href="javascript:void(0)">Prev</a>
-              </li>
-              <li class="page-item" v-for="p in visiblePages" :key="p" :class="{ active: p === meta.page }">
-                <a class="page-link" @click="goToPage(p)" href="javascript:void(0)">{{ p }}</a>
-              </li>
-              <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
-                <a class="page-link" @click="goToPage(meta.page + 1)" href="javascript:void(0)">Next</a>
-              </li>
-            </ul>
-          </nav>
+      <!-- Pagination footer -->
+      <div class="d-flex justify-content-between align-items-center border-top px-3 py-2 small text-muted">
+        <div>
+          Showing {{ (meta.page - 1) * meta.limit + 1 }}–{{ Math.min(meta.page * meta.limit, meta.total) }} of {{ meta.total }}
         </div>
+
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" :class="{ disabled: meta.page <= 1 }">
+            <a class="page-link" href="javascript:void(0)" @click="goToPage(meta.page - 1)">Prev</a>
+          </li>
+
+          <li v-for="p in visiblePages" :key="p" class="page-item" :class="{ active: p === meta.page }">
+            <a class="page-link" href="javascript:void(0)" @click="goToPage(p)">{{ p }}</a>
+          </li>
+
+          <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
+            <a class="page-link" href="javascript:void(0)" @click="goToPage(meta.page + 1)">Next</a>
+          </li>
+        </ul>
       </div>
     </div>
 
     <!-- Add/Edit Member Modal -->
     <div class="modal fade" ref="memberModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">
-              {{ editingMember ? 'Edit Member' : 'Add Member' }}
-            </h5>
+            <h5 class="modal-title">{{ editingMember ? 'Edit Member' : 'Add Member' }}</h5>
             <button type="button" class="btn-close" @click="closeMemberModal"></button>
           </div>
           <div class="modal-body">
@@ -231,14 +213,14 @@
                 <div class="col-md-6">
                   <label class="form-label"><strong>First Name</strong></label>
                   <input v-model.trim="memberForm.firstName" type="text" class="form-control"
-                    :class="{ 'is-invalid': memberErrors.firstName }" @blur="validateMemberField('firstName')"
-                    required />
+                         :class="{ 'is-invalid': memberErrors.firstName }" @blur="validateMemberField('firstName')" required />
                   <div v-if="memberErrors.firstName" class="invalid-feedback">{{ memberErrors.firstName }}</div>
                 </div>
+
                 <div class="col-md-6">
                   <label class="form-label"><strong>Last Name</strong></label>
                   <input v-model.trim="memberForm.lastName" type="text" class="form-control"
-                    :class="{ 'is-invalid': memberErrors.lastName }" @blur="validateMemberField('lastName')" required />
+                         :class="{ 'is-invalid': memberErrors.lastName }" @blur="validateMemberField('lastName')" required />
                   <div v-if="memberErrors.lastName" class="invalid-feedback">{{ memberErrors.lastName }}</div>
                 </div>
               </div>
@@ -247,13 +229,14 @@
                 <div class="col-md-6">
                   <label class="form-label"><strong>Email</strong></label>
                   <input v-model.trim="memberForm.email" type="email" class="form-control"
-                    :class="{ 'is-invalid': memberErrors.email }" @blur="validateMemberField('email')" required />
+                         :class="{ 'is-invalid': memberErrors.email }" @blur="validateMemberField('email')" required />
                   <div v-if="memberErrors.email" class="invalid-feedback">{{ memberErrors.email }}</div>
                 </div>
+
                 <div class="col-md-6">
                   <label class="form-label"><strong>Phone</strong></label>
                   <input v-model.trim="memberForm.phone" type="text" class="form-control"
-                    :class="{ 'is-invalid': memberErrors.phone }" @blur="validateMemberField('phone')" required />
+                         :class="{ 'is-invalid': memberErrors.phone }" @blur="validateMemberField('phone')" required />
                   <div v-if="memberErrors.phone" class="invalid-feedback">{{ memberErrors.phone }}</div>
                 </div>
               </div>
@@ -273,21 +256,21 @@
                     <option value="Other">Other</option>
                   </select>
                 </div>
+
                 <div class="col-md-4">
                   <label class="form-label"><strong>Referral Source</strong></label>
-                  <input v-model.trim="memberForm.referralSource" type="text" class="form-control"
-                    placeholder="E.g. Friend, Ad" />
+                  <input v-model.trim="memberForm.referralSource" type="text" class="form-control" placeholder="E.g. Friend, Ad" />
                 </div>
+
                 <div class="col-md-4">
                   <label class="form-label"><strong>Notes</strong></label>
-                  <input v-model.trim="memberForm.notes" type="text" class="form-control"
-                    placeholder="Optional notes" />
+                  <input v-model.trim="memberForm.notes" type="text" class="form-control" placeholder="Optional notes" />
                 </div>
               </div>
 
               <div class="d-grid gap-2 mt-4">
                 <button type="button" class="btn btn-primary" @click="saveMember"
-                  :disabled="!isMemberFormValid || (!!editingMember && !isMemberFormDirty)">
+                        :disabled="!isMemberFormValid || (!!editingMember && !isMemberFormDirty)">
                   {{ editingMember ? 'Update Member' : 'Add Member' }}
                 </button>
               </div>
@@ -299,7 +282,7 @@
 
     <!-- Edit Membership Modal -->
     <div class="modal fade" ref="membershipModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Edit Membership</h5>
@@ -312,14 +295,17 @@
                 <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option>
               </select>
             </div>
+
             <div class="mb-3">
               <label class="form-label">Start Date</label>
               <input v-model="membershipForm.startDate" type="date" class="form-control" />
             </div>
+
             <div class="mb-3">
               <label class="form-label">End Date</label>
               <input v-model="membershipForm.endDate" type="date" class="form-control" />
             </div>
+
             <div class="mb-3">
               <label class="form-label">Status</label>
               <select v-model="membershipForm.status" class="form-select">
@@ -330,7 +316,10 @@
                 <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
-            <button class="btn btn-primary w-100" @click="saveMembership">Update</button>
+
+            <div class="d-grid">
+              <button class="btn btn-primary" @click="saveMembership">Update</button>
+            </div>
           </div>
         </div>
       </div>
@@ -338,7 +327,7 @@
 
     <!-- Refund Modal -->
     <div class="modal fade" ref="refundModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-sm">
+      <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Issue Refund</h5>
@@ -362,15 +351,17 @@
                 <option value="ONLINE">Online</option>
               </select>
             </div>
-            <button class="btn btn-success w-100" @click="processRefund">Refund</button>
+
+            <div class="d-grid">
+              <button class="btn btn-success" @click="processRefund">Refund</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Confirm Delete -->
-    <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" style="display: block;" v-if="isConfirmOpen"
-      @click.self="resolveConfirm(false)">
+    <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" style="display: block;" v-if="isConfirmOpen" @click.self="resolveConfirm(false)">
       <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header border-0 pb-2">
@@ -399,19 +390,25 @@ import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
 // ─────────────── Interfaces ───────────────
+interface Plan { id: number; name: string }
 interface Membership {
   id: number
+  userId?: number
   planId: number
+  memberId?: number
   startDate: string
   endDate: string
   status: string
+  discount?: number
   paid: number
   pending: number
-  discount?: number
+  createdAt?: string
+  updatedAt?: string
+  plan?: Plan
 }
-
 interface Addon {
   id: number
+  memberId?: number
   addonId: number
   trainerId?: number | null
   startDate: string
@@ -421,17 +418,13 @@ interface Addon {
   discount?: number
   paid: number
   pending: number
-  addon?: {
-    id: number
-    name: string
-    description?: string
-    price: number
-    durationDays: number
-  }
+  createdAt?: string
+  updatedAt?: string
+  addon?: { id: number; name: string; description?: string; price?: number; durationDays?: number }
 }
-
 interface Member {
   id: number
+  userId?: number
   firstName: string
   lastName: string
   email: string
@@ -440,21 +433,12 @@ interface Member {
   gender?: string
   referralSource?: string
   notes?: string
+  createdAt?: string
+  updatedAt?: string
   memberships: Membership[]
   memberAddons: Addon[]
 }
-
-interface Plan {
-  id: number
-  name: string
-}
-
-interface PaginationMeta {
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-}
+interface PaginationMeta { total: number; page: number; limit: number; totalPages: number }
 
 // ─────────────── State ───────────────
 const members = ref<Member[]>([])
@@ -489,10 +473,10 @@ const toastMessage = ref('')
 const isMemberFormValid = computed(() => {
   ;['firstName', 'lastName', 'email', 'phone'].forEach(validateMemberField)
   return (
-    memberForm.value.firstName &&
-    memberForm.value.lastName &&
-    memberForm.value.email &&
-    memberForm.value.phone &&
+    !!memberForm.value.firstName &&
+    !!memberForm.value.lastName &&
+    !!memberForm.value.email &&
+    !!memberForm.value.phone &&
     !Object.values(memberErrors.value).some(err => err)
   )
 })
@@ -519,23 +503,20 @@ const visiblePages = computed(() => {
 const getPlanName = (id?: number) => plans.value.find(p => p.id === id)?.name ?? 'N/A'
 const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
 const getStatusClass = (status?: string) => {
-  if (!status) return 'bg-secondary'
+  if (!status) return 'status-secondary'
   return {
-    ACTIVE: 'bg-success',
-    PARTIAL_PAID: 'bg-warning text-dark',
-    EXPIRED: 'bg-danger',
-    CANCELLED: 'bg-dark',
-  }[status] || 'bg-secondary'
+    ACTIVE: 'status-success',
+    PARTIAL_PAID: 'status-warning',
+    EXPIRED: 'status-danger',
+    CANCELLED: 'status-dark',
+  }[status] || 'status-secondary'
 }
 const canDeleteMember = (member: Member) => {
   const hasActiveMembership = member.memberships?.some(ms => ms.status === 'ACTIVE')
   const hasActiveAddon = member.memberAddons?.some(ad => ad.status === 'ACTIVE')
   const hasAnyMembershipOrAddon = (member.memberships?.length ?? 0) > 0 || (member.memberAddons?.length ?? 0) > 0
-
-  // Delete allowed only if no active ones and both lists are empty or inactive
   return !hasActiveMembership && !hasActiveAddon && !hasAnyMembershipOrAddon
 }
-
 
 // ─────────────── Validation ───────────────
 const validateMemberField = (field: string) => {
@@ -549,14 +530,12 @@ const validateMemberField = (field: string) => {
       break
     case 'email':
       if (!value) memberErrors.value.email = 'Email is required.'
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value)))
-        memberErrors.value.email = 'Enter a valid email.'
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value))) memberErrors.value.email = 'Enter a valid email.'
       else memberErrors.value.email = ''
       break
     case 'phone':
       if (!value) memberErrors.value.phone = 'Phone number is required.'
-      else if (!/^[0-9]{10}$/.test(String(value)))
-        memberErrors.value.phone = 'Enter a valid 10-digit phone number.'
+      else if (!/^[0-9]{10}$/.test(String(value))) memberErrors.value.phone = 'Enter a valid 10-digit phone number.'
       else memberErrors.value.phone = ''
       break
   }
@@ -591,7 +570,7 @@ const loadPlans = async () => {
   try {
     const res: AxiosResponse<any> = await api.get('/plans/list-all')
     plans.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
-  } catch { }
+  } catch { /* swallow */ }
 }
 const resetPageAndLoad = () => { pagination.value.page = 1; loadMembers() }
 const goToPage = (page: number | string) => {
@@ -637,8 +616,8 @@ const openEditMembershipModal = (ms: Membership) => {
   editingMembership.value = ms
   membershipForm.value = {
     planId: ms.planId,
-    startDate: ms.startDate.split('T')[0],
-    endDate: ms.endDate.split('T')[0],
+    startDate: ms.startDate?.split('T')[0] ?? '',
+    endDate: ms.endDate?.split('T')[0] ?? '',
     status: ms.status,
   }
   membershipModal?.show()
@@ -659,9 +638,7 @@ const saveMembership = async () => {
 // ─────────────── Addon Actions ───────────────
 const editAddon = (addon: Addon) => {
   showToast(`Edit Addon #${addon.id} clicked`)
-  // You can later add modal edit logic here
 }
-
 const deleteAddon = async (addon: Addon) => {
   if (await showConfirm()) {
     try {
@@ -688,10 +665,20 @@ const processRefund = async () => {
 
 // ─────────────── Delete Confirmation ───────────────
 const isConfirmOpen = ref(false)
-let resolveConfirm: (v: boolean) => void = () => { }
+let resolveConfirm: (v: boolean) => void = () => {}
 const showConfirm = (): Promise<boolean> => new Promise(resolve => { isConfirmOpen.value = true; resolveConfirm = v => { isConfirmOpen.value = false; resolve(v) } })
 const confirmDeleteMembership = async (ms: Membership) => { if (await showConfirm()) try { await api.delete(`/memberships/${ms.id}`); showToast('Membership deleted!'); loadMembers() } catch { showToast('Failed.', false) } }
-const confirmDelete = async (m: Member) => { if (await showConfirm()) try { await api.delete(`/members/${m.id}`); showToast('Member deleted!'); loadMembers() } catch { showToast('Failed.', false) } }
+const confirmDelete = async (m: Member) => {
+  if (await showConfirm()) {
+    try {
+      await api.delete(`/members/${m.id}`)
+      showToast('Member deleted!')
+      await loadMembers()
+    } catch {
+      showToast('Failed to delete member.', false)
+    }
+  }
+}
 
 // ─────────────── UI Helpers ───────────────
 const toggleExpand = (id: number) => { expandedMemberId.value = expandedMemberId.value === id ? null : id }
@@ -712,68 +699,67 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <style scoped>
-.table td,
-.table th {
-  vertical-align: middle;
-}
+.members-container { padding: 1.25rem; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: #fff; }
 
-.table-active {
-  background-color: #f8f9fa !important;
-}
+/* header */
+h2 { font-size: 1.125rem; }
 
-.dropdown {
-  position: relative;
+/* search card */
+.search-input { width: 320px; }
+
+/* table */
+.table-modern th, .table-modern td { font-size: 0.925rem; vertical-align: middle; }
+.table-modern th { color: #6b7280; font-weight: 600; border-bottom: 1px solid #eef2f6; background: #f8fafc; }
+.table-modern tbody tr:hover { background: #fbfdff; transition: background 0.12s; }
+.table-active { background: #f3f4f6 !important; }
+
+/* action icon */
+.icon-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.icon-btn:hover { background: #e2e8f0; }
+
+/* status badges */
+.status-badge {
   display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fff;
 }
+.status-success { background: #16a34a; }
+.status-warning { background: #f59e0b; color: #000; }
+.status-danger { background: #dc2626; }
+.status-dark { background: #374151; }
+.status-secondary { background: #6b7280; }
 
+/* dropdown menu custom */
+.dropdown { position: relative; display: inline-block; }
 .dropdown-menu-custom {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
-  z-index: 2000;
-  min-width: 160px;
+  position: absolute; right: 0; top: 100%;
+  background: white; border: 1px solid #e6e9ee; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(16,24,40,0.06); z-index: 2000; min-width: 180px;
 }
+.dropdown-item-custom { display:block; padding:8px 12px; color:#111827; text-decoration:none; font-size:0.9rem; }
+.dropdown-item-custom:hover { background:#f8fafc; }
 
-.dropdown-item-custom {
-  display: block;
-  padding: 8px 12px;
-  color: #333;
-  text-decoration: none;
-  font-size: .9rem;
-}
+/* modal tweaks */
+.modal-body { max-height: 70vh; overflow-y: auto; }
+.modal-dialog { max-width: 820px; }
+.modal-sm .modal-content { border-radius: .5rem; }
 
-.dropdown-item-custom:hover {
-  background: #f8f9fa;
-}
+/* toast width */
+.toast { min-width: 280px; }
 
-.dropdown-item-custom.text-danger {
-  color: #dc3545 !important;
-}
-
-.btn-sm.border-0 {
-  font-size: 1.3rem;
-  line-height: 1;
-  padding: 0 .4rem;
-}
-
-.modal-body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.toast {
-  min-width: 280px;
-}
-
-.card-body {
-  overflow: visible !important;
-}
-
-.modal-sm .modal-content {
-  border-radius: .5rem;
-}
+/* pagination */
+.pagination .page-item .page-link { color: #374151; border-radius: 6px; }
+.pagination .page-item.active .page-link { background-color: #2563eb; color: #fff; border-color: #2563eb; }
 </style>
