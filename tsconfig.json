@@ -13,6 +13,13 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "types": ["vite/client"],
+    "typeRoots": ["./node_modules/@types", "./src/types"]  // Added: include custom types
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/types/**/*.d.ts"  // Added: ensure custom .d.ts files are picked up
+  ]
 }
