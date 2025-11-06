@@ -66,114 +66,96 @@
             <thead class="bg-light text-muted small fw-semibold sticky-top" style="z-index: 10;">
               <tr>
                 <!-- ID -->
-                <th class="position-relative">
-                  <div class="d-flex align-items-center justify-content-between">
-                    ID
-                    <button v-if="!columnFilters.id" @click.stop="columnFilters.id = true" class="btn btn-sm p-0 ms-2"
-                      title="Search ID">
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.id }">ID</span>
+                    <input v-show="columnFilters.id" v-model.trim="filters.id" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm filter-input" placeholder="Search ID"
+                      @blur="handleBlur('id')" />
+                    <button class="filter-btn" @click.stop="toggleFilter('id')" title="Filter ID">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
                         <path
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.id" v-model.trim="filters.id" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="ID"
-                      @blur="handleBlur('id')" />
                   </div>
                 </th>
 
                 <!-- Name -->
-                <th class="position-relative">
-                  <div class="d-flex align-items-center justify-content-between">
-                    Name
-                    <button v-if="!columnFilters.name" @click.stop="columnFilters.name = true"
-                      class="btn btn-sm p-0 ms-2" title="Search Name">
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.name }">Name</span>
+                    <input v-show="columnFilters.name" v-model.trim="filters.name" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm filter-input" placeholder="Search Name"
+                      @blur="handleBlur('name')" />
+                    <button class="filter-btn" @click.stop="toggleFilter('name')" title="Filter Name">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
                         <path
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.name" v-model.trim="filters.name" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Name"
-                      @blur="handleBlur('name')" />
                   </div>
                 </th>
 
                 <!-- Email -->
-                <th class="position-relative">
-                  <div class="d-flex align-items-center justify-content-between">
-                    Email
-                    <button v-if="!columnFilters.email" @click.stop="columnFilters.email = true"
-                      class="btn btn-sm p-0 ms-2" title="Search Email">
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.email }">Email</span>
+                    <input v-show="columnFilters.email" v-model.trim="filters.email" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm filter-input" placeholder="Search Email"
+                      @blur="handleBlur('email')" />
+                    <button class="filter-btn" @click.stop="toggleFilter('email')" title="Filter Email">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
                         <path
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.email" v-model.trim="filters.email" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Email"
-                      @blur="handleBlur('email')" />
                   </div>
                 </th>
 
                 <!-- Phone -->
-                <th class="position-relative">
-                  <div class="d-flex align-items-center justify-content-between">
-                    Phone
-                    <button v-if="!columnFilters.phone" @click.stop="columnFilters.phone = true"
-                      class="btn btn-sm p-0 ms-2" title="Search Phone">
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.phone }">Phone</span>
+                    <input v-show="columnFilters.phone" v-model.trim="filters.phone" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm filter-input" placeholder="Search Phone"
+                      @blur="handleBlur('phone')" />
+                    <button class="filter-btn" @click.stop="toggleFilter('phone')" title="Filter Phone">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
                         <path
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.phone" v-model.trim="filters.phone" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Phone"
-                      @blur="handleBlur('phone')" />
                   </div>
                 </th>
 
                 <!-- Plan -->
-                <th class="position-relative">
-                  <div class="d-flex align-items-center justify-content-between">
-                    Plan
-                    <button v-if="!columnFilters.plan" @click.stop="columnFilters.plan = true"
-                      class="btn btn-sm p-0 ms-2" title="Search Plan">
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.plan }">Plan</span>
+                    <input v-show="columnFilters.plan" v-model.trim="filters.plan" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm filter-input" placeholder="Search Plan"
+                      @blur="handleBlur('plan')" />
+                    <button class="filter-btn" @click.stop="toggleFilter('plan')" title="Filter Plan">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
                         <path
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.plan" v-model.trim="filters.plan" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Plan"
-                      @blur="handleBlur('plan')" />
                   </div>
                 </th>
 
                 <!-- Status -->
-                <!-- Status -->
-                <th class="position-relative">
-                  <div class="d-flex align-items-center justify-content-between">
-                    Status
-                    <button v-if="!columnFilters.status" @click.stop="columnFilters.status = true"
-                      class="btn btn-sm p-0 ms-2" title="Filter Status">
-                      <!-- Funnel / Filter Icon -->
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                          d="M6 10a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 10zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 7zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 4z" />
-                      </svg>
-
-                    </button>
-
-                    <!-- 🔽 Status Dropdown -->
-                    <select v-if="columnFilters.status" v-model="filters.status" @change="debouncedResetPageAndLoad"
-                      class="form-select form-select-sm w-auto ms-2" @blur="handleBlur('status')">
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.status }">Status</span>
+                    <select v-show="columnFilters.status" v-model="filters.status" @change="debouncedResetPageAndLoad"
+                      class="form-select form-select-sm filter-input" @blur="handleBlur('status')">
                       <option value="">All</option>
                       <option value="ACTIVE">Active</option>
                       <option value="INACTIVE">Inactive</option>
@@ -181,6 +163,13 @@
                       <option value="EXPIRED">Expired</option>
                       <option value="CANCELLED">Cancelled</option>
                     </select>
+                    <button class="filter-btn" @click.stop="toggleFilter('status')" title="Filter Status">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                          d="M6 10a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 10zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 7zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 4z" />
+                      </svg>
+                    </button>
                   </div>
                 </th>
 
@@ -188,6 +177,7 @@
                 <th class="text-center">Action</th>
               </tr>
             </thead>
+
 
             <tbody>
               <template v-for="member in members" :key="member.id">
@@ -702,6 +692,11 @@ const validateMemberField = (field: string) => {
   }
 }
 
+const toggleFilter = (key: FilterKey) => {
+  columnFilters.value[key] = !columnFilters.value[key];
+  if (!columnFilters.value[key]) filters.value[key] = '';
+};
+
 // Toast
 const showToast = (msg: string, success = true) => {
   toastMessage.value = msg
@@ -748,7 +743,7 @@ const resetPageAndLoad = () => {
   pagination.value.page = 1
   loadMembers()
 }
-const debouncedResetPageAndLoad = debounce(resetPageAndLoad, 700)
+const debouncedResetPageAndLoad = debounce(resetPageAndLoad, 1000)
 
 
 const goToPage = (page: number | string) => {
@@ -1033,5 +1028,60 @@ onMounted(async () => {
 
 .pagination-footer select {
   min-width: 70px;
+}
+.filter-header {
+  position: relative;
+  white-space: nowrap;
+  min-width: 140px;
+}
+
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.header-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #495057;
+  transition: opacity 0.2s ease;
+}
+
+.header-label.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-input {
+  width: 100%;
+  max-width: 120px;
+  opacity: 1;
+  transition: all 0.3s ease;
+  padding: 0.15rem 0.4rem;
+}
+
+.filter-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.filter-btn:hover {
+  color: #4361ee;
+}
+
+.filter-header .form-control-sm,
+.filter-header .form-select-sm {
+  font-size: 0.8rem;
+  height: 26px;
 }
 </style>
