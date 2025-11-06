@@ -153,20 +153,31 @@
                 </th>
 
                 <!-- Status -->
+                <!-- Status -->
                 <th class="position-relative">
                   <div class="d-flex align-items-center justify-content-between">
                     Status
                     <button v-if="!columnFilters.status" @click.stop="columnFilters.status = true"
-                      class="btn btn-sm p-0 ms-2" title="Search Status">
+                      class="btn btn-sm p-0 ms-2" title="Filter Status">
+                      <!-- Funnel / Filter Icon -->
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
                         <path
-                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                          d="M6 10a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 10zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 7zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 4z" />
                       </svg>
+
                     </button>
-                    <input v-if="columnFilters.status" v-model.trim="filters.status" @input="resetPageAndLoad"
-                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Status"
-                      @blur="handleBlur('status')" />
+
+                    <!-- 🔽 Status Dropdown -->
+                    <select v-if="columnFilters.status" v-model="filters.status" @change="resetPageAndLoad"
+                      class="form-select form-select-sm w-auto ms-2" @blur="handleBlur('status')">
+                      <option value="">All</option>
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                      <option value="PARTIAL_PAID">Partial Paid</option>
+                      <option value="EXPIRED">Expired</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
                   </div>
                 </th>
 
