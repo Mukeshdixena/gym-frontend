@@ -67,165 +67,168 @@
 
     <!-- Table Container -->
     <div v-else class="table-responsive rounded-3 overflow-hidden shadow-sm border">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="bg-light text-muted small fw-semibold sticky-top" style="z-index: 10;">
-          <tr>
-            <th>ID</th>
-            <th>
-              Name
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"
-                class="ms-1">
-                <path
-                  d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z" />
-              </svg>
-            </th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Plan</th>
-            <th>Status</th>
-            <th class="text-center">Action</th>
-          </tr>
-        </thead>
+      <!-- Table Wrapper -->
+      <!-- Scrollable Table Container -->
+      <div class="table-scroll-container">
+        <div class="table-container border rounded-3 shadow-sm">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-muted small fw-semibold sticky-top" style="z-index: 10;">
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
 
-        <tbody>
-          <template v-for="member in members" :key="member.id">
-            <tr @click="toggleExpand(member.id)" style="cursor: pointer;"
-              :class="{ 'table-active': expandedMemberId === member.id }">
-              <td class="small text-muted">{{ member.id }}</td>
-              <td class="fw-semibold">{{ member.firstName }} {{ member.lastName }}</td>
-              <td class="small">{{ member.email }}</td>
-              <td class="small">{{ member.phone }}</td>
-              <td class="small">{{ member.memberships[0]?.plan?.name ?? 'N/A' }}</td>
-              <td>
-                <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
-                  {{ member.memberships[0]?.status ?? 'N/A' }}
-                </span>
-              </td>
-              <td class="text-center" @click.stop>
-                <div class="d-flex justify-content-center gap-2">
-                  <button class="icon-btn" title="Edit" @click.stop="editMember(member)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                      viewBox="0 0 16 16">
-                      <path
-                        d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708L4.207 13.5 2 14l.5-2.207L12.146.146zM11.207 2L3 10.207V12h1.793L13 3.793 11.207 2z" />
-                    </svg>
-                  </button>
+            <tbody>
+              <template v-for="member in members" :key="member.id">
+                <tr @click="toggleExpand(member.id)" style="cursor: pointer;"
+                  :class="{ 'table-active': expandedMemberId === member.id }">
+                  <td class="small text-muted">{{ member.id }}</td>
+                  <td class="fw-semibold">{{ member.firstName }} {{ member.lastName }}</td>
+                  <td class="small">{{ member.email }}</td>
+                  <td class="small">{{ member.phone }}</td>
+                  <td class="small">{{ member.memberships[0]?.plan?.name ?? 'N/A' }}</td>
+                  <td>
+                    <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
+                      {{ member.memberships[0]?.status ?? 'N/A' }}
+                    </span>
+                  </td>
+                  <td class="text-center" @click.stop>
+                    <div class="d-flex justify-content-center gap-2">
+                      <button class="icon-btn" title="Edit" @click.stop="editMember(member)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708L4.207 13.5 2 14l.5-2.207L12.146.146zM11.207 2L3 10.207V12h1.793L13 3.793 11.207 2z" />
+                        </svg>
+                      </button>
 
-                  <button class="icon-btn text-danger" :disabled="!canDeleteMember(member)" title="Delete"
-                    @click.stop="confirmDelete(member)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                      viewBox="0 0 16 16">
-                      <path d="M5.5 5.5v7h1v-7h-1zm3 0v7h1v-7h-1z" />
-                      <path fill-rule="evenodd"
-                        d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4H2.5a1 1 0 1 1 0-2H5l.5-1h5l.5 1h2.5a1 1 0 0 1 1 1z" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-
-            <!-- Expanded Row -->
-            <tr v-if="expandedMemberId === member.id">
-              <td colspan="7" class="p-0 bg-light">
-                <div class="p-4">
-                  <div class="row g-4">
-                    <div class="col-md-6">
-                      <h6 class="fw-bold text-primary mb-3">Memberships</h6>
-                      <div v-if="member.memberships?.length" class="table-responsive">
-                        <table class="table table-sm table-bordered">
-                          <thead class="table-light small">
-                            <tr>
-                              <th>Plan</th>
-                              <th>Status</th>
-                              <th>Start</th>
-                              <th>End</th>
-                              <th>Paid</th>
-                              <th>Pending</th>
-                              <th>Discount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="ms in member.memberships" :key="'m-' + ms.id">
-                              <td>{{ ms.plan?.name ?? 'N/A' }}</td>
-                              <td><span class="status-badge" :class="getStatusClass(ms.status)">{{ ms.status }}</span>
-                              </td>
-                              <td>{{ formatDate(ms.startDate) }}</td>
-                              <td>{{ formatDate(ms.endDate) }}</td>
-                              <td>₹{{ ms.paid }}</td>
-                              <td>₹{{ ms.pending }}</td>
-                              <td>₹{{ ms.discount ?? 0 }}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <p v-else class="text-muted small">No memberships</p>
+                      <button class="icon-btn text-danger" :disabled="!canDeleteMember(member)" title="Delete"
+                        @click.stop="confirmDelete(member)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path d="M5.5 5.5v7h1v-7h-1zm3 0v7h1v-7h-1z" />
+                          <path fill-rule="evenodd"
+                            d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4H2.5a1 1 0 1 1 0-2H5l.5-1h5l.5 1h2.5a1 1 0 0 1 1 1z" />
+                        </svg>
+                      </button>
                     </div>
+                  </td>
+                </tr>
 
-                    <div class="col-md-6">
-                      <h6 class="fw-bold text-success mb-3">Special Programs</h6>
-                      <div v-if="member.memberAddons?.length" class="table-responsive">
-                        <table class="table table-sm table-bordered">
-                          <thead class="table-light small">
-                            <tr>
-                              <th>Name</th>
-                              <th>Status</th>
-                              <th>Start</th>
-                              <th>End</th>
-                              <th>Paid</th>
-                              <th>Pending</th>
-                              <th>Trainer</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="ad in member.memberAddons" :key="'a-' + ad.id">
-                              <td>{{ ad.addon?.name ?? 'N/A' }}</td>
-                              <td><span class="status-badge" :class="getStatusClass(ad.status)">{{ ad.status }}</span>
-                              </td>
-                              <td>{{ formatDate(ad.startDate) }}</td>
-                              <td>{{ formatDate(ad.endDate) }}</td>
-                              <td>₹{{ ad.paid }}</td>
-                              <td>₹{{ ad.pending }}</td>
-                              <td>{{ ad.trainerId ?? 'N/A' }}</td>
-                            </tr>
-                          </tbody>
-                        </table>
+                <!-- Expanded row section same as before -->
+                <tr v-if="expandedMemberId === member.id">
+                  <td colspan="7" class="p-0 bg-light">
+                    <div class="p-4">
+                      <div class="row g-4">
+                        <div class="col-md-6">
+                          <h6 class="fw-bold text-primary mb-3">Memberships</h6>
+                          <div v-if="member.memberships?.length" class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                              <thead class="table-light small">
+                                <tr>
+                                  <th>Plan</th>
+                                  <th>Status</th>
+                                  <th>Start</th>
+                                  <th>End</th>
+                                  <th>Paid</th>
+                                  <th>Pending</th>
+                                  <th>Discount</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr v-for="ms in member.memberships" :key="'m-' + ms.id">
+                                  <td>{{ ms.plan?.name ?? 'N/A' }}</td>
+                                  <td><span class="status-badge" :class="getStatusClass(ms.status)">{{ ms.status
+                                      }}</span>
+                                  </td>
+                                  <td>{{ formatDate(ms.startDate) }}</td>
+                                  <td>{{ formatDate(ms.endDate) }}</td>
+                                  <td>₹{{ ms.paid }}</td>
+                                  <td>₹{{ ms.pending }}</td>
+                                  <td>₹{{ ms.discount ?? 0 }}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          <p v-else class="text-muted small">No memberships</p>
+                        </div>
+
+                        <div class="col-md-6">
+                          <h6 class="fw-bold text-success mb-3">Special Programs</h6>
+                          <div v-if="member.memberAddons?.length" class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                              <thead class="table-light small">
+                                <tr>
+                                  <th>Name</th>
+                                  <th>Status</th>
+                                  <th>Start</th>
+                                  <th>End</th>
+                                  <th>Paid</th>
+                                  <th>Pending</th>
+                                  <th>Trainer</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr v-for="ad in member.memberAddons" :key="'a-' + ad.id">
+                                  <td>{{ ad.addon?.name ?? 'N/A' }}</td>
+                                  <td><span class="status-badge" :class="getStatusClass(ad.status)">{{ ad.status
+                                      }}</span>
+                                  </td>
+                                  <td>{{ formatDate(ad.startDate) }}</td>
+                                  <td>{{ formatDate(ad.endDate) }}</td>
+                                  <td>₹{{ ad.paid }}</td>
+                                  <td>₹{{ ad.pending }}</td>
+                                  <td>{{ ad.trainerId ?? 'N/A' }}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          <p v-else class="text-muted small">No add-ons</p>
+                        </div>
                       </div>
-                      <p v-else class="text-muted small">No add-ons</p>
                     </div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          </template>
+                  </td>
+                </tr>
+              </template>
 
-          <tr v-if="!members.length">
-            <td colspan="7" class="text-center text-muted py-5">No members found</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Sticky Footer -->
-      <div
-        class="bg-white border-top px-3 py-2 d-flex justify-content-between align-items-center small text-muted sticky-bottom">
-        <div>
-          Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }} of {{
-            meta.total }} results
+              <tr v-if="!members.length">
+                <td colspan="7" class="text-center text-muted py-5">No members found</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-
-        <nav>
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item" :class="{ disabled: meta.page <= 1 }">
-              <a class="page-link" href="#" @click.prevent="goToPage(meta.page - 1)">Previous</a>
-            </li>
-            <li v-for="p in visiblePages" :key="p" class="page-item" :class="{ active: p === meta.page }">
-              <a class="page-link" href="#" @click.prevent="goToPage(p)">{{ p }}</a>
-            </li>
-            <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
-              <a class="page-link" href="#" @click.prevent="goToPage(meta.page + 1)">Next</a>
-            </li>
-          </ul>
-        </nav>
       </div>
+
+      <!-- Pagination Footer -->
+      <footer class="pagination-footer">
+        <div class="d-flex justify-content-between align-items-center small text-muted">
+          <div>
+            Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }} of
+            {{ meta.total }} results
+          </div>
+
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item" :class="{ disabled: meta.page <= 1 }">
+                <a class="page-link" href="#" @click.prevent="goToPage(meta.page - 1)">Previous</a>
+              </li>
+              <li v-for="p in visiblePages" :key="p" class="page-item" :class="{ active: p === meta.page }">
+                <a class="page-link" href="#" @click.prevent="goToPage(p)">{{ p }}</a>
+              </li>
+              <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
+                <a class="page-link" href="#" @click.prevent="goToPage(meta.page + 1)">Next</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </footer>
+
     </div>
 
     <!-- Add/Edit Member Modal -->
@@ -768,5 +771,32 @@ onMounted(async () => {
 
 .badge {
   font-weight: 500;
+}
+
+.table-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.table-container {
+  max-height: calc(100vh - 240px);
+  /* scrollable area */
+  overflow-y: auto;
+  background: white;
+}
+
+/* Fixed footer outside the card */
+.pagination-footer {
+  position: fixed;
+  bottom: 0;
+  left: 240px; /* same as sidebar width */
+  right: 0;
+  background: #fff;
+  /* border-top: 1px solid #dee2e6; */
+  padding: 0.65rem 1rem;
+  z-index: 1040;
+  /* box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05); */
 }
 </style>
