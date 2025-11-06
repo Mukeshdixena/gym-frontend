@@ -60,8 +60,8 @@
               <td>{{ exp.title }}</td>
               <td>{{ exp.category }}</td>
               <td>₹{{ exp.amount.toFixed(2) }}</td>
-              <td>₹{{ exp.paid?.toFixed(2) ?? 0 }}</td>
-              <td>₹{{ exp.pending?.toFixed(2) ?? 0 }}</td>
+              <td>₹{{ (exp.paid ?? 0).toFixed(2) }}</td>
+              <td>₹{{ (exp.pending ?? 0).toFixed(2) }}</td>
               <td>
                 <span class="badge" :class="getStatusClass(exp.status)">
                   {{ exp.status }}
@@ -113,7 +113,7 @@
               </div>
               <div class="mb-3">
                 <label class="form-label fw-semibold">Amount (₹)</label>
-                <input v-model.number="expenseForm.amount" type="number" min="0" class="form-control" required />
+                <input v-model.number="expenseForm.amount" type="number" min="0" step="0.01" class="form-control" required />
               </div>
               <div class="mb-3">
                 <label class="form-label fw-semibold">Expense Date</label>
@@ -135,33 +135,130 @@
       </div>
     </div>
 
-    <!-- Add Payment Modal -->
+    <!-- Add Payment Modal (UPDATED – matches Billing style) -->
     <div class="modal fade" ref="paymentModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-sm">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Add Payment</h5>
+            <h5 class="modal-title">Add Payment – Expense</h5>
             <button type="button" class="btn-close" @click="closePaymentModal"></button>
           </div>
           <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label">Amount (₹)</label>
-              <input v-model.number="paymentForm.amount" type="number" min="1" class="form-control" required />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Method</label>
-              <select v-model="paymentForm.method" class="form-select">
-                <option value="CASH">Cash</option>
-                <option value="CARD">Card</option>
-                <option value="UPI">UPI</option>
-                <option value="ONLINE">Online</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Notes</label>
-              <input v-model.trim="paymentForm.notes" type="text" class="form-control" placeholder="Optional" />
-            </div>
-            <button class="btn btn-success w-100" @click="savePayment">Add Payment</button>
+            <form @submit.prevent>
+              <!-- Expense Info -->
+              <div class="mb-3">
+                <strong>Expense:</strong>
+                <span>{{ selectedExpense?.title }}</span>
+                <span class="text-muted ms-2">({{ selectedExpense?.category }})</span>
+              </div>
+
+              <div class="mt-4">
+                <h6>Expense Details</h6>
+                <div class="form-control-plaintext p-2 bg-light rounded">
+                  Amount: ₹{{ selectedExpense?.amount?.toFixed(2) }}
+                </div>
+              </div>
+
+              <!-- Payment Fields -->
+              <div class="mt-3 row g-3">
+                <div class="col-md-4">
+                  <label class="form-label"><strong>Total Amount (₹)</strong></label>
+                  <input type="number" class="form-control" :value="selectedExpense?.amount" readonly />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label"><strong>Already Paid (₹)</strong></label>
+                  <input type="number" class="form-control" :value="oldPaid" readonly />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label"><strong>Pending (Before) (₹)</strong></label>
+                  <input type="number" class="form-control" :value="oldPending" readonly />
+                </div>
+
+                <!-- PAYING NOW – capped & validated -->
+                <div class="col-md-4">
+                  <label class="form-label text-success"><strong>Paying Now (₹)</strong></label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    :class="{ 'is-invalid': newPaidNow > oldPending || newPaidNow < 0 }"
+                    v-model.number="newPaidNow"
+                    min="0"
+                    :max="oldPending"
+                    step="0.01"
+                    placeholder="Enter amount"
+                    @input="clampPayingNow"
+                  />
+                  <div v-if="newPaidNow > oldPending" class="invalid-feedback">
+                    Cannot exceed pending amount (₹{{ oldPending }})
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label text-danger"><strong>Pending (After) (₹)</strong></label>
+                  <input type="number" class="form-control" :value="pendingAfterPayment" readonly />
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label"><strong>Payment Method</strong></label>
+                  <select v-model="paymentMethod" class="form-select">
+                    <option value="CASH">Cash</option>
+                    <option value="CARD">Card</option>
+                    <option value="UPI">UPI</option>
+                    <option value="ONLINE">Online</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Notes</label>
+                  <input v-model.trim="paymentNotes" type="text" class="form-control" placeholder="Optional" />
+                </div>
+              </div>
+
+              <!-- PAYMENT HISTORY (always shown) -->
+              <div class="mt-4">
+                <h6>Payment History</h6>
+                <div v-if="selectedExpense?.payments?.length" class="table-responsive">
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <th>#</th>
+                        <th>Amount (₹)</th>
+                        <th>Date</th>
+                        <th>Method</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(p, i) in selectedExpense.payments" :key="p.id">
+                        <td>{{ i + 1 }}</td>
+                        <td>₹{{ p.amount }}</td>
+                        <td>{{ formatDateTime(p.paymentDate) }}</td>
+                        <td>{{ p.method }}</td>
+                        <td>{{ p.notes || '-' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div v-else class="text-muted">No payments made yet.</div>
+              </div>
+
+              <!-- Buttons -->
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-secondary" @click="closePaymentModal" :disabled="isSubmitting">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  @click="savePayment"
+                  :disabled="isSubmitting || newPaidNow <= 0 || newPaidNow > oldPending"
+                >
+                  {{ isSubmitting ? 'Updating…' : 'Add Payment' }}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -192,10 +289,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
+
+interface Payment {
+  id: number
+  amount: number
+  paymentDate: string
+  method: string
+  notes?: string
+}
 
 interface Expense {
   id: number
@@ -207,12 +312,7 @@ interface Expense {
   status: string
   expenseDate: string
   description?: string
-}
-
-interface PaymentForm {
-  amount: number
-  method: string
-  notes?: string
+  payments?: Payment[]
 }
 
 const expenses = ref<Expense[]>([])
@@ -228,10 +328,26 @@ let paymentModal: Modal
 
 const editingExpense = ref<Expense | null>(null)
 const expenseForm = ref<Partial<Expense>>({})
-const paymentForm = ref<PaymentForm>({ amount: 0, method: 'CASH', notes: '' })
-const currentExpenseId = ref<number | null>(null)
+const selectedExpense = ref<Expense | null>(null)
+const oldPaid = ref(0)
+const oldPending = ref(0)
+const newPaidNow = ref(0)
+const paymentMethod = ref<'CASH' | 'CARD' | 'UPI' | 'ONLINE'>('CASH')
+const paymentNotes = ref('')
+const isSubmitting = ref(false)
 const openDropdownId = ref<number | null>(null)
 const toastMessage = ref('')
+
+// ─────────────── Computed ───────────────
+const pendingAfterPayment = computed(() => {
+  return Math.max(oldPending.value - newPaidNow.value, 0)
+})
+
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+
+const formatDateTime = (d: string) =>
+  new Date(d).toLocaleString('en-IN')
 
 // ─────────────── Toast ───────────────
 const showToast = (msg: string, success = true) => {
@@ -253,7 +369,12 @@ const loadExpenses = async () => {
     const res = (await api.get('/expenses', {
       params: { search: filters.value.search },
     })) as AxiosResponse<Expense[]>
-    expenses.value = res.data
+    expenses.value = res.data.map(exp => ({
+      ...exp,
+      paid: exp.paid ?? 0,
+      pending: exp.pending ?? exp.amount,
+      payments: exp.payments ?? []
+    }))
   } catch {
     showToast('Failed to load expenses', false)
   } finally {
@@ -263,7 +384,7 @@ const loadExpenses = async () => {
 
 const saveExpense = async () => {
   try {
-    if (!expenseForm.value.title || !expenseForm.value.category || !expenseForm.value.amount)
+    if (!expenseForm.value.title || !expenseForm.value.category || expenseForm.value.amount == null)
       return showToast('Please fill all required fields', false)
 
     if (editingExpense.value) {
@@ -282,16 +403,22 @@ const saveExpense = async () => {
 }
 
 const savePayment = async () => {
+  if (newPaidNow.value <= 0) return showToast('Enter a valid amount', false)
+  isSubmitting.value = true
   try {
-    if (!currentExpenseId.value || paymentForm.value.amount <= 0)
-      return showToast('Enter valid amount', false)
-
-    await api.patch(`/expenses/${currentExpenseId.value}/payment`, paymentForm.value)
+    await api.patch(`/expenses/${selectedExpense.value!.id}/payment`, {
+      amount: newPaidNow.value,
+      method: paymentMethod.value,
+      notes: paymentNotes.value || undefined,
+      status: pendingAfterPayment.value === 0 ? 'PAID' : 'PARTIAL_PAID'
+    })
     showToast('Payment added successfully!')
     closePaymentModal()
     await loadExpenses()
   } catch (err: any) {
     showToast(err?.response?.data?.message || 'Failed to add payment', false)
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -325,13 +452,27 @@ const editExpense = (exp: Expense) => {
 }
 
 const openPaymentModal = (exp: Expense) => {
-  currentExpenseId.value = exp.id
-  paymentForm.value = { amount: 0, method: 'CASH', notes: '' }
+  selectedExpense.value = exp
+  oldPaid.value = exp.paid ?? 0
+  oldPending.value = exp.pending ?? exp.amount
+  newPaidNow.value = 0
+  paymentMethod.value = 'CASH'
+  paymentNotes.value = ''
   paymentModal?.show()
 }
 
 const closeModal = () => expenseModal?.hide()
-const closePaymentModal = () => paymentModal?.hide()
+const closePaymentModal = () => {
+  paymentModal?.hide()
+  selectedExpense.value = null
+  newPaidNow.value = 0
+}
+
+// ─────────────── Validation ───────────────
+const clampPayingNow = () => {
+  if (newPaidNow.value < 0) newPaidNow.value = 0
+  if (newPaidNow.value > oldPending.value) newPaidNow.value = oldPending.value
+}
 
 // ─────────────── Helpers ───────────────
 const getStatusClass = (status?: string) => {
@@ -342,9 +483,6 @@ const getStatusClass = (status?: string) => {
     PAID: 'bg-success',
   }[status] || 'bg-secondary'
 }
-
-const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 
 const toggleDropdown = (id: number) =>
   (openDropdownId.value = openDropdownId.value === id ? null : id)
@@ -428,5 +566,10 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 
 .card-body {
   overflow: visible !important;
+}
+
+input[readonly],
+.form-control-plaintext {
+  background-color: #f8f9fa !important;
 }
 </style>
