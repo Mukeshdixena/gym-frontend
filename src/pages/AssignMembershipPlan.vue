@@ -326,7 +326,8 @@
               <small><strong>Please select at least one:</strong> Plan or Special Program</small>
             </div>
 
-            <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting || !isFormValid">
+            <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting || !isFormValid"
+              @click="assignPlan">
               {{ isSubmitting ? 'Saving...' : 'Save' }}
             </button>
           </div>
