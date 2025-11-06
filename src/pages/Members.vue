@@ -76,8 +76,10 @@
                     <div v-if="openDropdownId === member.id" class="dropdown-menu-custom shadow-sm">
                       <a href="javascript:void(0)" @click="editMember(member)" class="dropdown-item-custom">Edit
                         Member</a>
-                      <a href="javascript:void(0)" @click="confirmDelete(member)"
-                        class="dropdown-item-custom text-danger">Delete Member</a>
+                      <a v-if="canDeleteMember(member)" href="javascript:void(0)" @click="confirmDelete(member)"
+                        class="dropdown-item-custom text-danger">
+                        Delete Member
+                      </a>
                     </div>
                   </div>
                 </td>
@@ -118,13 +120,13 @@
                             <td>₹{{ ms.pending }}</td>
                             <td>₹{{ ms.discount ?? 0 }}</td>
                             <!-- <td class="text-center" @click.stop> -->
-                              <!-- <button class="btn btn-sm btn-outline-primary me-1" @click="openEditMembershipModal(ms)">
+                            <!-- <button class="btn btn-sm btn-outline-primary me-1" @click="openEditMembershipModal(ms)">
                                 Edit
                               </button> -->
-                              <!-- <button class="btn btn-sm btn-outline-danger" @click="openRefundModal(ms)">
+                            <!-- <button class="btn btn-sm btn-outline-danger" @click="openRefundModal(ms)">
                                 Refund
                               </button> -->
-                              <!-- <button class="btn btn-sm btn-outline-dark ms-1" @click="confirmDeleteMembership(ms)">
+                            <!-- <button class="btn btn-sm btn-outline-dark ms-1" @click="confirmDeleteMembership(ms)">
                                 Delete
                               </button> -->
                             <!-- </td> -->
@@ -166,10 +168,10 @@
                             <td>₹{{ ad.discount ?? 0 }}</td>
                             <td>{{ ad.trainerId ? ad.trainerId : 'N/A' }}</td>
                             <!-- <td class="text-center" @click.stop> -->
-                              <!-- <button class="btn btn-sm btn-outline-primary me-1" @click="editAddon(ad)">
+                            <!-- <button class="btn btn-sm btn-outline-primary me-1" @click="editAddon(ad)">
                                 Edit
                               </button> -->
-                              <!-- <button class="btn btn-sm btn-outline-danger" @click="deleteAddon(ad)">
+                            <!-- <button class="btn btn-sm btn-outline-danger" @click="deleteAddon(ad)">
                                 Delete
                               </button> -->
                             <!-- </td> -->
@@ -525,6 +527,15 @@ const getStatusClass = (status?: string) => {
     CANCELLED: 'bg-dark',
   }[status] || 'bg-secondary'
 }
+const canDeleteMember = (member: Member) => {
+  const hasActiveMembership = member.memberships?.some(ms => ms.status === 'ACTIVE')
+  const hasActiveAddon = member.memberAddons?.some(ad => ad.status === 'ACTIVE')
+  const hasAnyMembershipOrAddon = (member.memberships?.length ?? 0) > 0 || (member.memberAddons?.length ?? 0) > 0
+
+  // Delete allowed only if no active ones and both lists are empty or inactive
+  return !hasActiveMembership && !hasActiveAddon && !hasAnyMembershipOrAddon
+}
+
 
 // ─────────────── Validation ───────────────
 const validateMemberField = (field: string) => {
