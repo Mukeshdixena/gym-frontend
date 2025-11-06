@@ -12,7 +12,6 @@
         </div>
       </div>
     </div>
-
     <!-- Filters -->
     <div class="row g-3 mb-3">
       <div class="col-md-3">
@@ -39,6 +38,16 @@
           <option value="ONLINE">Online</option>
         </select>
       </div>
+      <div class="col-md-2">
+        <label class="form-label"><strong>Type</strong></label>
+        <select v-model="filters.type" @change="resetPageAndLoad" class="form-select form-select-sm">
+          <option value="">All</option>
+          <option value="membership">Membership</option>
+          <option value="addon">Program</option>
+          <option value="expense">Expense</option>
+        </select>
+      </div>
+
       <div class="col-md-3 d-flex align-items-end">
         <button class="btn btn-outline-secondary btn-sm w-100" @click="clearFilters">
           Clear Filters
@@ -217,7 +226,7 @@ const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 }
 const isLoading = ref(true)
 const toastMessage = ref('')
 
-const filters = ref({ search: '', startDate: '', endDate: '', method: '' })
+const filters = ref({ search: '', startDate: '', endDate: '', method: '', type: '' })
 const pagination = ref({ page: 1, limit: 10 })
 
 const toastRef = ref<HTMLElement | null>(null)
@@ -280,7 +289,7 @@ const loadPayments = async () => {
 }
 
 const resetPageAndLoad = () => { pagination.value.page = 1; loadPayments() }
-const clearFilters = () => { filters.value = { search: '', startDate: '', endDate: '', method: '' }; resetPageAndLoad() }
+const clearFilters = () => { filters.value = { search: '', startDate: '', endDate: '', method: '' , type: '' }; resetPageAndLoad() }
 const goToPage = (page: number) => {
   if (page < 1 || page > meta.value.totalPages || page === meta.value.page) return
   pagination.value.page = page
