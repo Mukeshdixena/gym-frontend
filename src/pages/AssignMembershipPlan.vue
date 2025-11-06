@@ -283,8 +283,8 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label"><strong>Start Date:</strong></label>
-                    <input type="date" v-model="addonStartDate" class="form-control" @change="updateAddonEndDate"
-                      :min="minAddonStartDate" />
+                    <input type="date" v-model="addonStartDate" class="form-control" @change="updateAddonEndDate" />
+
                     <p class="mt-2"><strong>End Date:</strong> {{ formattedAddonEndDate }}</p>
                   </div>
                 </div>
@@ -501,7 +501,7 @@ const pendingAmount = computed(() => {
   return Math.max(total - paid - discount, 0)
 })
 
-const minAddonStartDate = computed(() => enrollmentForm.value.startDate || new Date().toISOString().split('T')[0])
+// const minAddonStartDate = computed(() => enrollmentForm.value.startDate || new Date().toISOString().split('T')[0])
 
 const isFormValid = computed(() => {
   const hasPlan = enrollmentForm.value.planId > 0 && enrollmentForm.value.startDate && enrollmentForm.value.endDate
