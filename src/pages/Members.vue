@@ -77,8 +77,9 @@
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.id" v-model.trim="filters.id" @input="resetPageAndLoad" type="text"
-                      class="form-control form-control-sm w-auto ms-2" placeholder="ID" @blur="handleBlur('id')" />
+                    <input v-if="columnFilters.id" v-model.trim="filters.id" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="ID"
+                      @blur="handleBlur('id')" />
                   </div>
                 </th>
 
@@ -94,8 +95,9 @@
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.name" v-model.trim="filters.name" @input="resetPageAndLoad" type="text"
-                      class="form-control form-control-sm w-auto ms-2" placeholder="Name" @blur="handleBlur('name')" />
+                    <input v-if="columnFilters.name" v-model.trim="filters.name" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Name"
+                      @blur="handleBlur('name')" />
                   </div>
                 </th>
 
@@ -111,8 +113,8 @@
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.email" v-model.trim="filters.email" @input="resetPageAndLoad" type="text"
-                      class="form-control form-control-sm w-auto ms-2" placeholder="Email"
+                    <input v-if="columnFilters.email" v-model.trim="filters.email" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Email"
                       @blur="handleBlur('email')" />
                   </div>
                 </th>
@@ -129,8 +131,8 @@
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.phone" v-model.trim="filters.phone" @input="resetPageAndLoad" type="text"
-                      class="form-control form-control-sm w-auto ms-2" placeholder="Phone"
+                    <input v-if="columnFilters.phone" v-model.trim="filters.phone" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Phone"
                       @blur="handleBlur('phone')" />
                   </div>
                 </th>
@@ -147,8 +149,9 @@
                           d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                       </svg>
                     </button>
-                    <input v-if="columnFilters.plan" v-model.trim="filters.plan" @input="resetPageAndLoad" type="text"
-                      class="form-control form-control-sm w-auto ms-2" placeholder="Plan" @blur="handleBlur('plan')" />
+                    <input v-if="columnFilters.plan" v-model.trim="filters.plan" @input="debouncedResetPageAndLoad"
+                      type="text" class="form-control form-control-sm w-auto ms-2" placeholder="Plan"
+                      @blur="handleBlur('plan')" />
                   </div>
                 </th>
 
@@ -169,7 +172,7 @@
                     </button>
 
                     <!-- 🔽 Status Dropdown -->
-                    <select v-if="columnFilters.status" v-model="filters.status" @change="resetPageAndLoad"
+                    <select v-if="columnFilters.status" v-model="filters.status" @change="debouncedResetPageAndLoad"
                       class="form-select form-select-sm w-auto ms-2" @blur="handleBlur('status')">
                       <option value="">All</option>
                       <option value="ACTIVE">Active</option>
@@ -324,7 +327,7 @@
             <!-- 🔽 Limit Dropdown -->
             <div class="d-flex align-items-center ms-3">
               <label class="me-1">Rows per page:</label>
-              <select v-model.number="pagination.limit" @change="resetPageAndLoad"
+              <select v-model.number="pagination.limit" @change="debouncedResetPageAndLoad"
                 class="form-select form-select-sm w-auto">
                 <option :value="5">5</option>
                 <option :value="10">10</option>
@@ -631,6 +634,15 @@ const activeFilters = computed(() => {
   return active
 })
 
+// Simple debounce helper
+function debounce<T extends (...args: any[]) => void>(fn: T, delay = 500): T {
+  let timeout: ReturnType<typeof setTimeout>
+  return ((...args: any[]) => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => fn(...args), delay)
+  }) as T
+}
+
 // Handle blur for column filters
 const handleBlur = (key: FilterKey) => {
   if (!filters.value[key]) {
@@ -736,6 +748,8 @@ const resetPageAndLoad = () => {
   pagination.value.page = 1
   loadMembers()
 }
+const debouncedResetPageAndLoad = debounce(resetPageAndLoad, 700)
+
 
 const goToPage = (page: number | string) => {
   if (typeof page !== 'number' || page < 1 || page > meta.value.totalPages || page === meta.value.page) return
