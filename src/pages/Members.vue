@@ -70,17 +70,28 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.id }">ID</span>
                     <transition name="fade-slide">
-
                       <input v-if="columnFilters.id" v-model.trim="filters.id" @input="debouncedResetPageAndLoad"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search ID"
                         @blur="handleBlur('id')" />
                     </transition>
-                    <button class="filter-btn" @click.stop="toggleFilter('id')" title="Filter ID">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                      </svg>
+                    <button class="filter-btn" :class="{ active: columnFilters.id }" @click.stop="toggleFilter('id')"
+                      title="Filter ID">
+                      <template v-if="columnFilters.id">
+                        <!-- ❌ Close Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <!-- 🔍 Search Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </template>
                     </button>
                   </div>
                 </th>
@@ -90,17 +101,26 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.name }">Name</span>
                     <transition name="fade-slide">
-
                       <input v-if="columnFilters.name" v-model.trim="filters.name" @input="debouncedResetPageAndLoad"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search Name"
                         @blur="handleBlur('name')" />
                     </transition>
-                    <button class="filter-btn" @click.stop="toggleFilter('name')" title="Filter Name">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                      </svg>
+                    <button class="filter-btn" :class="{ active: columnFilters.name }"
+                      @click.stop="toggleFilter('name')" title="Filter Name">
+                      <template v-if="columnFilters.name">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </template>
                     </button>
                   </div>
                 </th>
@@ -110,17 +130,26 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.email }">Email</span>
                     <transition name="fade-slide">
-
                       <input v-if="columnFilters.email" v-model.trim="filters.email" @input="debouncedResetPageAndLoad"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search Email"
                         @blur="handleBlur('email')" />
                     </transition>
-                    <button class="filter-btn" @click.stop="toggleFilter('email')" title="Filter Email">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                      </svg>
+                    <button class="filter-btn" :class="{ active: columnFilters.email }"
+                      @click.stop="toggleFilter('email')" title="Filter Email">
+                      <template v-if="columnFilters.email">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </template>
                     </button>
                   </div>
                 </th>
@@ -134,12 +163,22 @@
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search Phone"
                         @blur="handleBlur('phone')" />
                     </transition>
-                    <button class="filter-btn" @click.stop="toggleFilter('phone')" title="Filter Phone">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                      </svg>
+                    <button class="filter-btn" :class="{ active: columnFilters.phone }"
+                      @click.stop="toggleFilter('phone')" title="Filter Phone">
+                      <template v-if="columnFilters.phone">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </template>
                     </button>
                   </div>
                 </th>
@@ -148,18 +187,27 @@
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.plan }">Plan</span>
-
                     <transition name="fade-slide">
                       <input v-if="columnFilters.plan" v-model.trim="filters.plan" @input="debouncedResetPageAndLoad"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search Plan"
                         @blur="handleBlur('plan')" />
                     </transition>
-                    <button class="filter-btn" @click.stop="toggleFilter('plan')" title="Filter Plan">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                          d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                      </svg>
+                    <button class="filter-btn" :class="{ active: columnFilters.plan }"
+                      @click.stop="toggleFilter('plan')" title="Filter Plan">
+                      <template v-if="columnFilters.plan">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </template>
                     </button>
                   </div>
                 </th>
@@ -169,7 +217,6 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.status }">Status</span>
                     <transition name="fade-slide">
-
                       <select v-if="columnFilters.status" v-model="filters.status" @change="debouncedResetPageAndLoad"
                         class="form-select form-select-sm filter-input" @blur="handleBlur('status')">
                         <option value="">All</option>
@@ -180,12 +227,22 @@
                         <option value="CANCELLED">Cancelled</option>
                       </select>
                     </transition>
-                    <button class="filter-btn" @click.stop="toggleFilter('status')" title="Filter Status">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                        viewBox="0 0 16 16">
-                        <path
-                          d="M6 10a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 10zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 7zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 4z" />
-                      </svg>
+                    <button class="filter-btn" :class="{ active: columnFilters.status }"
+                      @click.stop="toggleFilter('status')" title="Filter Status">
+                      <template v-if="columnFilters.status">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M6 10a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 10zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 7zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 4z" />
+                        </svg>
+                      </template>
                     </button>
                   </div>
                 </th>
@@ -194,6 +251,7 @@
                 <th class="text-center">Action</th>
               </tr>
             </thead>
+
 
 
             <tbody>
