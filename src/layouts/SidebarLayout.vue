@@ -47,9 +47,9 @@
 
     <!-- Main content -->
     <div class="flex-grow-1 d-flex flex-column">
-      <header class="bg-light p-3 border-bottom">
+      <!-- <header class="bg-light p-3 border-bottom">
         <h4 class="m-2 fw-semibold"><span class="text-success">Welcome back, Admin!</span> Let’s make today a productive one at DailyGym</h4>
-      </header>
+      </header> -->
       <main class="flex-grow-1 p-3 bg-light">
         <router-view />
       </main>
