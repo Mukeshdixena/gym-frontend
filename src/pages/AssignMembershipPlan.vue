@@ -85,7 +85,7 @@
 
     <!-- Assign / Renew Modal -->
     <div class="modal fade" ref="assignModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
+      <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
@@ -98,50 +98,82 @@
             </h5>
             <button type="button" class="btn-close" @click="closeAssignModal"></button>
           </div>
-
           <div class="modal-body">
-            <form @submit.prevent="assignPlan">
+            <!-- Member Info -->
+            <div class="mb-3">
+              <strong>Member:</strong>
+              {{ selectedMember?.firstName }} {{ selectedMember?.lastName }}
+              <span class="text-muted">({{ selectedMember?.email }})</span>
+            </div>
+
+            <!-- ========================== -->
+            <!-- MEMBERSHIP SECTION -->
+            <!-- ========================== -->
+            <div class="border rounded-3 p-3 mb-4 shadow-sm bg-white">
+              <h5 class="text-primary mb-3">
+                <i class="bi bi-person-badge me-1"></i> Membership Section
+              </h5>
+
+              <!-- PLAN DROPDOWN -->
               <div class="mb-3">
-                <strong>Member:</strong>
-                {{ selectedMember?.firstName }} {{ selectedMember?.lastName }} ({{ selectedMember?.email }})
+                <label class="form-label fw-semibold">Select Membership Plan</label>
+                <select v-model="enrollmentForm.planId" class="form-select" @change="updatePlanDates"
+                  :disabled="plans.length === 0">
+                  <option :value="0">-- Select Plan --</option>
+                  <option v-for="plan in plans" :key="plan.id" :value="plan.id">
+                    {{ plan.name }} - ₹{{ plan.price }} ({{ plan.durationDays }} days)
+                  </option>
+                  <option v-if="plans.length === 0" value="" disabled class="fst-italic text-muted">
+                    No plans available
+                  </option>
+                </select>
               </div>
 
-              <div class="row g-3">
-                <!-- PLAN -->
-                <div class="col-md-6">
-                  <label class="form-label"><strong>Select Plan </strong></label>
-                  <select v-model="enrollmentForm.planId" class="form-select" @change="updatePlanDates"
-                    :disabled="plans.length === 0">
-                    <option :value="0">-- Select Plan --</option>
-                    <option v-for="plan in plans" :key="plan.id" :value="plan.id">
-                      {{ plan.name }} - ₹{{ plan.price }} ({{ plan.durationDays }} days)
-                    </option>
-                    <option v-if="plans.length === 0" value="" disabled style="color: #999; font-style: italic;">
-                      No plans available
-                    </option>
-                  </select>
-                </div>
-
-                <!-- SPECIAL PROGRAM -->
-                <div class="col-md-6">
-                  <label class="form-label"><strong>Select Special Program </strong></label>
-                  <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect"
-                    :disabled="addons.length === 0">
-                    <option :value="0">-- Select Special Program --</option>
-                    <option v-for="a in addons" :key="a.id" :value="a.id">
-                      {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
-                    </option>
-                    <option v-if="addons.length === 0" value="" disabled style="color: #999; font-style: italic;">
-                      No special programs available
-                    </option>
-                  </select>
+              <!-- MEMBERSHIP HISTORY -->
+              <div v-if="selectedMember?.memberships?.length" class="mb-3">
+                <h6 class="text-secondary mb-2">
+                  <i class="bi bi-card-checklist me-1"></i> Membership History
+                </h6>
+                <div class="table-responsive small">
+                  <table class="table table-sm table-striped align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Plan</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Status</th>
+                        <th>Paid</th>
+                        <th>Discount</th>
+                        <th>Pending</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="ms in selectedMember.memberships" :key="ms.id">
+                        <td>{{ ms.plan?.name || getPlanName(ms.planId) }}</td>
+                        <td>{{ formatDate(ms.startDate) }}</td>
+                        <td>{{ formatDate(ms.endDate) }}</td>
+                        <td>
+                          <span :class="['badge',
+                            ms.status === 'ACTIVE' ? 'bg-success' :
+                              ms.status === 'PARTIAL_PAID' ? 'bg-warning text-dark' :
+                                ms.status === 'INACTIVE' ? 'bg-secondary' :
+                                  'bg-danger']">
+                            {{ ms.status }}
+                          </span>
+                        </td>
+                        <td>{{ ms.paid || 0 }}</td>
+                        <td>{{ ms.discount || 0 }}</td>
+                        <td>{{ ms.pending || 0 }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
-              <!-- PLAN DETAILS -->
-              <div v-if="selectedPlan" class="mt-4 p-3 border rounded bg-light">
-                <h6 class="mb-3 text-primary">Plan Details</h6>
-                <div class="row">
+              <!-- PLAN FORM -->
+              <div v-if="selectedPlan" class="mt-3 p-3 border rounded bg-light">
+                <h6 class="mb-3 text-primary">Membership Plan Details</h6>
+                <div class="row g-3">
                   <div class="col-md-6">
                     <p><strong>Description:</strong> {{ selectedPlan.description }}</p>
                     <p><strong>Duration:</strong> {{ selectedPlan.durationDays }} days</p>
@@ -173,9 +205,76 @@
                   </div>
                 </div>
               </div>
+            </div>
 
-              <!-- SPECIAL PROGRAM DETAILS -->
-              <div v-if="selectedAddon" class="mt-4 p-3 border rounded bg-light">
+            <!-- ========================== -->
+            <!-- SPECIAL PROGRAM SECTION -->
+            <!-- ========================== -->
+            <div class="border rounded-3 p-3 mb-4 shadow-sm bg-white">
+              <h5 class="text-success mb-3">
+                <i class="bi bi-activity me-1"></i> Special Program Section
+              </h5>
+
+              <!-- ADDON DROPDOWN -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Select Special Program</label>
+                <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect"
+                  :disabled="addons.length === 0">
+                  <option :value="0">-- Select Special Program --</option>
+                  <option v-for="a in addons" :key="a.id" :value="a.id">
+                    {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
+                  </option>
+                  <option v-if="addons.length === 0" value="" disabled class="fst-italic text-muted">
+                    No special programs available
+                  </option>
+                </select>
+              </div>
+
+              <!-- SPECIAL PROGRAM HISTORY -->
+              <div v-if="selectedMember?.memberAddons?.length" class="mb-3">
+                <h6 class="text-secondary mb-2">
+                  <i class="bi bi-clock-history me-1"></i> Special Program History
+                </h6>
+                <div class="table-responsive small">
+                  <table class="table table-sm table-striped align-middle mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Program</th>
+                        <th>Trainer</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Status</th>
+                        <th>Paid</th>
+                        <th>Discount</th>
+                        <th>Pending</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="ad in selectedMember.memberAddons" :key="ad.id">
+                        <td>{{ ad.addon?.name }}</td>
+                        <td>{{ ad.trainerId ? getTrainerName(ad.trainerId) : '—' }}</td>
+                        <td>{{ formatDate(ad.startDate) }}</td>
+                        <td>{{ formatDate(ad.endDate) }}</td>
+                        <td>
+                          <span :class="['badge',
+                            ad.status === 'ACTIVE' ? 'bg-success' :
+                              ad.status === 'PARTIAL_PAID' ? 'bg-warning text-dark' :
+                                ad.status === 'INACTIVE' ? 'bg-secondary' :
+                                  'bg-danger']">
+                            {{ ad.status }}
+                          </span>
+                        </td>
+                        <td>{{ ad.paid || 0 }}</td>
+                        <td>{{ ad.discount || 0 }}</td>
+                        <td>{{ ad.pending || 0 }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- SPECIAL PROGRAM FORM -->
+              <div v-if="selectedAddon" class="mt-3 p-3 border rounded bg-light">
                 <h6 class="mb-3 text-success">Special Program Details</h6>
                 <div class="row">
                   <div class="col-md-6">
@@ -195,7 +294,6 @@
                     <label class="form-label"><strong>Price (₹)</strong></label>
                     <input type="number" class="form-control" :value="selectedAddon.price" readonly />
                   </div>
-
                   <div class="col-md-3">
                     <label class="form-label">Discount (₹)</label>
                     <input type="number" v-model.number="addonDiscount" class="form-control" min="0"
@@ -204,12 +302,10 @@
                       Discount cannot exceed program price (₹{{ selectedAddon?.price }})
                     </small>
                   </div>
-
                   <div class="col-md-3">
                     <label class="form-label">Pending (₹)</label>
                     <input type="number" class="form-control" :value="addonPendingAmount" readonly />
                   </div>
-
                   <div class="col-md-3">
                     <label class="form-label">Trainer</label>
                     <select v-model="addonTrainerId" class="form-select">
@@ -220,19 +316,21 @@
                     </select>
                   </div>
                 </div>
-
               </div>
+            </div>
 
-              <!-- Validation Alert -->
-              <div v-if="!isFormValid" class="alert alert-warning mt-3">
-                <small><strong>Please select at least one:</strong> Plan or Special Program</small>
-              </div>
+            <!-- ========================== -->
+            <!-- FORM SUBMIT -->
+            <!-- ========================== -->
+            <div v-if="!isFormValid" class="alert alert-warning mt-3">
+              <small><strong>Please select at least one:</strong> Plan or Special Program</small>
+            </div>
 
-              <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting || !isFormValid">
-                {{ isSubmitting ? 'Saving...' : 'Save' }}
-              </button>
-            </form>
+            <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting || !isFormValid">
+              {{ isSubmitting ? 'Saving...' : 'Save' }}
+            </button>
           </div>
+
         </div>
       </div>
     </div>
@@ -248,43 +346,69 @@ import type { AxiosResponse } from 'axios'
 
 interface Plan {
   id: number
+  userId?: number
   name: string
+  description: string
   price: number
   durationDays: number
-  description: string
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
-// Updated Trainer interface to match actual response
 interface Trainer {
   id: number
   firstName: string
   lastName: string
   email: string
   phone: string
-  speciality: string
+  speciality?: string
   createdAt: string
   updatedAt: string
-  classes: any[]
+  classes?: any[]
 }
 
 interface Membership {
   id: number
+  userId?: number
   planId: number
+  memberId?: number
   startDate: string
   endDate: string
   status: string
-  paid?: number
   discount?: number
+  paid?: number
+  pending?: number
+  plan?: Plan
+}
+
+interface MemberAddon {
+  id: number
+  memberId: number
+  addonId: number
+  trainerId?: number | null
+  startDate: string
+  endDate: string
+  price: number
+  status: string
+  discount?: number
+  paid?: number
+  pending?: number
+  addon?: Plan
 }
 
 interface Member {
   id: number
+  userId?: number
   firstName: string
   lastName: string
   email: string
   phone: string
+  address?: string
   memberships: Membership[]
+  memberAddons: MemberAddon[]
 }
+
 
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
@@ -316,6 +440,10 @@ const addonStartDate = ref('')
 const addonEndDate = ref('')
 
 const toastMessage = ref('')
+const getTrainerName = (id: number) => {
+  const trainer = trainers.value.find(t => t.id === id)
+  return trainer ? `${trainer.firstName} ${trainer.lastName}` : 'N/A'
+}
 
 // Toast
 const showToast = (msg: string, success = true) => {
