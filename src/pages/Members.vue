@@ -69,9 +69,12 @@
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.id }">ID</span>
-                    <input v-show="columnFilters.id" v-model.trim="filters.id" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm filter-input" placeholder="Search ID"
-                      @blur="handleBlur('id')" />
+                    <transition name="fade-slide">
+
+                      <input v-if="columnFilters.id" v-model.trim="filters.id" @input="debouncedResetPageAndLoad"
+                        type="text" class="form-control form-control-sm filter-input" placeholder="Search ID"
+                        @blur="handleBlur('id')" />
+                    </transition>
                     <button class="filter-btn" @click.stop="toggleFilter('id')" title="Filter ID">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
@@ -86,9 +89,12 @@
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.name }">Name</span>
-                    <input v-show="columnFilters.name" v-model.trim="filters.name" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm filter-input" placeholder="Search Name"
-                      @blur="handleBlur('name')" />
+                    <transition name="fade-slide">
+
+                      <input v-if="columnFilters.name" v-model.trim="filters.name" @input="debouncedResetPageAndLoad"
+                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Name"
+                        @blur="handleBlur('name')" />
+                    </transition>
                     <button class="filter-btn" @click.stop="toggleFilter('name')" title="Filter Name">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
@@ -103,9 +109,12 @@
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.email }">Email</span>
-                    <input v-show="columnFilters.email" v-model.trim="filters.email" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm filter-input" placeholder="Search Email"
-                      @blur="handleBlur('email')" />
+                    <transition name="fade-slide">
+
+                      <input v-if="columnFilters.email" v-model.trim="filters.email" @input="debouncedResetPageAndLoad"
+                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Email"
+                        @blur="handleBlur('email')" />
+                    </transition>
                     <button class="filter-btn" @click.stop="toggleFilter('email')" title="Filter Email">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
@@ -120,9 +129,11 @@
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.phone }">Phone</span>
-                    <input v-show="columnFilters.phone" v-model.trim="filters.phone" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm filter-input" placeholder="Search Phone"
-                      @blur="handleBlur('phone')" />
+                    <transition name="fade-slide">
+                      <input v-if="columnFilters.phone" v-model.trim="filters.phone" @input="debouncedResetPageAndLoad"
+                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Phone"
+                        @blur="handleBlur('phone')" />
+                    </transition>
                     <button class="filter-btn" @click.stop="toggleFilter('phone')" title="Filter Phone">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
@@ -137,9 +148,12 @@
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.plan }">Plan</span>
-                    <input v-show="columnFilters.plan" v-model.trim="filters.plan" @input="debouncedResetPageAndLoad"
-                      type="text" class="form-control form-control-sm filter-input" placeholder="Search Plan"
-                      @blur="handleBlur('plan')" />
+
+                    <transition name="fade-slide">
+                      <input v-if="columnFilters.plan" v-model.trim="filters.plan" @input="debouncedResetPageAndLoad"
+                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Plan"
+                        @blur="handleBlur('plan')" />
+                    </transition>
                     <button class="filter-btn" @click.stop="toggleFilter('plan')" title="Filter Plan">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
@@ -154,15 +168,18 @@
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.status }">Status</span>
-                    <select v-show="columnFilters.status" v-model="filters.status" @change="debouncedResetPageAndLoad"
-                      class="form-select form-select-sm filter-input" @blur="handleBlur('status')">
-                      <option value="">All</option>
-                      <option value="ACTIVE">Active</option>
-                      <option value="INACTIVE">Inactive</option>
-                      <option value="PARTIAL_PAID">Partial Paid</option>
-                      <option value="EXPIRED">Expired</option>
-                      <option value="CANCELLED">Cancelled</option>
-                    </select>
+                    <transition name="fade-slide">
+
+                      <select v-if="columnFilters.status" v-model="filters.status" @change="debouncedResetPageAndLoad"
+                        class="form-select form-select-sm filter-input" @blur="handleBlur('status')">
+                        <option value="">All</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                        <option value="PARTIAL_PAID">Partial Paid</option>
+                        <option value="EXPIRED">Expired</option>
+                        <option value="CANCELLED">Cancelled</option>
+                      </select>
+                    </transition>
                     <button class="filter-btn" @click.stop="toggleFilter('status')" title="Filter Status">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                         viewBox="0 0 16 16">
@@ -1029,6 +1046,7 @@ onMounted(async () => {
 .pagination-footer select {
   min-width: 70px;
 }
+
 .filter-header {
   position: relative;
   white-space: nowrap;
@@ -1083,5 +1101,42 @@ onMounted(async () => {
 .filter-header .form-select-sm {
   font-size: 0.8rem;
   height: 26px;
+}
+
+/* Smooth appearance of filter inputs */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.25s ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(6px);
+}
+
+.header-label {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.header-label.hidden {
+  opacity: 0;
+  transform: translateX(-4px);
+  width: 0;
+  margin: 0;
+  overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, width 0.25s ease 0.15s;
+}
+
+
+@media (max-width: 768px) {
+  .pagination-footer {
+    left: 0;
+    padding: 0.5rem;
+  }
+}
+
+.filter-btn.active {
+  color: #4361ee;
 }
 </style>
