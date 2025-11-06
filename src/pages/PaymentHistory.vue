@@ -74,11 +74,11 @@
               <th>Method</th>
               <th>Date</th>
               <th>Type</th>
-              <th class="text-center">+</th>
+              <th class="text-center">Details</th>
             </tr>
           </thead>
           <tbody>
-            <template v-for="p in payments" :key="p.id">
+            <template v-for="p in displayPayments" :key="p.id">
               <!-- Compact Row -->
               <tr class="cursor-pointer" @click="toggleExpand(p.id)" :class="{ 'table-active': expanded.has(p.id) }">
                 <td class="ps-4 fw-semibold">
@@ -107,54 +107,141 @@
               <tr v-if="expanded.has(p.id)">
                 <td colspan="5" class="p-0 border-0">
                   <div class="bg-light p-4 border-top">
-                    <div class="row g-4">
-                      <!-- Member / Expense Info -->
-                      <div class="col-md-4">
-                        <h6 class="fw-bold text-primary mb-2">
-                          {{ p.member ? 'Member' : p.type === 'expense' ? 'Expense' : 'Details' }}
-                        </h6>
-                        <div v-if="p.member" class="ms-2">
-                          <div><strong>{{ p.member.name }}</strong></div>
-                          <div class="text-muted small">{{ p.member.email }}</div>
-                        </div>
-                        <div v-else-if="p.type === 'expense'" class="ms-2">
-                          <div><strong>{{ p.expenseTitle }}</strong></div>
-                          <div class="text-muted small">{{ p.category }}</div>
-                          <div class="mt-2">
-                            <span class="badge bg-success small">Paid: ₹{{ p.paid }}</span>
-                            <span class="badge bg-warning text-dark small ms-1">Pending: ₹{{ p.pending }}</span>
+
+                    <!-- MEMBERSHIP -->
+                    <div v-if="p.type === 'membership'" class="row g-4">
+                      <div class="col-md-6">
+                        <div class="bg-white rounded-3 shadow-sm p-3 border-start border-primary border-4">
+                          <h6 class="fw-bold text-primary mb-2">Member</h6>
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                              style="width: 40px; height: 40px;">
+                              <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div>
+                              <div class="fw-semibold">{{ p.member?.name }}</div>
+                              <div class="text-muted small">{{ p.member?.email }}</div>
+                            </div>
                           </div>
                         </div>
-                        <div v-else class="text-muted small">—</div>
                       </div>
-
-                      <!-- Payment Details -->
-                      <div class="col-md-4">
-                        <h6 class="fw-bold text-primary mb-2">Payment Details</h6>
-                        <div class="ms-2">
-                          <template v-if="p.type === 'membership'">
-                            <div><strong>Plan:</strong> {{ p.plan }}</div>
-                          </template>
-                          <template v-else-if="p.type === 'addon'">
-                            <div><strong>Program:</strong> {{ p.addonName }}</div>
-                          </template>
-                          <template v-else-if="p.type === 'expense'">
-                            <div><strong>Total Amount:</strong> ₹{{ p.expenseAmount?.toLocaleString('en-IN') }}</div>
-                          </template>
-                        </div>
-                      </div>
-
-                      <!-- Trainer -->
-                      <div class="col-md-4">
-                        <h6 class="fw-bold text-primary mb-2">Trainer</h6>
-                        <div class="ms-2">
-                          <span v-if="p.trainer" class="text-success fw-semibold">{{ p.trainer.name }}</span>
-                          <span v-else class="text-muted">—</span>
+                      <div class="col-md-6">
+                        <div class="bg-white rounded-3 shadow-sm p-3 border-start border-success border-4">
+                          <h6 class="fw-bold text-success mb-2">Plan</h6>
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                              style="width: 40px; height: 40px;">
+                              <i class="bi bi-calendar-check"></i>
+                            </div>
+                            <div>
+                              <div class="fw-semibold">{{ p.plan }}</div>
+                              <div class="text-muted small">Membership Active</div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <!-- ID at bottom -->
+                    <!-- ADDON -->
+                    <div v-else-if="p.type === 'addon'" class="row g-4">
+                      <div class="col-md-4">
+                        <div class="bg-white rounded-3 shadow-sm p-3 border-start border-info border-4">
+                          <h6 class="fw-bold text-info mb-2">Member</h6>
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                              style="width: 38px; height: 38px;">
+                              <i class="bi bi-person-fill"></i>
+                            </div>
+                            <div>
+                              <div class="fw-semibold">{{ p.member?.name }}</div>
+                              <div class="text-muted small">{{ p.member?.email }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="bg-white rounded-3 shadow-sm p-3 border-start border-warning border-4">
+                          <h6 class="fw-bold text-warning mb-2">Program</h6>
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center me-3"
+                              style="width: 38px; height: 38px;">
+                              <i class="bi bi-star-fill"></i>
+                            </div>
+                            <div>
+                              <div class="fw-semibold">{{ p.addonName }}</div>
+                              <div class="text-muted small">Personalized Session</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="bg-white rounded-3 shadow-sm p-3 border-start border-success border-4">
+                          <h6 class="fw-bold text-success mb-2">Trainer</h6>
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                              style="width: 38px; height: 38px;">
+                              <i class="bi bi-person-badge-fill"></i>
+                            </div>
+                            <div>
+                              <div class="fw-semibold">{{ p.trainer?.name || '—' }}</div>
+                              <div class="text-muted small">{{ p.trainer ? 'Assigned' : 'Not Assigned' }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- EXPENSE -->
+                    <div v-else-if="p.type === 'expense'" class="row g-4">
+                      <div class="col-md-6">
+                        <div class="bg-white rounded-3 shadow-sm p-3 border-start border-danger border-4">
+                          <h6 class="fw-bold text-danger mb-2">Expense</h6>
+                          <div class="d-flex align-items-center">
+                            <div
+                              class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                              style="width: 40px; height: 40px;">
+                              <i class="bi bi-receipt"></i>
+                            </div>
+                            <div>
+                              <div class="fw-semibold">{{ p.expenseTitle }}</div>
+                              <div class="text-muted small">{{ p.category }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="bg-white rounded-3 shadow-sm p-3 border-start border-dark border-4">
+                          <h6 class="fw-bold text-dark mb-2">Payment Status</h6>
+                          <div class="row g-3">
+                            <div class="col-4">
+                              <div class="text-center">
+                                <div class="fw-bold text-success">₹{{ p.paid.toLocaleString('en-IN') }}</div>
+                                <div class="text-muted small">Paid</div>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="text-center">
+                                <div class="fw-bold text-warning">₹{{ p.pending.toLocaleString('en-IN') }}</div>
+                                <div class="text-muted small">Pending</div>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="text-center border-start">
+                                <div class="fw-bold text-dark">₹{{ p.expenseAmount?.toLocaleString('en-IN') }}</div>
+                                <div class="text-muted small">Total</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Payment ID -->
                     <div class="mt-3 text-end text-muted small">
                       Payment ID: #{{ p.id }}
                     </div>
@@ -164,7 +251,7 @@
             </template>
 
             <!-- No Data -->
-            <tr v-if="payments.length === 0">
+            <tr v-if="displayPayments.length === 0">
               <td colspan="5" class="text-center text-muted py-5">
                 No payments found
               </td>
@@ -185,8 +272,9 @@
             <li class="page-item" :class="{ disabled: meta.page <= 1 }">
               <a class="page-link" @click="goToPage(meta.page - 1)" href="javascript:void(0)">Prev</a>
             </li>
-            <li class="page-item" v-for="p in visiblePages" :key="p" :class="{ active: p === meta.page }">
-              <a class="page-link" @click="typeof p === 'number' && goToPage(p)" href="javascript:void(0)">{{ p }}</a>
+            <li class="page-item" v-for="pg in visiblePages" :key="pg" :class="{ active: pg === meta.page }">
+              <a class="page-link" @click="typeof pg === 'number' && goToPage(pg)" href="javascript:void(0)">{{ pg
+                }}</a>
             </li>
             <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
               <a class="page-link" @click="goToPage(meta.page + 1)" href="javascript:void(0)">Next</a>
@@ -204,42 +292,184 @@ import { Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
-// ─────────────── Types ───────────────
-interface Member { id: number; name: string; email: string }
-interface Trainer { id: number; name: string }
-interface Payment {
+// ────────────────────── Types (from real API) ──────────────────────
+interface RawMember {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+}
+interface RawPlan { name: string; price: number }
+interface RawAddon { name: string; price: number }
+interface RawTrainer { id: number; firstName: string; lastName: string }
+interface RawExpense {
+  id: number
+  title: string
+  category: string
+  amount: number
+  paid: number | null
+  pending: number | null
+}
+interface RawPayment {
   id: number
   amount: number
   paymentDate: string
   method: string
-  type: 'membership' | 'addon' | 'expense' | 'unknown'
-  member: Member | null
-  plan: string | null
-  addonName: string | null
-  trainer: Trainer | null
-  // expense-related fields
-  expenseTitle?: string | null
-  category?: string | null
-  paid?: number | null
-  pending?: number | null
-  expenseAmount?: number | null
+  membershipId: number | null
+  memberAddonId: number | null
+  expenseId: number | null
+  membership: { member: RawMember; plan: RawPlan } | null
+  memberAddon: { member: RawMember; addon: RawAddon; trainer: RawTrainer | null } | null
+  expense: RawExpense | null
 }
 interface PaginationMeta { total: number; page: number; limit: number; totalPages: number }
 
-// ─────────────── State ───────────────
-const payments = ref<Payment[]>([])
+// ────────────────────── State ──────────────────────
+const payments = ref<RawPayment[]>([])
 const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 })
 const isLoading = ref(true)
 const toastMessage = ref('')
 const expanded = ref<Set<number>>(new Set())
 
-const filters = ref({ search: '', startDate: '', endDate: '', method: '', type: '' })
+const filters = ref({
+  search: '',
+  startDate: '',
+  endDate: '',
+  method: '',
+  type: ''
+})
 const pagination = ref({ page: 1, limit: 10 })
 
 const toastRef = ref<HTMLElement | null>(null)
 let toastInstance: Toast | null = null
 
-// ─────────────── Computed ───────────────
+// ────────────────────── Display-ready Payment ──────────────────────
+interface DisplayPayment {
+  id: number
+  amount: number
+  paymentDate: string
+  method: string
+  type: 'membership' | 'addon' | 'expense' | 'unknown'
+  member: { id: number; name: string; email: string } | null
+  plan: string | null
+  addonName: string | null
+  trainer: { id: number; name: string } | null
+  expenseTitle: string | null
+  category: string | null
+  expenseAmount: number | null
+  paid: number
+  pending: number
+}
+const displayPayments = computed<DisplayPayment[]>(() => {
+  return payments.value.map(p => {
+    const base: DisplayPayment = {
+      id: p.id,
+      amount: p.amount,
+      paymentDate: p.paymentDate,
+      method: p.method,
+      type: 'unknown',
+      member: null,
+      plan: null,
+      addonName: null,
+      trainer: null,
+      expenseTitle: null,
+      category: null,
+      expenseAmount: null,
+      paid: 0,
+      pending: 0,
+    }
+
+    if (p.membership) {
+      const m = p.membership.member
+      return {
+        ...base,
+        type: 'membership',
+        member: { id: m.id, name: `${m.firstName} ${m.lastName}`, email: m.email },
+        plan: p.membership.plan.name,
+      }
+    }
+
+    if (p.memberAddon) {
+      const m = p.memberAddon.member
+      const t = p.memberAddon.trainer
+      return {
+        ...base,
+        type: 'addon',
+        member: { id: m.id, name: `${m.firstName} ${m.lastName}`, email: m.email },
+        addonName: p.memberAddon.addon.name,
+        trainer: t ? { id: t.id, name: `${t.firstName} ${t.lastName}` } : null,
+      }
+    }
+
+    if (p.expense) {
+      return {
+        ...base,
+        type: 'expense',
+        expenseTitle: p.expense.title,
+        category: p.expense.category,
+        expenseAmount: p.expense.amount,
+        paid: p.expense.paid ?? 0,
+        pending: p.expense.pending ?? 0,
+      }
+    }
+
+    return base
+  })
+})
+
+// ────────────────────── Helpers ──────────────────────
+const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+const formatTime = (d: string) => new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+const formatType = (t: string) => t === 'membership' ? 'Membership' : t === 'addon' ? 'Program' : t === 'expense' ? 'Expense' : 'Unknown'
+const getTypeBadgeClass = (t: string) => {
+  switch (t) {
+    case 'membership': return 'bg-primary'
+    case 'addon': return 'bg-info text-dark'
+    case 'expense': return 'bg-danger'
+    default: return 'bg-secondary'
+  }
+}
+const toggleExpand = (id: number) => expanded.value.has(id) ? expanded.value.delete(id) : expanded.value.add(id)
+
+// ────────────────────── Toast ──────────────────────
+const showToast = (msg: string, success = true) => {
+  toastMessage.value = msg
+  if (toastRef.value) {
+    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
+    toastInstance?.show()
+  }
+  setTimeout(() => { if (toastMessage.value === msg) hideToast() }, 4000)
+}
+const hideToast = () => toastInstance?.hide()
+
+// ────────────────────── API & Pagination ──────────────────────
+const buildQuery = () => ({ ...filters.value, ...pagination.value })
+const loadPayments = async () => {
+  isLoading.value = true
+  try {
+    const res = await api.get('/payments/history', { params: buildQuery() }) as AxiosResponse<{
+      data: RawPayment[]
+      meta: PaginationMeta
+    }>
+    payments.value = res.data.data
+    meta.value = res.data.meta
+  } catch (err: any) {
+    console.error(err)
+    showToast('Failed to load payment history', false)
+  } finally {
+    isLoading.value = false
+  }
+}
+const resetPageAndLoad = () => { pagination.value.page = 1; loadPayments() }
+const clearFilters = () => {
+  filters.value = { search: '', startDate: '', endDate: '', method: '', type: '' }
+  resetPageAndLoad()
+}
+const goToPage = (page: number) => {
+  if (page < 1 || page > meta.value.totalPages || page === meta.value.page) return
+  pagination.value.page = page
+  loadPayments()
+}
 const visiblePages = computed(() => {
   const delta = 2
   const range: (number | string)[] = []
@@ -252,73 +482,7 @@ const visiblePages = computed(() => {
   return range
 })
 
-// ─────────────── Helpers ───────────────
-const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-const formatTime = (d: string) => new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-
-const formatType = (type: string) => {
-  return type === 'membership' ? 'Membership'
-    : type === 'addon' ? 'Program'
-      : type === 'expense' ? 'Expense'
-        : 'Unknown'
-}
-
-const getTypeBadgeClass = (type: string) => {
-  switch (type) {
-    case 'membership': return 'bg-primary'
-    case 'addon': return 'bg-info text-dark'
-    case 'expense': return 'bg-danger'
-    default: return 'bg-secondary'
-  }
-}
-
-const toggleExpand = (id: number) => {
-  if (expanded.value.has(id)) {
-    expanded.value.delete(id)
-  } else {
-    expanded.value.add(id)
-  }
-}
-
-// ─────────────── Toast ───────────────
-const showToast = (msg: string, success = true) => {
-  toastMessage.value = msg
-  if (toastRef.value) {
-    toastRef.value.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`
-    toastInstance?.show()
-  }
-  setTimeout(() => { if (toastMessage.value === msg) hideToast() }, 4000)
-}
-const hideToast = () => toastInstance?.hide()
-
-// ─────────────── API ───────────────
-const buildQuery = () => ({ ...filters.value, ...pagination.value })
-const loadPayments = async () => {
-  isLoading.value = true
-  try {
-    const res = await api.get('/payments/history', { params: buildQuery() }) as AxiosResponse<{
-      data: Payment[]
-      meta: PaginationMeta
-    }>
-    payments.value = res.data.data
-    meta.value = res.data.meta
-  } catch (err: any) {
-    console.error(err)
-    showToast('Failed to load payment history', false)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const resetPageAndLoad = () => { pagination.value.page = 1; loadPayments() }
-const clearFilters = () => { filters.value = { search: '', startDate: '', endDate: '', method: '', type: '' }; resetPageAndLoad() }
-const goToPage = (page: number) => {
-  if (page < 1 || page > meta.value.totalPages || page === meta.value.page) return
-  pagination.value.page = page
-  loadPayments()
-}
-
-// ─────────────── Lifecycle ───────────────
+// ────────────────────── Lifecycle ──────────────────────
 onMounted(async () => {
   if (toastRef.value) toastInstance = new Toast(toastRef.value)
   await loadPayments()
@@ -339,8 +503,8 @@ onMounted(async () => {
 }
 
 .bi {
-  font-size: 0.9rem;
-  transition: transform 0.2s ease;
+  font-size: .9rem;
+  transition: transform .2s ease;
 }
 
 .table td,
@@ -349,7 +513,7 @@ onMounted(async () => {
 }
 
 .badge {
-  font-size: 0.75rem;
+  font-size: .75rem;
 }
 
 .toast {
@@ -363,5 +527,18 @@ onMounted(async () => {
 .spinner-border {
   width: 2.5rem;
   height: 2.5rem;
+}
+
+/* Card-like sections */
+.border-start {
+  border-left-width: 4px !important;
+}
+
+.rounded-3 {
+  border-radius: .75rem !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
 }
 </style>
