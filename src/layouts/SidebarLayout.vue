@@ -20,6 +20,7 @@
         <!-- <router-link to="/classes" class="nav-link text-light" active-class="active">Classes</router-link> -->
         <router-link to="/plans" class="nav-link text-light" active-class="active">Your Plans</router-link>
         <router-link to="/addons" class="nav-link text-light" active-class="active">Special Programs</router-link>
+        <router-link to="/expenses" class="nav-link text-light" active-class="active">Expenses</router-link>
         <router-link to="/payment-history" class="nav-link text-light" active-class="active">Payment
           History</router-link>
       </nav>

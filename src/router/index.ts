@@ -72,6 +72,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/expenses",
+    name: "Expenses",
+    component: () => import("@/pages/Expenses.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/payment-history",
     name: "paymentHistory",
     component: PaymentHistory,
