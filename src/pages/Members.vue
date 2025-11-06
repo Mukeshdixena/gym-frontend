@@ -303,14 +303,30 @@
 
       <!-- Pagination Footer -->
       <footer class="pagination-footer">
-        <div class="d-flex justify-content-between align-items-center small text-muted">
-          <div>
-            Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }} of
-            {{ meta.total }} results
+        <div class="d-flex justify-content-between align-items-center small text-muted w-100">
+          <div class="d-flex align-items-center gap-2">
+            <span>
+              Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }} of
+              {{ meta.total }} results
+            </span>
+
+            <!-- 🔽 Limit Dropdown -->
+            <div class="d-flex align-items-center ms-3">
+              <label class="me-1">Rows per page:</label>
+              <select v-model.number="pagination.limit" @change="resetPageAndLoad"
+                class="form-select form-select-sm w-auto">
+                <option :value="5">5</option>
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+            </div>
           </div>
 
           <nav>
             <ul class="pagination pagination-sm mb-0">
+
               <li class="page-item" :class="{ disabled: meta.page <= 1 }">
                 <a class="page-link" href="#" @click.prevent="goToPage(meta.page - 1)">Previous</a>
               </li>
@@ -988,5 +1004,9 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.pagination-footer select {
+  min-width: 70px;
 }
 </style>
