@@ -145,7 +145,7 @@
                                 <tr v-for="ms in member.memberships" :key="'m-' + ms.id">
                                   <td>{{ ms.plan?.name ?? 'N/A' }}</td>
                                   <td><span class="status-badge" :class="getStatusClass(ms.status)">{{ ms.status
-                                      }}</span>
+                                  }}</span>
                                   </td>
                                   <td>{{ formatDate(ms.startDate) }}</td>
                                   <td>{{ formatDate(ms.endDate) }}</td>
@@ -178,7 +178,7 @@
                                 <tr v-for="ad in member.memberAddons" :key="'a-' + ad.id">
                                   <td>{{ ad.addon?.name ?? 'N/A' }}</td>
                                   <td><span class="status-badge" :class="getStatusClass(ad.status)">{{ ad.status
-                                      }}</span>
+                                  }}</span>
                                   </td>
                                   <td>{{ formatDate(ad.startDate) }}</td>
                                   <td>{{ formatDate(ad.endDate) }}</td>
@@ -790,13 +790,26 @@ onMounted(async () => {
 /* Fixed footer outside the card */
 .pagination-footer {
   position: fixed;
-  bottom: 0;
-  left: 240px; /* same as sidebar width */
+  bottom: 10px;
+  /* raised slightly from bottom */
+  left: 240px;
+  /* same as sidebar width */
   right: 0;
   background: #fff;
-  /* border-top: 1px solid #dee2e6; */
   padding: 0.65rem 1rem;
   z-index: 1040;
-  /* box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05); */
+  display: flex;
+  justify-content: center;
+  /* centers pagination horizontally */
+  align-items: center;
+}
+
+.pagination-footer>div {
+  width: 100%;
+  max-width: 900px;
+  /* optional: keeps centered area narrower */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>
