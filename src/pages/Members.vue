@@ -293,7 +293,7 @@
                       </button>
 
                       <!-- Delete -->
-                      <button class="icon-btn text-danger" :disabled="!canDeleteMember(member)" title="Delete"
+                      <button v-if="canDeleteMember(member)" class="icon-btn text-danger" title="Delete"
                         @click.stop="confirmDelete(member)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                           viewBox="0 0 16 16">
