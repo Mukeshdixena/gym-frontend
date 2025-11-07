@@ -256,8 +256,8 @@
 
             <tbody>
               <template v-for="member in members" :key="member.id">
-                <tr @click="toggleExpand(member.id)" style="cursor: pointer;"
-                  :class="{ 'table-active': expandedMemberId === member.id }">
+                <tr :class="{ 'table-active': expandedMemberId === member.id }">
+
                   <td class="small text-muted">{{ member.id }}</td>
                   <td class="fw-semibold">{{ member.firstName }} {{ member.lastName }}</td>
                   <td class="small">{{ member.email }}</td>
@@ -270,6 +270,20 @@
                   </td>
                   <td class="text-center" @click.stop>
                     <div class="d-flex justify-content-center gap-2">
+                      <!-- Expand/Collapse -->
+                      <button class="icon-btn" title="Show Details" @click.stop="toggleExpand(member.id)">
+                        <svg v-if="expandedMemberId !== member.id" xmlns="http://www.w3.org/2000/svg" width="16"
+                          height="16" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M1.5 8a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12A.5.5 0 0 1 1.5 8z" />
+                          <path d="M8 1.5a.5.5 0 0 1 .5.5v12a.5.5 0 0 1-1 0v-12a.5.5 0 0 1 .5-.5z" />
+                        </svg>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path d="M1.5 8a.5.5 0 0 1 .5-.5h12a.5.5 0 0 1 0 1h-12A.5.5 0 0 1 1.5 8z" />
+                        </svg>
+                      </button>
+
+                      <!-- Edit -->
                       <button class="icon-btn" title="Edit" @click.stop="editMember(member)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                           viewBox="0 0 16 16">
@@ -278,6 +292,7 @@
                         </svg>
                       </button>
 
+                      <!-- Delete -->
                       <button class="icon-btn text-danger" :disabled="!canDeleteMember(member)" title="Delete"
                         @click.stop="confirmDelete(member)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -288,6 +303,7 @@
                         </svg>
                       </button>
                     </div>
+
                   </td>
                 </tr>
 
@@ -316,7 +332,7 @@
                                 <tr v-for="ms in member.memberships" :key="'m-' + ms.id">
                                   <td>{{ ms.plan?.name ?? 'N/A' }}</td>
                                   <td><span class="status-badge" :class="getStatusClass(ms.status)">{{ ms.status
-                                  }}</span></td>
+                                      }}</span></td>
                                   <td>{{ formatDate(ms.startDate) }}</td>
                                   <td>{{ formatDate(ms.endDate) }}</td>
                                   <td>₹{{ ms.paid }}</td>
@@ -354,7 +370,7 @@
                                 <tr v-for="ad in member.memberAddons" :key="'a-' + ad.id">
                                   <td>{{ ad.addon?.name ?? 'N/A' }}</td>
                                   <td><span class="status-badge" :class="getStatusClass(ad.status)">{{ ad.status
-                                  }}</span></td>
+                                      }}</span></td>
                                   <td>{{ formatDate(ad.startDate) }}</td>
                                   <td>{{ formatDate(ad.endDate) }}</td>
                                   <td>₹{{ ad.paid }}</td>
@@ -1196,5 +1212,13 @@ onMounted(async () => {
 
 .filter-btn.active {
   color: #4361ee;
+}
+
+.icon-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.table-active .icon-btn:first-child svg {
+  transform: rotate(180deg);
 }
 </style>
