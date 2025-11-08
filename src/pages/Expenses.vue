@@ -127,9 +127,9 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.category }">Category</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.category" v-model.trim="filters.category" @input="debouncedResetPageAndLoad"
-                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Category"
-                        @blur="handleBlur('category')" />
+                      <input v-if="columnFilters.category" v-model.trim="filters.category"
+                        @input="debouncedResetPageAndLoad" type="text" class="form-control form-control-sm filter-input"
+                        placeholder="Search Category" @blur="handleBlur('category')" />
                     </transition>
                     <button class="filter-btn" :class="{ active: columnFilters.category }"
                       @click.stop="toggleFilter('category')" title="Filter Category">
@@ -156,9 +156,9 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.amount }">Amount</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.amount" v-model.trim="filters.amount" @input="debouncedResetPageAndLoad"
-                        type="text" class="form-control form-control-sm filter-input" placeholder="Min Amount"
-                        @blur="handleBlur('amount')" />
+                      <input v-if="columnFilters.amount" v-model.trim="filters.amount"
+                        @input="debouncedResetPageAndLoad" type="text" class="form-control form-control-sm filter-input"
+                        placeholder="Min Amount" @blur="handleBlur('amount')" />
                     </transition>
                     <button class="filter-btn" :class="{ active: columnFilters.amount }"
                       @click.stop="toggleFilter('amount')" title="Filter Amount">
@@ -279,8 +279,7 @@
                       </button>
 
                       <!-- Delete -->
-                      <button class="icon-btn text-danger" title="Delete"
-                        @click.stop="confirmDelete(exp)">
+                      <button class="icon-btn text-danger" title="Delete" @click.stop="confirmDelete(exp)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                           viewBox="0 0 16 16">
                           <path d="M5.5 5.5v7h1v-7h-1zm3 0v7h1v-7h-1z" />
@@ -300,10 +299,22 @@
                         <div class="col-md-6">
                           <h6 class="fw-bold text-primary mb-3">Financial Summary</h6>
                           <table class="table table-sm">
-                            <tr><th>Total Amount</th><td>₹ R{{ exp.amount.toFixed(2) }}</td></tr>
-                            <tr><th>Paid</th><td class="text-success">₹{{ (exp.paid ?? 0).toFixed(2) }}</td></tr>
-                            <tr><th>Pending</th><td class="text-danger">₹{{ (exp.pending ?? exp.amount).toFixed(2) }}</td></tr>
-                            <tr><th>Status</th><td><span class="badge" :class="getStatusClass(exp.status)">{{ exp.status }}</span></td></tr>
+                            <tr>
+                              <th>Total Amount</th>
+                              <td>₹ R{{ exp.amount.toFixed(2) }}</td>
+                            </tr>
+                            <tr>
+                              <th>Paid</th>
+                              <td class="text-success">₹{{ (exp.paid ?? 0).toFixed(2) }}</td>
+                            </tr>
+                            <tr>
+                              <th>Pending</th>
+                              <td class="text-danger">₹{{ (exp.pending ?? exp.amount).toFixed(2) }}</td>
+                            </tr>
+                            <tr>
+                              <th>Status</th>
+                              <td><span class="badge" :class="getStatusClass(exp.status)">{{ exp.status }}</span></td>
+                            </tr>
                           </table>
                         </div>
                         <div class="col-md-6">
@@ -408,7 +419,8 @@
               </div>
               <div class="mb-3">
                 <label class="form-label"><strong>Amount (₹)</strong></label>
-                <input v-model.number="expenseForm.amount" type="number" min="0" step="0.01" class="form-control" required />
+                <input v-model.number="expenseForm.amount" type="number" min="0" step="0.01" class="form-control"
+                  required />
               </div>
               <div class="mb-3">
                 <label class="form-label"><strong>Expense Date</strong></label>
@@ -431,77 +443,101 @@
     </div>
 
     <!-- Add Payment Modal -->
-    <div class="modal fade" ref="paymentModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Add Payment – {{ selectedExpense?.title }}</h5>
-            <button type="button" class="btn-close" @click="closePaymentModal"></button>
+    <div class="modal fade" ref="paymentModalRef" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 900px; width: 100%;">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+          <!-- Header -->
+          <div class="modal-header border-0 bg-primary text-white pb-3">
+            <h5 class="modal-title fw-bold fs-4">
+              Add Payment – {{ selectedExpense?.title }}
+            </h5>
+            <button type="button" class="btn-close btn-close-white" @click="closePaymentModal"
+              aria-label="Close"></button>
           </div>
-          <div class="modal-body">
-            <form @submit.prevent>
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <label class="form-label"><strong>Total Amount</strong></label>
-                  <input type="number" class="form-control" :value="selectedExpense?.amount" readonly />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label"><strong>Paid</strong></label>
-                  <input type="number" class="form-control" :value="oldPaid" readonly />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label"><strong>Pending</strong></label>
-                  <input type="number" class="form-control" :value="oldPending" readonly />
+
+          <div class="modal-body pt-4 px-4">
+            <form @submit.prevent="savePayment">
+
+              <!-- Summary Card -->
+              <div class="bg-light rounded-3 p-4 mb-4 border">
+                <div class="row g-3 text-center text-md-start">
+                  <div class="col-md-4">
+                    <div class="text-muted small fw-semibold">Total Amount</div>
+                    <div class="fs-4 fw-bold text-dark">₹{{ selectedExpense?.amount?.toFixed(2) }}</div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="text-muted small fw-semibold">Already Paid</div>
+                    <div class="fs-4 fw-bold text-success">₹{{ oldPaid.toFixed(2) }}</div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="text-muted small fw-semibold">Pending</div>
+                    <div class="fs-4 fw-bold text-danger">₹{{ oldPending.toFixed(2) }}</div>
+                  </div>
                 </div>
               </div>
 
-              <div class="row g-3 mt-3">
-                <div class="col-md-4">
-                  <label class="form-label text-success"><strong>Paying Now</strong></label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    :class="{ 'is-invalid': newPaidNow > oldPending || newPaidNow < 0 }"
-                    v-model.number="newPaidNow"
-                    min="0"
-                    :max="oldPending"
-                    step="0.01"
-                    @input="clampPayingNow"
-                  />
-                  <div v-if="newPaidNow > oldPending" class="invalid-feedback">
-                    Cannot exceed ₹{{ oldPending }}
+              <!-- Main Input Row -->
+              <div class="row g-4 align-items-end">
+
+                <!-- Paying Now (LARGE & FOCUSED) -->
+                <div class="col-lg-5">
+                  <label class="form-label text-success fw-bold fs-5">
+                    Paying Now <span class="text-danger">*</span>
+                  </label>
+                  <div class="input-group input-group-lg">
+                    <span class="input-group-text fw-bold bg-white">₹</span>
+                    <input type="number" class="form-control form-control-lg fw-bold text-success border-start-0"
+                      :class="{ 'is-invalid': newPaidNow > oldPending || newPaidNow < 0 }" v-model.number="newPaidNow"
+                      min="0" :max="oldPending" step="0.01" @input="clampPayingNow" placeholder="0.00"
+                      ref="payingNowInput" required autofocus />
+                    <span class="input-group-text bg-light text-muted small fw-semibold border-start-0"
+                      :class="{ 'text-danger': pendingAfterPayment === 0 }">
+                      → ₹{{ pendingAfterPayment.toFixed(2) }}
+                    </span>
+                  </div>
+                  <div v-if="newPaidNow > oldPending" class="invalid-feedback mt-1">
+                    Cannot exceed pending amount
                   </div>
                 </div>
-                <div class="col-md-4">
-                  <label class="form-label text-danger"><strong>Pending After</strong></label>
-                  <input type="number" class="form-control" :value="pendingAfterPayment" readonly />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label"><strong>Method</strong></label>
-                  <select v-model="paymentMethod" class="form-select">
+
+                <!-- Payment Method -->
+                <div class="col-lg-4">
+                  <label class="form-label fw-bold fs-5">
+                    Method <span class="text-danger">*</span>
+                  </label>
+                  <select v-model="paymentMethod" class="form-select form-select-lg fw-semibold" required
+                    ref="methodSelect">
+                    <option value="" disabled>Select payment method</option>
                     <option value="CASH">Cash</option>
                     <option value="CARD">Card</option>
                     <option value="UPI">UPI</option>
-                    <option value="ONLINE">Online</option>
+                    <option value="ONLINE">Online Transfer</option>
                   </select>
                 </div>
-                <div class="col-md-12">
-                  <label class="form-label">Notes</label>
+
+                <!-- Notes (Optional) -->
+                <div class="col-lg-3">
+                  <label class="form-label text-secondary fs-6">Notes</label>
                   <input v-model.trim="paymentNotes" type="text" class="form-control" placeholder="Optional" />
                 </div>
               </div>
 
-              <div class="d-flex justify-content-end gap-2 mt-4">
-                <button type="button" class="btn btn-secondary" @click="closePaymentModal" :disabled="isSubmitting">
+              <!-- Action Buttons -->
+              <div class="d-flex justify-content-end gap-3 mt-5">
+                <button type="button" class="btn btn-outline-secondary px-5 py-2 fw-semibold" @click="closePaymentModal"
+                  :disabled="isSubmitting">
                   Cancel
                 </button>
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="savePayment"
-                  :disabled="isSubmitting || newPaidNow <= 0 || newPaidNow > oldPending"
-                >
-                  {{ isSubmitting ? 'Adding...' : 'Add Payment' }}
+                <button type="submit" class="btn btn-success px-5 py-2 fw-bold text-white shadow-sm"
+                  :disabled="isSubmitting || newPaidNow <= 0 || newPaidNow > oldPending || !paymentMethod">
+                  <span v-if="isSubmitting">
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Adding...
+                  </span>
+                  <span v-else>
+                    Add Payment
+                  </span>
                 </button>
               </div>
             </form>
@@ -808,6 +844,8 @@ const confirmDelete = async (exp: Expense) => {
   }
 }
 
+
+
 // Helpers
 const getStatusClass = (status?: string) => {
   if (!status) return 'bg-secondary'
@@ -960,7 +998,7 @@ onMounted(async () => {
   align-items: center;
 }
 
-.pagination-footer > div {
+.pagination-footer>div {
   width: 100%;
   max-width: 900px;
   display: flex;
