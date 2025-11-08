@@ -1,35 +1,37 @@
 <template>
   <div class="members-container">
     <!-- Top Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Members Management</h2>
-        <p class="text-muted small mb-0">Manage members, memberships and special programs.</p>
-      </div>
+    <div class="header-section mb-4">
+      <div class="header-content">
+        <div>
+          <h2 class="fw-bold mb-1 title-responsive">Members Management</h2>
+          <p class="text-muted small mb-0 d-none d-md-block">Manage members, memberships and special programs.</p>
+        </div>
 
-      <div class="d-flex gap-2 align-items-center">
-        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" @click="loadMembers">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z" />
-            <path d="M8 1v3h3" />
-          </svg>
-          Refresh
-        </button>
+        <div class="header-actions">
+          <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" @click="loadMembers">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z" />
+              <path d="M8 1v3h3" />
+            </svg>
+            <span class="d-none d-sm-inline">Refresh</span>
+          </button>
 
-        <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 1v14m7-7H1" />
-          </svg>
-          + New Enrollment
-        </button>
+          <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus"
+              viewBox="0 0 16 16">
+              <path
+                d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+            </svg>
+            <span class="d-sm-inline">New Enrollment</span>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Filter Bar (Sticky) -->
-    <div class="filter-bar">
-      <div class="d-flex align-items-center gap-2 flex-wrap">
-
-        <!-- Filter Chips -->
+    <div class="filter-bar" v-if="Object.keys(activeFilters).length">
+      <div class="filter-chips">
         <div v-for="(value, key) in activeFilters" :key="key"
           class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
@@ -43,8 +45,9 @@
     </div>
 
     <!-- Toast -->
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
-      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert">
+    <div class="toast-container">
+      <div ref="toastRef" class="toast align-items-center text-white bg-success border-0" role="alert"
+        aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
           <div class="toast-body">{{ toastMessage }}</div>
           <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="hideToast"></button>
@@ -58,10 +61,10 @@
       <div class="mt-2 text-muted">Loading members and plans...</div>
     </div>
 
-    <!-- Table Container -->
-    <div v-else class="table-responsive rounded-3 overflow-hidden">
+    <!-- Desktop Table (≥992px) -->
+    <div v-else-if="!isMobile" class="d-none d-lg-block table-responsive rounded-3 overflow-hidden">
       <div class="table-scroll-container">
-        <div class="table-container border rounded-3 ">
+        <div class="table-container border rounded-3">
           <table class="table table-hover align-middle mb-0">
             <thead class="bg-light text-muted small fw-semibold sticky-top" style="z-index: 10;">
               <tr>
@@ -123,8 +126,6 @@
                   </div>
                 </th>
 
-
-
                 <!-- Phone -->
                 <th class="filter-header">
                   <div class="filter-wrapper">
@@ -184,7 +185,6 @@
                 </th>
 
                 <!-- Plan -->
-
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.plan }">Plan</span>
@@ -302,7 +302,6 @@
                         </svg>
                       </button>
                     </div>
-
                   </td>
                 </tr>
 
@@ -336,12 +335,6 @@
                                   <td>₹{{ ms.paid }}</td>
                                   <td>₹{{ ms.pending }}</td>
                                   <td>₹{{ ms.discount ?? 0 }}</td>
-                                  <!-- <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1"
-                                      @click.stop="openEditMembershipModal(ms)">Edit</button>
-                                    <button class="btn btn-sm btn-outline-success"
-                                      @click.stop="openRefundModal(ms)">Refund</button>
-                                  </td> -->
                                 </tr>
                               </tbody>
                             </table>
@@ -393,51 +386,104 @@
           </table>
         </div>
       </div>
-
-      <!-- Pagination Footer -->
-      <footer class="pagination-footer">
-        <div class="d-flex justify-content-between align-items-center small text-muted w-100">
-          <div class="d-flex align-items-center gap-2">
-            <span>
-              Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }} of
-              {{ meta.total }} results
-            </span>
-
-            <!-- Limit Dropdown -->
-            <div class="d-flex align-items-center ms-3">
-              <label class="me-1">Rows per page:</label>
-              <select v-model.number="pagination.limit" @change="debouncedResetPageAndLoad"
-                class="form-select form-select-sm w-auto">
-                <option :value="5">5</option>
-                <option :value="10">10</option>
-                <option :value="20">20</option>
-                <option :value="50">50</option>
-                <option :value="100">100</option>
-              </select>
-            </div>
-          </div>
-
-          <nav>
-            <ul class="pagination pagination-sm mb-0">
-
-              <li class="page-item" :class="{ disabled: meta.page <= 1 }">
-                <a class="page-link" href="#" @click.prevent="goToPage(meta.page - 1)">Previous</a>
-              </li>
-              <li v-for="p in visiblePages" :key="p" class="page-item" :class="{ active: p === meta.page }">
-                <a class="page-link" href="#" @click.prevent="goToPage(p)">{{ p }}</a>
-              </li>
-              <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
-                <a class="page-link" href="#" @click.prevent="goToPage(meta.page + 1)">Next</a>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </footer>
     </div>
+
+    <!-- Mobile View (<992px) -->
+    <div v-else class="d-lg-none">
+      <div v-for="member in members" :key="member.id" class="card mb-3 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h6 class="mb-0 fw-bold">{{ member.firstName }} {{ member.lastName }}</h6>
+              <small class="text-muted">#{{ member.id }}</small>
+            </div>
+            <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
+              {{ member.memberships[0]?.status ?? 'N/A' }}
+            </span>
+          </div>
+          <div class="small text-muted mb-2">
+            <div><strong>Phone:</strong> {{ member.phone }}</div>
+            <div><strong>Email:</strong> {{ member.email || '—' }}</div>
+            <div><strong>Plan:</strong> {{ member.memberships[0]?.plan?.name ?? 'N/A' }}</div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary flex-fill" @click="toggleExpand(member.id)">
+              {{ expandedMemberId === member.id ? 'Hide' : 'Details' }}
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" @click="editMember(member)">Edit</button>
+            <button v-if="canDeleteMember(member)" class="btn btn-sm btn-outline-danger"
+              @click="confirmDelete(member)">Delete</button>
+          </div>
+        </div>
+        <div v-if="expandedMemberId === member.id" class="card-footer bg-light p-3">
+          <div class="mb-3">
+            <strong>Memberships</strong>
+            <div v-if="member.memberships?.length" class="mt-2 small">
+              <div v-for="ms in member.memberships" :key="ms.id" class="border-bottom pb-2 mb-2">
+                <div><strong>{{ ms.plan?.name }}</strong> ({{ ms.status }})</div>
+                <div>₹{{ ms.paid }} paid • ₹{{ ms.pending }} pending</div>
+                <div>{{ formatDate(ms.startDate) }} – {{ formatDate(ms.endDate) }}</div>
+              </div>
+            </div>
+            <div v-else class="text-muted">No memberships</div>
+          </div>
+          <div>
+            <strong>Programs</strong>
+            <div v-if="member.memberAddons?.length" class="mt-2 small">
+              <div v-for="ad in member.memberAddons" :key="ad.id" class="border-bottom pb-2 mb-2">
+                <div><strong>{{ ad.addon?.name }}</strong></div>
+                <div>₹{{ ad.paid }} paid • ₹{{ ad.pending }} pending</div>
+              </div>
+            </div>
+            <div v-else class="text-muted">No programs</div>
+          </div>
+        </div>
+      </div>
+      <div v-if="!members.length" class="text-center text-muted py-5">No members found</div>
+    </div>
+
+    <!-- Pagination Footer -->
+    <footer class="pagination-footer">
+      <div class="pagination-content">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="small text-muted">
+            Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }} of {{
+              meta.total }} results
+          </span>
+
+          <!-- Limit Dropdown -->
+          <div class="d-flex align-items-center ms-3">
+            <label class="me-1 small">Rows per page:</label>
+            <select v-model.number="pagination.limit" @change="debouncedResetPageAndLoad"
+              class="form-select form-select-sm w-auto">
+              <option :value="5">5</option>
+              <option :value="10">10</option>
+              <option :value="20">20</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+          </div>
+        </div>
+
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" :class="{ disabled: meta.page <= 1 }">
+              <a class="page-link" href="#" @click.prevent="goToPage(meta.page - 1)">Previous</a>
+            </li>
+            <li v-for="p in visiblePages" :key="p" class="page-item" :class="{ active: p === meta.page }">
+              <a class="page-link" href="#" @click.prevent="goToPage(p)">{{ p }}</a>
+            </li>
+            <li class="page-item" :class="{ disabled: meta.page >= meta.totalPages }">
+              <a class="page-link" href="#" @click.prevent="goToPage(meta.page + 1)">Next</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
 
     <!-- Add/Edit Member Modal -->
     <div class="modal fade" ref="memberModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">{{ editingMember ? 'Edit Member' : 'Add Member' }}</h5>
@@ -446,7 +492,7 @@
           <div class="modal-body">
             <form @submit.prevent>
               <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                   <label class="form-label"><strong>First Name</strong></label>
                   <input v-model.trim="memberForm.firstName" type="text" class="form-control"
                     :class="{ 'is-invalid': memberErrors.firstName }" @blur="validateMemberField('firstName')"
@@ -454,7 +500,7 @@
                   <div v-if="memberErrors.firstName" class="invalid-feedback">{{ memberErrors.firstName }}</div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                   <label class="form-label"><strong>Last Name</strong></label>
                   <input v-model.trim="memberForm.lastName" type="text" class="form-control"
                     :class="{ 'is-invalid': memberErrors.lastName }" @blur="validateMemberField('lastName')" required />
@@ -463,7 +509,7 @@
               </div>
 
               <div class="row g-3 mt-2">
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                   <label class="form-label"><strong>Email (optional)</strong></label>
                   <input v-model.trim="memberForm.email" type="email" class="form-control"
                     :class="{ 'is-invalid': memberErrors.email }" @blur="validateMemberField('email')"
@@ -471,7 +517,7 @@
                   <div v-if="memberErrors.email" class="invalid-feedback">{{ memberErrors.email }}</div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                   <label class="form-label"><strong>Phone</strong></label>
                   <input v-model.trim="memberForm.phone" type="text" class="form-control"
                     :class="{ 'is-invalid': memberErrors.phone }" @blur="validateMemberField('phone')" required />
@@ -485,7 +531,7 @@
               </div>
 
               <div class="row g-3 mt-3">
-                <div class="col-md-4">
+                <div class="col-12 col-md-4">
                   <label class="form-label"><strong>Gender</strong></label>
                   <select v-model="memberForm.gender" class="form-select">
                     <option value="">Select Gender</option>
@@ -495,13 +541,13 @@
                   </select>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-12 col-md-4">
                   <label class="form-label"><strong>Referral Source</strong></label>
                   <input v-model.trim="memberForm.referralSource" type="text" class="form-control"
                     placeholder="E.g. Friend, Ad" />
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-12 col-md-4">
                   <label class="form-label"><strong>Notes</strong></label>
                   <input v-model.trim="memberForm.notes" type="text" class="form-control"
                     placeholder="Optional notes" />
@@ -625,7 +671,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
@@ -672,6 +718,19 @@ const columnFilters = ref({
 const pagination = ref({ page: 1, limit: 10 })
 const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 })
 const isLoading = ref(true)
+
+// Mobile detection
+const isMobile = ref(false)
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 992
+}
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+watch(isMobile, () => {
+  if (!isLoading.value) loadMembers()
+})
 
 // Toast & Modals
 const toastRef = ref<HTMLElement | null>(null)
@@ -737,11 +796,10 @@ const clearFilter = (key: FilterKey) => {
 
 // Computed
 const isMemberFormValid = computed(() => {
-  // Only validate fields that are present
   validateMemberField('firstName')
   validateMemberField('lastName')
   validateMemberField('phone')
-  if (memberForm.value.email) validateMemberField('email') // Only validate if provided
+  if (memberForm.value.email) validateMemberField('email')
 
   const hasRequired = !!memberForm.value.firstName && !!memberForm.value.lastName && !!memberForm.value.phone
   const noErrors = !Object.values(memberErrors.value).some(err => err)
@@ -877,7 +935,7 @@ const openAddModal = () => {
 }
 const editMember = (m: Member) => {
   editingMember.value = m
-  memberForm.value = { ...m, email: m.email || '' } // Ensure email is string
+  memberForm.value = { ...m, email: m.email || '' }
   originalMemberForm.value = { ...m, email: m.email || '' }
   memberErrors.value = {}
   memberModal?.show()
@@ -887,7 +945,7 @@ const saveMember = async () => {
   if (!isMemberFormValid.value) return showToast('Fill required fields.', false)
   try {
     const payload = { ...memberForm.value }
-    if (payload.email === '') delete payload.email // Remove empty email
+    if (payload.email === '') delete payload.email
     if (editingMember.value) {
       await api.put(`/members/${editingMember.value.id}`, payload)
       showToast('Member updated!')
@@ -964,26 +1022,81 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Same styles as before — unchanged */
+/* ========================================
+   Core Layout & Responsiveness
+   ======================================== */
 .members-container {
-  padding: 1.5rem;
+  padding: 1rem;
   background: #f8f9fa;
-  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
 }
 
-/* Filter Bar */
+/* Header Section */
+.header-section {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+@media (min-width: 768px) {
+  .header-content {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.title-responsive {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+@media (min-width: 576px) {
+  .title-responsive {
+    font-size: 1.6rem;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .header-actions {
+    width: auto;
+  }
+}
+
+/* Filter Bar (Sticky) */
 .filter-bar {
   position: sticky;
   top: 0;
   background: #f8f9fa;
   z-index: 15;
-  padding: 0.75rem 0;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid #dee2e6;
   backdrop-filter: blur(4px);
 }
 
-.search-input-wrapper .input-group {
-  width: 300px;
+.filter-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .filter-chip {
@@ -991,52 +1104,113 @@ onMounted(async () => {
   border-radius: 1rem;
   font-size: 0.8rem;
   color: #495057;
-  transition: background 0.2s;
-}
-
-.filter-chip:hover {
-  background: #dee2e6;
+  padding: 0.25rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .filter-chip .btn-close {
-  opacity: 0.7;
+  font-size: 0.7rem;
+  padding: 0.25rem;
 }
 
-.filter-chip .btn-close:hover {
-  opacity: 1;
+/* Toast */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1100;
+  pointer-events: none;
 }
 
-/* Table */
-.table {
-  --bs-table-hover-bg: #f1f5f9;
-  margin-bottom: 0;
+@media (max-width: 576px) {
+  .toast-container {
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .toast {
+    max-width: 100%;
+    width: fit-content;
+  }
 }
 
-.table thead th {
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6c757d;
-  border-bottom: 1px solid #dee2e6;
+/* Table Scroll Container */
+.table-scroll-container {
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-container {
+  min-width: 800px;
+}
+
+/* Mobile Cards */
+@media (max-width: 991.98px) {
+  .d-lg-none .card {
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .d-lg-none .card-body {
+    padding: 1rem;
+  }
+
+  .d-lg-none .card-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+  }
+}
+
+/* Pagination Footer */
+.pagination-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
   padding: 0.75rem 1rem;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1040;
+  border-top: 1px solid #dee2e6;
 }
 
-.table tbody td {
-  padding: 0.75rem 1rem;
-  font-size: 0.925rem;
-  vertical-align: middle;
+.pagination-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.875rem;
 }
 
-.table tbody tr:hover {
-  background-color: var(--bs-table-hover-bg);
+@media (max-width: 768px) {
+  .pagination-content {
+    flex-direction: column;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+
+  .pagination-content>div {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
+/* Status Badges */
 .status-badge {
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.6rem;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 1rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1066,145 +1240,90 @@ onMounted(async () => {
   color: #4b5563;
 }
 
+/* Icon Buttons */
 .icon-btn {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   padding: 6px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  color: #64748b;
 }
 
 .icon-btn:hover {
   background: #e2e8f0;
   border-color: #cbd5e1;
+  color: #475569;
 }
 
-.sticky-top {
-  position: sticky;
-  top: 0;
-  background: #f8f9fa;
+.icon-btn.text-danger {
+  color: #dc2626;
 }
 
-.pagination .page-link {
-  color: #495057;
-  border-radius: 6px;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.875rem;
+.icon-btn.text-danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
 }
 
-.pagination .page-item.active .page-link {
-  background: #4361ee;
-  border-color: #4361ee;
-  color: white;
-}
-
-.input-group-text {
-  background: #f8f9fa;
-  border-right: 0;
-  color: #6c757d;
-}
-
-.form-control {
-  border-left: 0;
-}
-
-.form-control:focus {
-  box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-  border-color: #4361ee;
-}
-
-.table-container {
-  max-height: calc(100vh - 240px);
-  overflow-y: auto;
-  background: white;
-}
-
-.pagination-footer {
-  position: fixed;
-  bottom: 10px;
-  left: 240px;
-  right: 0;
-  background: #fff;
-  padding: 0.65rem 1rem;
-  z-index: 1040;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.pagination-footer>div {
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pagination-footer select {
-  min-width: 70px;
-}
-
+/* Filter Headers */
 .filter-header {
+  min-width: 100px;
   position: relative;
-  white-space: nowrap;
-  min-width: 140px;
 }
 
 .filter-wrapper {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.4rem;
-  position: relative;
+  gap: 0.35rem;
+  white-space: nowrap;
 }
 
 .header-label {
   font-weight: 600;
-  font-size: 0.85rem;
-  color: #495057;
-  transition: opacity 0.2s ease;
+  font-size: 0.8rem;
+  color: #6c757d;
+  transition: opacity 0.2s;
 }
 
 .header-label.hidden {
   opacity: 0;
-  pointer-events: none;
+  width: 0;
+  overflow: hidden;
 }
 
 .filter-input {
-  width: 100%;
-  max-width: 120px;
-  opacity: 1;
-  transition: all 0.3s ease;
-  padding: 0.15rem 0.4rem;
+  max-width: 110px;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  height: auto;
 }
 
 .filter-btn {
-  background: transparent;
+  background: none;
   border: none;
-  padding: 0;
+  padding: 0.25rem;
   cursor: pointer;
   color: #6c757d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: color 0.2s;
 }
 
-.filter-btn:hover {
-  color: #4361ee;
+.filter-btn:hover,
+.filter-btn.active {
+  color: #0d6efd;
 }
 
-.filter-header .form-control-sm,
-.filter-header .form-select-sm {
-  font-size: 0.8rem;
-  height: 26px;
+.filter-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
-/* Smooth appearance of filter inputs */
+/* Fade-slide animation */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.25s ease;
@@ -1214,38 +1333,79 @@ onMounted(async () => {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateX(6px);
+  width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
-.header-label {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
+/* Mobile Card Buttons */
+@media (max-width: 576px) {
+  .d-lg-none .d-flex.gap-2 {
+    flex-direction: column;
+  }
 
-.header-label.hidden {
-  opacity: 0;
-  transform: translateX(-4px);
-  width: 0;
-  margin: 0;
-  overflow: hidden;
-  transition: opacity 0.25s ease, transform 0.25s ease, width 0.25s ease 0.15s;
-}
-
-
-@media (max-width: 768px) {
-  .pagination-footer {
-    left: 0;
-    padding: 0.5rem;
+  .d-lg-none .btn-sm {
+    font-size: 0.8rem;
   }
 }
 
-.filter-btn.active {
-  color: #4361ee;
+/* Modal Responsiveness */
+.modal-dialog {
+  max-width: 500px;
 }
 
-.icon-btn svg {
-  transition: transform 0.2s ease;
+@media (min-width: 576px) {
+  .modal-lg {
+    max-width: 800px;
+  }
 }
 
-.table-active .icon-btn:first-child svg {
-  transform: rotate(180deg);
+.modal-dialog-scrollable {
+  max-height: 90vh;
+}
+
+/* Form Controls */
+.form-control,
+.form-select {
+  font-size: 0.9rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Utility */
+.small {
+  font-size: 0.875rem;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+.fw-semibold {
+  font-weight: 600;
+}
+
+.d-none.d-lg-block {
+  display: none !important;
+}
+
+@media (min-width: 992px) {
+  .d-none.d-lg-block {
+    display: block !important;
+  }
+}
+
+.d-lg-none {
+  display: block !important;
+}
+
+@media (min-width: 992px) {
+  .d-lg-none {
+    display: none !important;
+  }
 }
 </style>
