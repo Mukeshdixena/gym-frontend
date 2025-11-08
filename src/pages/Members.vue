@@ -77,7 +77,6 @@
                     <button class="filter-btn" :class="{ active: columnFilters.id }" @click.stop="toggleFilter('id')"
                       title="Filter ID">
                       <template v-if="columnFilters.id">
-                        <!-- ❌ Close Icon -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                           viewBox="0 0 16 16">
                           <path
@@ -85,7 +84,6 @@
                         </svg>
                       </template>
                       <template v-else>
-                        <!-- 🔍 Search Icon -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                           viewBox="0 0 16 16">
                           <path
@@ -108,6 +106,37 @@
                     <button class="filter-btn" :class="{ active: columnFilters.name }"
                       @click.stop="toggleFilter('name')" title="Filter Name">
                       <template v-if="columnFilters.name">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </template>
+                    </button>
+                  </div>
+                </th>
+
+
+
+                <!-- Phone -->
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.phone }">Phone</span>
+                    <transition name="fade-slide">
+                      <input v-if="columnFilters.phone" v-model.trim="filters.phone" @input="debouncedResetPageAndLoad"
+                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Phone"
+                        @blur="handleBlur('phone')" />
+                    </transition>
+                    <button class="filter-btn" :class="{ active: columnFilters.phone }"
+                      @click.stop="toggleFilter('phone')" title="Filter Phone">
+                      <template v-if="columnFilters.phone">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                           viewBox="0 0 16 16">
                           <path
@@ -154,36 +183,8 @@
                   </div>
                 </th>
 
-                <!-- Phone -->
-                <th class="filter-header">
-                  <div class="filter-wrapper">
-                    <span class="header-label" :class="{ hidden: columnFilters.phone }">Phone</span>
-                    <transition name="fade-slide">
-                      <input v-if="columnFilters.phone" v-model.trim="filters.phone" @input="debouncedResetPageAndLoad"
-                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Phone"
-                        @blur="handleBlur('phone')" />
-                    </transition>
-                    <button class="filter-btn" :class="{ active: columnFilters.phone }"
-                      @click.stop="toggleFilter('phone')" title="Filter Phone">
-                      <template v-if="columnFilters.phone">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path
-                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
-                        </svg>
-                      </template>
-                      <template v-else>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path
-                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                        </svg>
-                      </template>
-                    </button>
-                  </div>
-                </th>
-
                 <!-- Plan -->
+
                 <th class="filter-header">
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.plan }">Plan</span>
@@ -252,16 +253,14 @@
               </tr>
             </thead>
 
-
-
             <tbody>
               <template v-for="member in members" :key="member.id">
                 <tr :class="{ 'table-active': expandedMemberId === member.id }">
 
                   <td class="small text-muted">{{ member.id }}</td>
                   <td class="fw-semibold">{{ member.firstName }} {{ member.lastName }}</td>
-                  <td class="small">{{ member.email }}</td>
                   <td class="small">{{ member.phone }}</td>
+                  <td class="small">{{ member.email || '—' }}</td>
                   <td class="small">{{ member.memberships[0]?.plan?.name ?? 'N/A' }}</td>
                   <td>
                     <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
@@ -325,7 +324,6 @@
                                   <th>Paid</th>
                                   <th>Pending</th>
                                   <th>Discount</th>
-                                  <!-- <th>Actions</th> -->
                                 </tr>
                               </thead>
                               <tbody>
@@ -405,7 +403,7 @@
               {{ meta.total }} results
             </span>
 
-            <!-- 🔽 Limit Dropdown -->
+            <!-- Limit Dropdown -->
             <div class="d-flex align-items-center ms-3">
               <label class="me-1">Rows per page:</label>
               <select v-model.number="pagination.limit" @change="debouncedResetPageAndLoad"
@@ -466,9 +464,10 @@
 
               <div class="row g-3 mt-2">
                 <div class="col-md-6">
-                  <label class="form-label"><strong>Email</strong></label>
+                  <label class="form-label"><strong>Email (optional)</strong></label>
                   <input v-model.trim="memberForm.email" type="email" class="form-control"
-                    :class="{ 'is-invalid': memberErrors.email }" @blur="validateMemberField('email')" required />
+                    :class="{ 'is-invalid': memberErrors.email }" @blur="validateMemberField('email')"
+                    placeholder="Leave blank if not available" />
                   <div v-if="memberErrors.email" class="invalid-feedback">{{ memberErrors.email }}</div>
                 </div>
 
@@ -642,14 +641,13 @@ interface Addon {
   paid: number; pending: number; trainerId?: number | null; addon?: { name: string }
 }
 interface Member {
-  id: number; firstName: string; lastName: string; email: string; phone: string;
+  id: number; firstName: string; lastName: string; email?: string | null; phone: string;
   address?: string; gender?: string; referralSource?: string; notes?: string;
   memberships: Membership[]; memberAddons: Addon[]
 }
 interface PaginationMeta { total: number; page: number; limit: number; totalPages: number }
 
 // Filter Keys
-// type FilterKey = keyof typeof filters.value
 type FilterKey = keyof typeof columnFilters.value
 
 // State
@@ -739,14 +737,27 @@ const clearFilter = (key: FilterKey) => {
 
 // Computed
 const isMemberFormValid = computed(() => {
-  ;['firstName', 'lastName', 'email', 'phone'].forEach(validateMemberField)
-  return !!memberForm.value.firstName && !!memberForm.value.lastName && !!memberForm.value.email && !!memberForm.value.phone && !Object.values(memberErrors.value).some(err => err)
+  // Only validate fields that are present
+  validateMemberField('firstName')
+  validateMemberField('lastName')
+  validateMemberField('phone')
+  if (memberForm.value.email) validateMemberField('email') // Only validate if provided
+
+  const hasRequired = !!memberForm.value.firstName && !!memberForm.value.lastName && !!memberForm.value.phone
+  const noErrors = !Object.values(memberErrors.value).some(err => err)
+  return hasRequired && noErrors
 })
+
 const isMemberFormDirty = computed(() => {
   if (!editingMember.value) return true
   const keys: (keyof Member)[] = ['firstName', 'lastName', 'email', 'phone', 'address', 'gender', 'referralSource', 'notes']
-  return keys.some(key => (memberForm.value[key] ?? '').toString().trim() !== (originalMemberForm.value[key] ?? '').toString().trim())
+  return keys.some(key => {
+    const a = (memberForm.value[key] ?? '').toString().trim()
+    const b = (originalMemberForm.value[key] ?? '').toString().trim()
+    return a !== b
+  })
 })
+
 const visiblePages = computed(() => {
   const delta = 2
   const range: (number | string)[] = []
@@ -757,6 +768,7 @@ const visiblePages = computed(() => {
   if (meta.value.totalPages > 1) range.push(meta.value.totalPages)
   return range
 })
+
 const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
 const getStatusClass = (status?: string) => {
   if (!status) return 'status-secondary'
@@ -776,10 +788,24 @@ const canDeleteMember = (member: Member) => {
 const validateMemberField = (field: string) => {
   const value = memberForm.value[field as keyof Member]
   switch (field) {
-    case 'firstName': memberErrors.value.firstName = value ? '' : 'Required.'; break
-    case 'lastName': memberErrors.value.lastName = value ? '' : 'Required.'; break
-    case 'email': memberErrors.value.email = value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value)) ? '' : 'Invalid email.'; break
-    case 'phone': memberErrors.value.phone = value && /^[0-9]{10}$/.test(String(value)) ? '' : '10 digits required.'; break
+    case 'firstName':
+      memberErrors.value.firstName = value ? '' : 'Required.'
+      break
+    case 'lastName':
+      memberErrors.value.lastName = value ? '' : 'Required.'
+      break
+    case 'email':
+      if (!value) {
+        memberErrors.value.email = ''
+      } else {
+        memberErrors.value.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value))
+          ? '' : 'Invalid email.'
+      }
+      break
+    case 'phone':
+      memberErrors.value.phone = value && /^[0-9]{10}$/.test(String(value))
+        ? '' : '10 digits required.'
+      break
   }
 }
 
@@ -836,7 +862,6 @@ const resetPageAndLoad = () => {
 }
 const debouncedResetPageAndLoad = debounce(resetPageAndLoad, 1000)
 
-
 const goToPage = (page: number | string) => {
   if (typeof page !== 'number' || page < 1 || page > meta.value.totalPages || page === meta.value.page) return
   pagination.value.page = page
@@ -852,8 +877,8 @@ const openAddModal = () => {
 }
 const editMember = (m: Member) => {
   editingMember.value = m
-  memberForm.value = { ...m }
-  originalMemberForm.value = { ...m }
+  memberForm.value = { ...m, email: m.email || '' } // Ensure email is string
+  originalMemberForm.value = { ...m, email: m.email || '' }
   memberErrors.value = {}
   memberModal?.show()
 }
@@ -862,6 +887,7 @@ const saveMember = async () => {
   if (!isMemberFormValid.value) return showToast('Fill required fields.', false)
   try {
     const payload = { ...memberForm.value }
+    if (payload.email === '') delete payload.email // Remove empty email
     if (editingMember.value) {
       await api.put(`/members/${editingMember.value.id}`, payload)
       showToast('Member updated!')
@@ -938,6 +964,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Same styles as before — unchanged */
 .members-container {
   padding: 1.5rem;
   background: #f8f9fa;
