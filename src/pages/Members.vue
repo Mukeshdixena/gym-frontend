@@ -329,7 +329,7 @@
                                 <tr v-for="ms in member.memberships" :key="'m-' + ms.id">
                                   <td>{{ ms.plan?.name ?? 'N/A' }}</td>
                                   <td><span class="status-badge" :class="getStatusClass(ms.status)">{{ ms.status
-                                      }}</span></td>
+                                  }}</span></td>
                                   <td>{{ formatDate(ms.startDate) }}</td>
                                   <td>{{ formatDate(ms.endDate) }}</td>
                                   <td>₹{{ ms.paid }}</td>
@@ -361,7 +361,7 @@
                                 <tr v-for="ad in member.memberAddons" :key="'a-' + ad.id">
                                   <td>{{ ad.addon?.name ?? 'N/A' }}</td>
                                   <td><span class="status-badge" :class="getStatusClass(ad.status)">{{ ad.status
-                                      }}</span></td>
+                                  }}</span></td>
                                   <td>{{ formatDate(ad.startDate) }}</td>
                                   <td>{{ formatDate(ad.endDate) }}</td>
                                   <td>₹{{ ad.paid }}</td>
@@ -390,32 +390,35 @@
 
     <!-- Mobile View (<992px) -->
     <div v-else class="d-lg-none">
-      <div v-for="member in members" :key="member.id" class="card mb-3 shadow-sm">
-        <div class="card-body">
+      <div v-for="member in members" :key="member.id" class="member-card mb-3">
+        <div class="member-card-inner">
           <div class="d-flex justify-content-between align-items-start mb-2">
-            <div>
-              <h6 class="mb-0 fw-bold">{{ member.firstName }} {{ member.lastName }}</h6>
+            <div class="member-info">
+              <h6 class="mb-0 fw-bold text-truncate">{{ member.firstName }} {{ member.lastName }}</h6>
               <small class="text-muted">#{{ member.id }}</small>
             </div>
             <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
               {{ member.memberships[0]?.status ?? 'N/A' }}
             </span>
           </div>
-          <div class="small text-muted mb-2">
+
+          <div class="member-details small text-muted">
             <div><strong>Phone:</strong> {{ member.phone }}</div>
             <div><strong>Email:</strong> {{ member.email || '—' }}</div>
             <div><strong>Plan:</strong> {{ member.memberships[0]?.plan?.name ?? 'N/A' }}</div>
           </div>
-          <div class="d-flex gap-2">
+
+          <div class="member-actions d-flex gap-2 mt-3">
             <button class="btn btn-sm btn-outline-primary flex-fill" @click="toggleExpand(member.id)">
               {{ expandedMemberId === member.id ? 'Hide' : 'Details' }}
             </button>
-            <button class="btn btn-sm btn-outline-secondary" @click="editMember(member)">Edit</button>
-            <button v-if="canDeleteMember(member)" class="btn btn-sm btn-outline-danger"
+            <button class="btn btn-sm btn-outline-secondary flex-fill" @click="editMember(member)">Edit</button>
+            <button v-if="canDeleteMember(member)" class="btn btn-sm btn-outline-danger flex-fill"
               @click="confirmDelete(member)">Delete</button>
           </div>
         </div>
-        <div v-if="expandedMemberId === member.id" class="card-footer bg-light p-3">
+
+        <div v-if="expandedMemberId === member.id" class="member-expanded p-3 bg-light border-top">
           <div class="mb-3">
             <strong>Memberships</strong>
             <div v-if="member.memberships?.length" class="mt-2 small">
@@ -439,6 +442,7 @@
           </div>
         </div>
       </div>
+
       <div v-if="!members.length" class="text-center text-muted py-5">No members found</div>
     </div>
 
@@ -829,7 +833,7 @@ const visiblePages = computed(() => {
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
 const getStatusClass = (status?: string) => {
-  if (!status) return 'status-secondary'
+  if (status === undefined || status === null) return 'status-secondary'
   return {
     ACTIVE: 'status-success',
     PARTIAL_PAID: 'status-warning',
@@ -1028,7 +1032,7 @@ onMounted(async () => {
 .members-container {
   padding: 1rem;
   background: #f8f9fa;
-  min-height: 100vh;
+  /* min-height: 100vh; */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
 }
@@ -1151,20 +1155,66 @@ onMounted(async () => {
   min-width: 800px;
 }
 
-/* Mobile Cards */
+/* Mobile Cards - Optimized */
 @media (max-width: 991.98px) {
-  .d-lg-none .card {
+  .member-card {
+    background: white;
     border-radius: 0.75rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
   }
 
-  .d-lg-none .card-body {
-    padding: 1rem;
+  .member-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   }
 
-  .d-lg-none .card-footer {
-    background: #f8f9fa;
+  .member-card-inner {
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .member-info h6 {
+    font-size: 1rem;
+    line-height: 1.3;
+    max-width: 180px;
+  }
+
+  .member-details>div {
+    line-height: 1.4;
+  }
+
+  .member-actions {
+    margin-top: 0.5rem !important;
+  }
+
+  .member-actions .btn-sm {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.5rem;
+    font-weight: 500;
+  }
+
+  /* Stack buttons on very small screens */
+  @media (max-width: 576px) {
+    .member-actions {
+      flex-direction: column;
+    }
+
+    .member-actions .btn-sm {
+      font-size: 0.78rem;
+    }
+  }
+
+  .member-expanded {
+    font-size: 0.875rem;
+    line-height: 1.5;
     border-top: 1px solid #dee2e6;
+  }
+
+  .member-expanded strong {
+    color: #343a40;
   }
 }
 
@@ -1336,17 +1386,6 @@ onMounted(async () => {
   width: 0 !important;
   padding: 0 !important;
   margin: 0 !important;
-}
-
-/* Mobile Card Buttons */
-@media (max-width: 576px) {
-  .d-lg-none .d-flex.gap-2 {
-    flex-direction: column;
-  }
-
-  .d-lg-none .btn-sm {
-    font-size: 0.8rem;
-  }
 }
 
 /* Modal Responsiveness */
