@@ -735,7 +735,7 @@ onMounted(async () => {
   padding: 1.5rem;
   background: #f8f9fa;
   font-family: 'Inter', sans-serif;
-  min-height: 100vh;
+  /* min-height: 100vh; */
 }
 
 /* Filter Bar */

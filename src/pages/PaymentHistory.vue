@@ -614,7 +614,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.members-container { padding: 1.5rem; background: #f8f9fa; font-family: 'Inter', sans-serif; min-height: 100vh; }
+.members-container { padding: 1.5rem; background: #f8f9fa; font-family: 'Inter', sans-serif;  }
 .filter-bar { position: sticky; top: 0; background: #f8f9fa; z-index: 15; padding: 0.75rem 0; border-bottom: 1px solid #dee2e6; backdrop-filter: blur(4px); }
 .filter-chip { background: #e9ecef; border-radius: 1rem; font-size: 0.8rem; color: #495057; transition: background 0.2s; }
 .filter-chip:hover { background: #dee2e6; }

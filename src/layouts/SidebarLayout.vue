@@ -211,6 +211,8 @@ watch(toastMessage, (msg) => {
   background: #f8f9fa;
   position: relative;
   overflow-x: hidden;
+  overflow-y: hidden;
+  height: 100vh;
 }
 
 /* ========================================
@@ -370,6 +372,8 @@ watch(toastMessage, (msg) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 .page-container {
