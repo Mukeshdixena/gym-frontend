@@ -392,61 +392,64 @@
     </div>
 
     <!-- Mobile View (<992px) -->
-    <div v-else class="d-lg-none">
-      <div v-for="member in members" :key="member.id" class="member-card mb-3">
-        <div class="member-card-inner">
-          <div class="d-flex justify-content-between align-items-start mb-2">
-            <div class="member-info">
-              <h6 class="mb-0 fw-bold text-truncate">{{ member.firstName }} {{ member.lastName }}</h6>
-              <small class="text-muted">#{{ member.id }}</small>
+    <div v-else class="d-lg-none mobile-cards-wrapper">
+      <div class="mobile-cards-scroll">
+        <div v-for="member in members" :key="member.id" class="member-card mb-3">
+          <!-- existing card content (unchanged) -->
+          <div class="member-card-inner">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="member-info">
+                <h6 class="mb-0 fw-bold text-truncate">{{ member.firstName }} {{ member.lastName }}</h6>
+                <small class="text-muted">#{{ member.id }}</small>
+              </div>
+              <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
+                {{ member.memberships[0]?.status ?? 'N/A' }}
+              </span>
             </div>
-            <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
-              {{ member.memberships[0]?.status ?? 'N/A' }}
-            </span>
+
+            <div class="member-details small text-muted">
+              <div><strong>Phone:</strong> {{ member.phone }}</div>
+              <div><strong>Email:</strong> {{ member.email || '—' }}</div>
+              <div><strong>Plan:</strong> {{ member.memberships[0]?.plan?.name ?? 'N/A' }}</div>
+            </div>
+
+            <div class="member-actions d-flex gap-2 mt-3">
+              <button class="btn btn-sm btn-outline-primary flex-fill" @click="toggleExpand(member.id)">
+                {{ expandedMemberId === member.id ? 'Hide' : 'Details' }}
+              </button>
+              <button class="btn btn-sm btn-outline-secondary flex-fill" @click="editMember(member)">Edit</button>
+              <button v-if="canDeleteMember(member)" class="btn btn-sm btn-outline-danger flex-fill"
+                @click="confirmDelete(member)">Delete</button>
+            </div>
           </div>
 
-          <div class="member-details small text-muted">
-            <div><strong>Phone:</strong> {{ member.phone }}</div>
-            <div><strong>Email:</strong> {{ member.email || '—' }}</div>
-            <div><strong>Plan:</strong> {{ member.memberships[0]?.plan?.name ?? 'N/A' }}</div>
-          </div>
-
-          <div class="member-actions d-flex gap-2 mt-3">
-            <button class="btn btn-sm btn-outline-primary flex-fill" @click="toggleExpand(member.id)">
-              {{ expandedMemberId === member.id ? 'Hide' : 'Details' }}
-            </button>
-            <button class="btn btn-sm btn-outline-secondary flex-fill" @click="editMember(member)">Edit</button>
-            <button v-if="canDeleteMember(member)" class="btn btn-sm btn-outline-danger flex-fill"
-              @click="confirmDelete(member)">Delete</button>
+          <div v-if="expandedMemberId === member.id" class="member-expanded p-3 bg-light border-top">
+            <div class="mb-3">
+              <strong>Memberships</strong>
+              <div v-if="member.memberships?.length" class="mt-2 small">
+                <div v-for="ms in member.memberships" :key="ms.id" class="border-bottom pb-2 mb-2">
+                  <div><strong>{{ ms.plan?.name }}</strong> ({{ ms.status }})</div>
+                  <div>₹{{ ms.paid }} paid • ₹{{ ms.pending }} pending</div>
+                  <div>{{ formatDate(ms.startDate) }} – {{ formatDate(ms.endDate) }}</div>
+                </div>
+              </div>
+              <div v-else class="text-muted">No memberships</div>
+            </div>
+            <div>
+              <strong>Programs</strong>
+              <div v-if="member.memberAddons?.length" class="mt-2 small">
+                <div v-for="ad in member.memberAddons" :key="ad.id" class="border-bottom pb-2 mb-2">
+                  <div><strong>{{ ad.addon?.name }}</strong></div>
+                  <div>₹{{ ad.paid }} paid • ₹{{ ad.pending }} pending</div>
+                </div>
+              </div>
+              <div v-else class="text-muted">No programs</div>
+            </div>
           </div>
         </div>
 
-        <div v-if="expandedMemberId === member.id" class="member-expanded p-3 bg-light border-top">
-          <div class="mb-3">
-            <strong>Memberships</strong>
-            <div v-if="member.memberships?.length" class="mt-2 small">
-              <div v-for="ms in member.memberships" :key="ms.id" class="border-bottom pb-2 mb-2">
-                <div><strong>{{ ms.plan?.name }}</strong> ({{ ms.status }})</div>
-                <div>₹{{ ms.paid }} paid • ₹{{ ms.pending }} pending</div>
-                <div>{{ formatDate(ms.startDate) }} – {{ formatDate(ms.endDate) }}</div>
-              </div>
-            </div>
-            <div v-else class="text-muted">No memberships</div>
-          </div>
-          <div>
-            <strong>Programs</strong>
-            <div v-if="member.memberAddons?.length" class="mt-2 small">
-              <div v-for="ad in member.memberAddons" :key="ad.id" class="border-bottom pb-2 mb-2">
-                <div><strong>{{ ad.addon?.name }}</strong></div>
-                <div>₹{{ ad.paid }} paid • ₹{{ ad.pending }} pending</div>
-              </div>
-            </div>
-            <div v-else class="text-muted">No programs</div>
-          </div>
-        </div>
+        <div v-if="!members.length" class="text-center text-muted py-5">No members found</div>
       </div>
-
-      <div v-if="!members.length" class="text-center text-muted py-5">No members found</div>
     </div>
 
     <!-- Pagination Footer -->
@@ -1037,16 +1040,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ========================================
-   Core Layout & Responsiveness
-   ======================================== */
+
 .members-container {
-  /* padding: 1rem; */
-  
+
   background: #f8f9fa;
-  /* min-height: 100vh; */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  /* line-height: 1.5; */
 }
 
 /* Header Section */
@@ -1097,7 +1095,6 @@ onMounted(async () => {
   }
 }
 
-/* Filter Bar (Sticky) */
 .filter-bar {
   position: sticky;
   top: 0;
@@ -1155,13 +1152,8 @@ onMounted(async () => {
   }
 }
 
-/* Table Scroll Container */
 .table-scroll-container {
-  /* Fixed height based on viewport minus fixed UI */
-  /* height: calc(100vh - 280px); */
-  min-height: calc(100vh - 250px);
-  /* fallback */
-  max-height: calc(100vh - 250px);
+  height: calc(100vh - 280px);
   overflow-y: auto;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1464,5 +1456,12 @@ onMounted(async () => {
   .d-lg-none {
     display: none !important;
   }
+}
+.mobile-cards-scroll {
+  height: calc(100vh - 250px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 1rem;
 }
 </style>
