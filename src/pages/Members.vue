@@ -76,8 +76,8 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.id }">ID</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.id" v-model.trim="filters.id"
-                        type="text" class="form-control form-control-sm filter-input" placeholder="Search ID"
+                      <input v-if="columnFilters.id" v-model.trim="filters.id" type="text"
+                        class="form-control form-control-sm filter-input" placeholder="Search ID"
                         @blur="handleBlur('id')" />
                     </transition>
                     <button class="filter-btn" :class="{ active: columnFilters.id }" @click.stop="toggleFilter('id')"
@@ -105,8 +105,8 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.name }">Name</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.name" v-model.trim="filters.name"
-                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Name"
+                      <input v-if="columnFilters.name" v-model.trim="filters.name" type="text"
+                        class="form-control form-control-sm filter-input" placeholder="Search Name"
                         @blur="handleBlur('name')" />
                     </transition>
                     <button class="filter-btn" :class="{ active: columnFilters.name }"
@@ -134,8 +134,8 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.phone }">Phone</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.phone" v-model.trim="filters.phone"
-                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Phone"
+                      <input v-if="columnFilters.phone" v-model.trim="filters.phone" type="text"
+                        class="form-control form-control-sm filter-input" placeholder="Search Phone"
                         @blur="handleBlur('phone')" />
                     </transition>
                     <button class="filter-btn" :class="{ active: columnFilters.phone }"
@@ -163,8 +163,8 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.email }">Email</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.email" v-model.trim="filters.email"
-                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Email"
+                      <input v-if="columnFilters.email" v-model.trim="filters.email" type="text"
+                        class="form-control form-control-sm filter-input" placeholder="Search Email"
                         @blur="handleBlur('email')" />
                     </transition>
                     <button class="filter-btn" :class="{ active: columnFilters.email }"
@@ -192,8 +192,8 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.plan }">Plan</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.plan" v-model.trim="filters.plan"
-                        type="text" class="form-control form-control-sm filter-input" placeholder="Search Plan"
+                      <input v-if="columnFilters.plan" v-model.trim="filters.plan" type="text"
+                        class="form-control form-control-sm filter-input" placeholder="Search Plan"
                         @blur="handleBlur('plan')" />
                     </transition>
                     <button class="filter-btn" :class="{ active: columnFilters.plan }"
@@ -1041,11 +1041,12 @@ onMounted(async () => {
    Core Layout & Responsiveness
    ======================================== */
 .members-container {
-  padding: 1rem;
+  /* padding: 1rem; */
+  
   background: #f8f9fa;
   /* min-height: 100vh; */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
+  /* line-height: 1.5; */
 }
 
 /* Header Section */
@@ -1156,7 +1157,11 @@ onMounted(async () => {
 
 /* Table Scroll Container */
 .table-scroll-container {
-  max-height: calc(100vh - 280px);
+  /* Fixed height based on viewport minus fixed UI */
+  /* height: calc(100vh - 280px); */
+  min-height: calc(100vh - 250px);
+  /* fallback */
+  max-height: calc(100vh - 250px);
   overflow-y: auto;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1231,6 +1236,9 @@ onMounted(async () => {
 
 /* Pagination Footer */
 .pagination-footer {
+
+  margin-top: 40px;
+
   bottom: 0;
   left: 0;
   right: 0;

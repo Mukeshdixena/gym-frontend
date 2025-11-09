@@ -379,6 +379,8 @@ watch(toastMessage, (msg) => {
 .page-container {
   flex: 1;
   padding: 1.5rem;
+  padding-bottom: 0;
+
   max-width: 100%;
 }
 
