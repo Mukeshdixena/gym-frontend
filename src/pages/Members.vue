@@ -1,7 +1,7 @@
 <template>
   <div class="members-container">
     <!-- Top Header -->
-    <div class="header-section mb-4">
+    <div ref="headerEl" class="header-section mb-4">
       <div class="header-content">
         <div>
           <h2 class="fw-bold mb-1 title-responsive">Members Management</h2>
@@ -30,7 +30,7 @@
     </div>
 
     <!-- Filter Bar (Sticky) + Searching Indicator -->
-    <div class="filter-bar" v-if="Object.keys(activeFilters).length || isTyping">
+    <div class="filter-bar" v-if="Object.keys(activeFilters).length || isTyping" ref="filterEl">
       <div class="filter-chips">
         <div v-for="(value, key) in activeFilters" :key="key"
           class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
@@ -453,7 +453,7 @@
     </div>
 
     <!-- Pagination Footer -->
-    <footer class="pagination-footer">
+    <footer ref="footerEl" class="pagination-footer">
       <div class="pagination-content">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <span class="small text-muted">
@@ -707,6 +707,10 @@ interface PaginationMeta { total: number; page: number; limit: number; totalPage
 type FilterKey = keyof typeof columnFilters.value
 
 // State
+const headerEl = ref<HTMLElement | null>(null)
+const filterEl = ref<HTMLElement | null>(null)
+const footerEl = ref<HTMLElement | null>(null)
+
 const members = ref<Member[]>([])
 const plans = ref<Plan[]>([])
 const filters = ref({
@@ -1028,6 +1032,19 @@ const confirmDelete = async (m: Member) => {
 // UI
 const toggleExpand = (id: number) => { expandedMemberId.value = expandedMemberId.value === id ? null : id }
 
+onMounted(() => {
+  const update = () => {
+    const h = headerEl.value?.offsetHeight ?? 0
+    const f = filterEl.value?.offsetHeight ?? 0
+    const p = footerEl.value?.offsetHeight ?? 0
+    const total = h + f + p + 100 // 24px = small safety margin
+    document.documentElement.style.setProperty('--vh-used', total + 'px')
+  }
+  update()
+  const ro = new ResizeObserver(update)
+    ;[headerEl, filterEl, footerEl].forEach(el => el.value && ro.observe(el.value))
+})
+
 // Lifecycle
 onMounted(async () => {
   if (toastRef.value) toastInstance = new Toast(toastRef.value)
@@ -1040,7 +1057,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-
 .members-container {
 
   background: #f8f9fa;
@@ -1153,7 +1169,7 @@ onMounted(async () => {
 }
 
 .table-scroll-container {
-  height: calc(100vh - 280px);
+  height: calc(100vh - var(--vh-used, 250px));
   overflow-y: auto;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1457,8 +1473,9 @@ onMounted(async () => {
     display: none !important;
   }
 }
+
 .mobile-cards-scroll {
-  height: calc(100vh - 250px);
+  height: calc(100vh - var(--vh-used, 250px));
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
