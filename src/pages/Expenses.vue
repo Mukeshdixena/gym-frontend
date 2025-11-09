@@ -444,11 +444,11 @@
 
     <!-- Add Payment Modal -->
     <div class="modal fade" ref="paymentModalRef" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-      <div class="modal-dialog modal-dialog-centered" style="max-width: 900px; width: 100%;">
+      <div class="modal-dialog modal-dialog-centered modal-xl-custom">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
 
           <!-- Header -->
-          <div class="modal-header border-0 bg-primary text-white pb-3">
+          <div class="modal-header bg-primary text-white px-5 py-3">
             <h5 class="modal-title fw-bold fs-4">
               Add Payment – {{ selectedExpense?.title }}
             </h5>
@@ -456,7 +456,7 @@
               aria-label="Close"></button>
           </div>
 
-          <div class="modal-body pt-4 px-4">
+          <div class="modal-body px-5 py-4">
             <form @submit.prevent="savePayment">
 
               <!-- Summary Card -->
@@ -477,11 +477,11 @@
                 </div>
               </div>
 
-              <!-- Main Input Row -->
+              <!-- Main Input Row (responsive) -->
               <div class="row g-4 align-items-end">
 
-                <!-- Paying Now (LARGE & FOCUSED) -->
-                <div class="col-lg-5">
+                <!-- Paying Now -->
+                <div class="col-12 col-lg-5">
                   <label class="form-label text-success fw-bold fs-5">
                     Paying Now <span class="text-danger">*</span>
                   </label>
@@ -492,17 +492,16 @@
                       min="0" :max="oldPending" step="0.01" @input="clampPayingNow" placeholder="0.00"
                       ref="payingNowInput" required autofocus />
                     <span class="input-group-text bg-light text-muted small fw-semibold border-start-0"
-                      :class="{ 'text-danger': pendingAfterPayment === 0 }">
-                      → ₹{{ pendingAfterPayment.toFixed(2) }}
-                    </span>
+                      :class="{ 'text-danger': pendingAfterPayment === 0 }">→ ₹{{ pendingAfterPayment.toFixed(2)
+                      }}</span>
                   </div>
                   <div v-if="newPaidNow > oldPending" class="invalid-feedback mt-1">
                     Cannot exceed pending amount
                   </div>
                 </div>
 
-                <!-- Payment Method -->
-                <div class="col-lg-4">
+                <!-- Method -->
+                <div class="col-12 col-lg-4">
                   <label class="form-label fw-bold fs-5">
                     Method <span class="text-danger">*</span>
                   </label>
@@ -516,28 +515,25 @@
                   </select>
                 </div>
 
-                <!-- Notes (Optional) -->
-                <div class="col-lg-3">
+                <!-- Notes (optional) -->
+                <div class="col-12 col-lg-3">
                   <label class="form-label text-secondary fs-6">Notes</label>
                   <input v-model.trim="paymentNotes" type="text" class="form-control" placeholder="Optional" />
                 </div>
               </div>
 
-              <!-- Action Buttons -->
+              <!-- Buttons -->
               <div class="d-flex justify-content-end gap-3 mt-5">
                 <button type="button" class="btn btn-outline-secondary px-5 py-2 fw-semibold" @click="closePaymentModal"
-                  :disabled="isSubmitting">
-                  Cancel
-                </button>
+                  :disabled="isSubmitting">Cancel</button>
+
                 <button type="submit" class="btn btn-success px-5 py-2 fw-bold text-white shadow-sm"
                   :disabled="isSubmitting || newPaidNow <= 0 || newPaidNow > oldPending || !paymentMethod">
                   <span v-if="isSubmitting">
                     <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                     Adding...
                   </span>
-                  <span v-else>
-                    Add Payment
-                  </span>
+                  <span v-else>Add Payment</span>
                 </button>
               </div>
             </form>
@@ -1094,6 +1090,20 @@ onMounted(async () => {
   .pagination-footer {
     left: 0;
     padding: 0.5rem;
+  }
+}
+
+/* Large centered payment modal */
+.modal-xl-custom {
+  max-width: 960px;
+  /* feel free to change 900-960-1000 */
+  width: 100%;
+}
+
+/* Tiny tweak for very small screens */
+@media (max-width: 576px) {
+  .modal-xl-custom {
+    max-width: 94vw;
   }
 }
 </style>

@@ -29,8 +29,8 @@
       </div>
     </div>
 
-    <!-- Filter Bar (Sticky) -->
-    <div class="filter-bar" v-if="Object.keys(activeFilters).length">
+    <!-- Filter Bar (Sticky) + Searching Indicator -->
+    <div class="filter-bar" v-if="Object.keys(activeFilters).length || isTyping">
       <div class="filter-chips">
         <div v-for="(value, key) in activeFilters" :key="key"
           class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
@@ -41,6 +41,9 @@
           <strong>{{ filterLabels[key] }}:</strong> {{ value }}
           <button @click="clearFilter(key)" class="btn-close btn-close-sm"></button>
         </div>
+        <small v-if="isTyping" class="text-primary ms-2 d-flex align-items-center">
+          <span class="spinner-border spinner-border-sm me-1"></span> Searching…
+        </small>
       </div>
     </div>
 
@@ -73,7 +76,7 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.id }">ID</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.id" v-model.trim="filters.id" @input="debouncedResetPageAndLoad"
+                      <input v-if="columnFilters.id" v-model.trim="filters.id"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search ID"
                         @blur="handleBlur('id')" />
                     </transition>
@@ -102,7 +105,7 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.name }">Name</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.name" v-model.trim="filters.name" @input="debouncedResetPageAndLoad"
+                      <input v-if="columnFilters.name" v-model.trim="filters.name"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search Name"
                         @blur="handleBlur('name')" />
                     </transition>
@@ -131,7 +134,7 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.phone }">Phone</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.phone" v-model.trim="filters.phone" @input="debouncedResetPageAndLoad"
+                      <input v-if="columnFilters.phone" v-model.trim="filters.phone"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search Phone"
                         @blur="handleBlur('phone')" />
                     </transition>
@@ -160,7 +163,7 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.email }">Email</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.email" v-model.trim="filters.email" @input="debouncedResetPageAndLoad"
+                      <input v-if="columnFilters.email" v-model.trim="filters.email"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search Email"
                         @blur="handleBlur('email')" />
                     </transition>
@@ -189,7 +192,7 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.plan }">Plan</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.plan" v-model.trim="filters.plan" @input="debouncedResetPageAndLoad"
+                      <input v-if="columnFilters.plan" v-model.trim="filters.plan"
                         type="text" class="form-control form-control-sm filter-input" placeholder="Search Plan"
                         @blur="handleBlur('plan')" />
                     </transition>
@@ -218,7 +221,7 @@
                   <div class="filter-wrapper">
                     <span class="header-label" :class="{ hidden: columnFilters.status }">Status</span>
                     <transition name="fade-slide">
-                      <select v-if="columnFilters.status" v-model="filters.status" @change="debouncedResetPageAndLoad"
+                      <select v-if="columnFilters.status" v-model="filters.status"
                         class="form-select form-select-sm filter-input" @blur="handleBlur('status')">
                         <option value="">All</option>
                         <option value="ACTIVE">Active</option>
@@ -458,7 +461,7 @@
           <!-- Limit Dropdown -->
           <div class="d-flex align-items-center ms-3">
             <label class="me-1 small">Rows per page:</label>
-            <select v-model.number="pagination.limit" @change="debouncedResetPageAndLoad"
+            <select v-model.number="pagination.limit" @change="resetPageAndLoad"
               class="form-select form-select-sm w-auto">
               <option :value="5">5</option>
               <option :value="10">10</option>
@@ -675,7 +678,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
@@ -722,6 +725,8 @@ const columnFilters = ref({
 const pagination = ref({ page: 1, limit: 10 })
 const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 })
 const isLoading = ref(true)
+const isTyping = ref(false)          // ← NEW: typing indicator
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 // Mobile detection
 const isMobile = ref(false)
@@ -776,14 +781,17 @@ const activeFilters = computed(() => {
   return active
 })
 
-// Simple debounce helper
-function debounce<T extends (...args: any[]) => void>(fn: T, delay = 500): T {
-  let timeout: ReturnType<typeof setTimeout>
-  return ((...args: any[]) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => fn(...args), delay)
-  }) as T
-}
+// GLOBAL DEBOUNCE: 750ms (Professional Standard)
+watch(filters, () => {
+  isTyping.value = true
+
+  if (searchTimer) clearTimeout(searchTimer)
+
+  searchTimer = setTimeout(() => {
+    resetPageAndLoad()
+    isTyping.value = false
+  }, 1000)  // ← Waits for natural pause in typing
+}, { deep: true })
 
 // Handle blur for column filters
 const handleBlur = (key: FilterKey) => {
@@ -874,6 +882,10 @@ const validateMemberField = (field: string) => {
 const toggleFilter = (key: FilterKey) => {
   columnFilters.value[key] = !columnFilters.value[key];
   if (!columnFilters.value[key]) filters.value[key] = '';
+  nextTick(() => {
+    const input = document.querySelector(`input[placeholder*=${key}], select`) as HTMLInputElement | HTMLSelectElement
+    input?.focus()
+  })
 };
 
 // Toast
@@ -922,7 +934,6 @@ const resetPageAndLoad = () => {
   pagination.value.page = 1
   loadMembers()
 }
-const debouncedResetPageAndLoad = debounce(resetPageAndLoad, 1000)
 
 const goToPage = (page: number | string) => {
   if (typeof page !== 'number' || page < 1 || page > meta.value.totalPages || page === meta.value.page) return
