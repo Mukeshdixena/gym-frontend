@@ -5,7 +5,7 @@
       <div class="header-content">
         <div>
           <h2 class="fw-bold mb-1 title-responsive">Members Management</h2>
-          <p class="text-muted small mb-0 d-none d-md-block">Manage members, memberships and special programs.</p>
+          <p class="text-muted small mb-0 d-none d-md-block">Manage members, memberships and classes.</p>
         </div>
 
         <div class="header-actions">
@@ -367,7 +367,7 @@
                         </div>
 
                         <div class="col-md-6">
-                          <h6 class="fw-bold text-success mb-3">Special Programs</h6>
+                          <h6 class="fw-bold text-success mb-3">Classes</h6>
                           <div v-if="member.memberAddons?.length" class="table-responsive">
                             <table class="table table-sm table-bordered">
                               <thead class="table-light small">

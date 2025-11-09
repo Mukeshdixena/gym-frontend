@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Billing Management</h2>
-        <p class="text-muted small mb-0">Manage pending and approved membership & special program bills.</p>
+        <p class="text-muted small mb-0">Manage pending and approved membership & classes bills.</p>
       </div>
 
       <div class="d-flex gap-2 align-items-center">
@@ -20,7 +20,7 @@
           <input type="radio" class="btn-check" id="type-membership" value="membership" v-model="billType">
           <label class="btn btn-outline-primary" for="type-membership">Membership</label>
           <input type="radio" class="btn-check" id="type-addon" value="addon" v-model="billType">
-          <label class="btn btn-outline-primary" for="type-addon">Special Program</label>
+          <label class="btn btn-outline-primary" for="type-addon">Classes</label>
         </div>
       </div>
     </div>
@@ -63,7 +63,7 @@
 
     <!-- Pending Bills -->
     <div v-else class="mb-5">
-      <h5 class="fw-semibold text-warning mb-3">Pending {{ billType === 'membership' ? 'Membership' : 'Special Program'
+      <h5 class="fw-semibold text-warning mb-3">Pending {{ billType === 'membership' ? 'Membership' : 'Classes'
       }} Bills</h5>
       <div class="table-responsive rounded-3 overflow-hidden">
         <div class="table-scroll-container">
@@ -211,7 +211,7 @@
     <!-- Approved Bills -->
     <div v-if="!isLoading">
       <h5 class="fw-semibold text-success mb-3">Approved {{ billType === 'membership' ? 'Memberships' :
-        'Special Programs'
+        'Classes'
       }}</h5>
       <div class="table-responsive rounded-3 overflow-hidden">
         <div class="table-scroll-container">
@@ -363,7 +363,7 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Collect Payment – {{ billType === 'membership' ? 'Membership' : 'Special Program' }}
+            <h5 class="modal-title">Collect Payment – {{ billType === 'membership' ? 'Membership' : 'Classes' }}
             </h5>
             <button type="button" class="btn-close" @click="closeCollectModal"></button>
           </div>
@@ -376,7 +376,7 @@
               </div>
 
               <div class="mt-4">
-                <h6>{{ billType === 'membership' ? 'Membership Plan' : 'Special Program' }}</h6>
+                <h6>{{ billType === 'membership' ? 'Membership Plan' : 'Class' }}</h6>
                 <div class="form-control-plaintext p-2 bg-light rounded">
                   {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }}
                   <span v-if="billType === 'membership'">({{ selectedPlanDuration }} days)</span>

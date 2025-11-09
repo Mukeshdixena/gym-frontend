@@ -9,18 +9,13 @@
 
       <div class="d-flex gap-2 align-items-center">
         <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" @click="loadExpenses">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z" />
-            <path d="M8 1v3h3" />
-          </svg>
+          <i class="bi bi-arrow-clockwise"></i>
           Refresh
         </button>
 
         <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 1v14m7-7H1" />
-          </svg>
-          + Add Expense
+           <i class="bi bi-plus-lg"></i>
+           Add Expense
         </button>
       </div>
     </div>
@@ -31,10 +26,7 @@
         <!-- Filter Chips -->
         <div v-for="(value, key) in activeFilters" :key="key"
           class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M2.5 2.5A.5.5 0 0 1 3 2h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5v-1z" />
-            <path d="M3 5h10v1H3z" />
-          </svg>
+          <i class="bi bi-funnel-fill"></i>
           <strong>{{ filterLabels[key] }}:</strong> {{ value }}
           <button @click="clearFilter(key)" class="btn-close btn-close-sm"></button>
         </div>
@@ -263,29 +255,17 @@
                     <div class="d-flex justify-content-center gap-2">
                       <!-- Add Payment -->
                       <button class="icon-btn text-success" title="Add Payment" @click.stop="openPaymentModal(exp)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path d="M8 1v14m7-7H1" />
-                        </svg>
+                        <i class="bi bi-currency-rupee"></i>
                       </button>
 
                       <!-- Edit -->
                       <button class="icon-btn" title="Edit" @click.stop="editExpense(exp)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path
-                            d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708L4.207 13.5 2 14l.5-2.207L12.146.146zM11.207 2L3 10.207V12h1.793L13 3.793 11.207 2z" />
-                        </svg>
+                        <i class="bi bi-pencil-square"></i>
                       </button>
 
                       <!-- Delete -->
                       <button class="icon-btn text-danger" title="Delete" @click.stop="confirmDelete(exp)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path d="M5.5 5.5v7h1v-7h-1zm3 0v7h1v-7h-1z" />
-                          <path fill-rule="evenodd"
-                            d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4H2.5a1 1 0 1 1 0-2H5l.5-1h5l.5 1h2.5a1 1 0 0 1 1 1z" />
-                        </svg>
+                        <i class="bi bi-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -401,7 +381,8 @@
 
     <!-- Add/Edit Expense Modal -->
     <div class="modal fade" ref="expenseModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
+
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">{{ editingExpense ? 'Edit Expense' : 'Add Expense' }}</h5>
@@ -444,7 +425,8 @@
 
     <!-- Add Payment Modal -->
     <div class="modal fade" ref="paymentModalRef" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-      <div class="modal-dialog modal-dialog-centered modal-xl-custom">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
+
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
 
           <!-- Header -->
@@ -1087,6 +1069,7 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
+  
   .pagination-footer {
     left: 0;
     padding: 0.5rem;
@@ -1096,7 +1079,6 @@ onMounted(async () => {
 /* Large centered payment modal */
 .modal-xl-custom {
   max-width: 960px;
-  /* feel free to change 900-960-1000 */
   width: 100%;
 }
 
@@ -1104,6 +1086,8 @@ onMounted(async () => {
 @media (max-width: 576px) {
   .modal-xl-custom {
     max-width: 94vw;
-  }
+  } 
 }
+
+
 </style>

@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Assign Membership Plans</h2>
-        <p class="text-muted small mb-0">Assign, renew, and manage membership plans & special programs.</p>
+        <p class="text-muted small mb-0">Assign, renew, and manage membership plans & classes.</p>
       </div>
     </div>
 
@@ -38,7 +38,7 @@
     <!-- Loading -->
     <div v-if="isLoading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
-      <div class="mt-2 text-muted">Loading members, plans, special programs, and trainers...</div>
+      <div class="mt-2 text-muted">Loading members, plans, classes, and trainers...</div>
     </div>
 
     <!-- Inactive Members Table -->
@@ -247,13 +247,8 @@
                       <span class="status-badge status-success">{{ m.memberships[0]?.status }}</span>
                     </td>
                     <td class="text-center">
-                      <button class="icon-btn text-warning" title="Renew / Assign New" @click="openAssignModal(m)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z" />
-                          <path
-                            d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
-                        </svg>
+                      <button class="icon-btn" title="Renew / Assign New" @click="openAssignModal(m)">
+                        <i class="bi bi-plus-square"></i>
                       </button>
                     </td>
                   </tr>
@@ -307,12 +302,12 @@
 
     <!-- Assign / Renew Modal -->
     <div class="modal fade" ref="assignModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-2 overflow-hidden">
           <div class="modal-header">
             <h5 class="modal-title">
               {{selectedMember?.memberships.some(ms => ms.status === 'ACTIVE') ? 'Renew / Update' : 'Assign'}}
-              Membership / Special Program
+              Membership / Class
             </h5>
             <button type="button" class="btn-close" @click="closeAssignModal"></button>
           </div>
@@ -430,29 +425,29 @@
               </div>
             </div>
 
-            <!-- Special Program Section -->
+            <!-- Class Section -->
             <div class="border rounded-3 p-3 mb-4 shadow-sm bg-white">
               <h5 class="text-success mb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"
                   class="me-1">
                   <path d="M8 16a8 8 0 1 0 0-16A8 8 0 0 0 8 16zm1-8.5V4h-2v3.5H5l3 3 3-3H9z" />
                 </svg>
-                Special Program Section
+                Class Section
               </h5>
 
               <!-- Addon Dropdown -->
               <div class="mb-3">
-                <label class="form-label fw-semibold">Select Special Program</label>
+                <label class="form-label fw-semibold">Select Class</label>
                 <select v-model="selectedAddonId" class="form-select" @change="onAddonSelect"
                   :disabled="addons.length === 0">
-                  <option :value="0">-- Select Special Program --</option>
+                  <option :value="0">-- Select Class --</option>
                   <option v-for="a in addons" :key="a.id" :value="a.id">
                     {{ a.name }} - ₹{{ a.price }} ({{ a.durationDays }} days)
                   </option>
                 </select>
               </div>
 
-              <!-- Special Program History -->
+              <!-- Classes History -->
               <div v-if="selectedMember?.memberAddons?.length" class="mb-3">
                 <h6 class="text-secondary mb-2">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"
@@ -460,7 +455,7 @@
                     <path
                       d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412l-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
                   </svg>
-                  Special Program History
+                  Classes History
                 </h6>
                 <div class="table-responsive small">
                   <table class="table table-sm table-striped align-middle mb-0">
@@ -500,9 +495,9 @@
                 </div>
               </div>
 
-              <!-- Special Program Form -->
+              <!-- Classes Form -->
               <div v-if="selectedAddon" class="mt-3 p-3 border rounded bg-light">
-                <h6 class="mb-3 text-success">Special Program Details</h6>
+                <h6 class="mb-3 text-success">Classes Details</h6>
                 <div class="row">
                   <div class="col-md-6">
                     <p><strong>Description:</strong> {{ selectedAddon.description }}</p>
@@ -547,7 +542,7 @@
 
             <!-- Submit -->
             <div v-if="!isFormValid" class="alert alert-warning mt-3">
-              <small><strong>Please select at least one:</strong> Plan or Special Program</small>
+              <small><strong>Please select at least one:</strong> Plan or Classes</small>
             </div>
 
             <button type="submit" class="btn btn-success w-100 mt-4" :disabled="isSubmitting || !isFormValid"

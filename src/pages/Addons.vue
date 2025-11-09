@@ -3,15 +3,12 @@
     <!-- Top Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Special Programs</h2>
-        <p class="text-muted small mb-0">Manage add-ons and special training programs.</p>
+        <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Classes</h2>
+        <p class="text-muted small mb-0">Manage add-ons and training programs.</p>
       </div>
 
       <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8 1v14m7-7H1" />
-        </svg>
-        + New Program
+         <i class="bi bi-plus-lg"></i> New Program
       </button>
     </div>
 
@@ -42,7 +39,7 @@
     <!-- Loading -->
     <div v-if="isLoading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
-      <div class="mt-2 text-muted">Loading special programs...</div>
+      <div class="mt-2 text-muted">Loading classes...</div>
     </div>
 
     <!-- Table Container -->
@@ -143,27 +140,19 @@
                 <td class="text-center" @click.stop>
                   <div class="d-flex justify-content-center gap-2">
                     <button class="icon-btn" title="Toggle Status" @click.stop="toggleAddonStatus(addon.id, !addon.isActive)" :disabled="isToggling">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path v-if="addon.isActive" d="M13 2.5a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3zm-10 0a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3zm5 0a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3z"/>
-                        <path v-else d="M2 2.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
-                      </svg>
+                      <i class="bi bi-pause-circle"></i>
                     </button>
                     <button class="icon-btn" title="Edit" @click.stop="editAddon(addon)">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708L4.207 13.5 2 14l.5-2.207L12.146.146zM11.207 2L3 10.207V12h1.793L13 3.793 11.207 2z"/>
-                      </svg>
+                      <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="icon-btn text-danger" title="Delete" @click.stop="confirmDelete(addon.id)">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5v7h1v-7h-1zm3 0v7h1v-7h-1z"/>
-                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4H2.5a1 1 0 1 1 0-2H5l.5-1h5l.5 1h2.5a1 1 0 0 1 1 1z"/>
-                      </svg>
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
                 </td>
               </tr>
               <tr v-if="!addons.length">
-                <td colspan="7" class="text-center text-muted py-5">No special programs found</td>
+                <td colspan="7" class="text-center text-muted py-5">No classes found</td>
               </tr>
             </tbody>
           </table>
@@ -210,7 +199,7 @@
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ editingAddon ? 'Edit Special Program' : 'Add Special Program' }}</h5>
+            <h5 class="modal-title">{{ editingAddon ? 'Edit Classes' : 'Add Classes' }}</h5>
             <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
           <div class="modal-body">
