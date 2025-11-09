@@ -158,18 +158,22 @@
                   </div>
                 </th>
 
-                <!-- Email -->
+                <!-- Gender (replaces Email) -->
                 <th class="filter-header">
                   <div class="filter-wrapper">
-                    <span class="header-label" :class="{ hidden: columnFilters.email }">Email</span>
+                    <span class="header-label" :class="{ hidden: columnFilters.gender }">Gender</span>
                     <transition name="fade-slide">
-                      <input v-if="columnFilters.email" v-model.trim="filters.email" type="text"
-                        class="form-control form-control-sm filter-input" placeholder="Search Email"
-                        @blur="handleBlur('email')" />
+                      <select v-if="columnFilters.gender" v-model="filters.gender"
+                        class="form-select form-select-sm filter-input" @blur="handleBlur('gender')">
+                        <option value="">All</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </transition>
-                    <button class="filter-btn" :class="{ active: columnFilters.email }"
-                      @click.stop="toggleFilter('email')" title="Filter Email">
-                      <template v-if="columnFilters.email">
+                    <button class="filter-btn" :class="{ active: columnFilters.gender }"
+                      @click.stop="toggleFilter('gender')" title="Filter Gender">
+                      <template v-if="columnFilters.gender">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
                           viewBox="0 0 16 16">
                           <path
@@ -263,7 +267,15 @@
                   <td class="small text-muted">{{ member.id }}</td>
                   <td class="fw-semibold">{{ member.firstName }} {{ member.lastName }}</td>
                   <td class="small">{{ member.phone }}</td>
-                  <td class="small">{{ member.email || '—' }}</td>
+                  <td class="small">
+                    <span class="badge" :class="{
+                      'bg-primary': member.gender === 'Male',
+                      'bg-success': member.gender === 'Female',
+                      'bg-secondary': member.gender === 'Other' || !member.gender
+                    }">
+                      {{ member.gender || '—' }}
+                    </span>
+                  </td>
                   <td class="small">{{ member.memberships[0]?.plan?.name ?? 'N/A' }}</td>
                   <td>
                     <span class="status-badge" :class="getStatusClass(member.memberships[0]?.status)">
@@ -313,6 +325,15 @@
                   <td colspan="7" class="p-0 bg-light">
                     <div class="p-4">
                       <div class="row g-4">
+                        <!-- Additional Info -->
+                        <div class="col-12">
+                          <h6 class="fw-bold text-info mb-2">Additional Info</h6>
+                          <div class="row g-3 small">
+                            <div class="col-sm-4"><strong>Address:</strong><br>{{ member.address || '—' }}</div>
+                            <div class="col-sm-4"><strong>Referral:</strong><br>{{ member.referralSource || '—' }}</div>
+                            <div class="col-sm-4"><strong>Notes:</strong><br>{{ member.notes || '—' }}</div>
+                          </div>
+                        </div>
                         <div class="col-md-6">
                           <h6 class="fw-bold text-primary mb-3">Memberships</h6>
                           <div v-if="member.memberships?.length" class="table-responsive">
@@ -376,6 +397,8 @@
                           </div>
                           <p v-else class="text-muted small">No add-ons</p>
                         </div>
+
+
                       </div>
                     </div>
                   </td>
@@ -409,7 +432,15 @@
 
             <div class="member-details small text-muted">
               <div><strong>Phone:</strong> {{ member.phone }}</div>
-              <div><strong>Email:</strong> {{ member.email || '—' }}</div>
+              <div><strong>Gender:</strong>
+                <span class="badge ms-1" :class="{
+                  'bg-primary': member.gender === 'Male',
+                  'bg-success': member.gender === 'Female',
+                  'bg-secondary': member.gender === 'Other' || !member.gender
+                }">
+                  {{ member.gender || '—' }}
+                </span>
+              </div>
               <div><strong>Plan:</strong> {{ member.memberships[0]?.plan?.name ?? 'N/A' }}</div>
             </div>
 
@@ -424,6 +455,14 @@
           </div>
 
           <div v-if="expandedMemberId === member.id" class="member-expanded p-3 bg-light border-top">
+            <div class="mt-3">
+              <strong>Additional Info</strong>
+              <div class="mt-2 small text-muted">
+                <div><strong>Address:</strong> {{ member.address || '—' }}</div>
+                <div><strong>Referral:</strong> {{ member.referralSource || '—' }}</div>
+                <div><strong>Notes:</strong> {{ member.notes || '—' }}</div>
+              </div>
+            </div>
             <div class="mb-3">
               <strong>Memberships</strong>
               <div v-if="member.memberships?.length" class="mt-2 small">
@@ -445,6 +484,7 @@
               </div>
               <div v-else class="text-muted">No programs</div>
             </div>
+
           </div>
         </div>
 
@@ -716,23 +756,23 @@ const plans = ref<Plan[]>([])
 const filters = ref({
   id: '',
   name: '',
-  email: '',
   phone: '',
   plan: '',
-  status: ''
+  status: '',
+  gender: ''
 })
 const columnFilters = ref({
   id: false,
   name: false,
-  email: false,
   phone: false,
   plan: false,
-  status: false
+  status: false,
+  gender: false
 })
 const pagination = ref({ page: 1, limit: 10 })
 const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 })
 const isLoading = ref(true)
-const isTyping = ref(false)          // ← NEW: typing indicator
+const isTyping = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
 // Mobile detection
@@ -773,10 +813,10 @@ const toastMessage = ref('')
 const filterLabels: Record<FilterKey, string> = {
   id: 'ID',
   name: 'Name',
-  email: 'Email',
   phone: 'Phone',
   plan: 'Plan',
-  status: 'Status'
+  status: 'Status',
+  gender: 'Gender'
 }
 
 // Active Filters (for chips)
@@ -788,16 +828,14 @@ const activeFilters = computed(() => {
   return active
 })
 
-// GLOBAL DEBOUNCE: 750ms (Professional Standard)
+// GLOBAL DEBOUNCE: 1000ms
 watch(filters, () => {
   isTyping.value = true
-
   if (searchTimer) clearTimeout(searchTimer)
-
   searchTimer = setTimeout(() => {
     resetPageAndLoad()
     isTyping.value = false
-  }, 1000)  // ← Waits for natural pause in typing
+  }, 1000)
 }, { deep: true })
 
 // Handle blur for column filters
@@ -819,7 +857,6 @@ const isMemberFormValid = computed(() => {
   validateMemberField('lastName')
   validateMemberField('phone')
   if (memberForm.value.email) validateMemberField('email')
-
   const hasRequired = !!memberForm.value.firstName && !!memberForm.value.lastName && !!memberForm.value.phone
   const noErrors = !Object.values(memberErrors.value).some(err => err)
   return hasRequired && noErrors
@@ -1037,7 +1074,7 @@ onMounted(() => {
     const h = headerEl.value?.offsetHeight ?? 0
     const f = filterEl.value?.offsetHeight ?? 0
     const p = footerEl.value?.offsetHeight ?? 0
-    const total = h + f + p + 100 // 24px = small safety margin
+    const total = h + f + p + 100
     document.documentElement.style.setProperty('--vh-used', total + 'px')
   }
   update()
@@ -1058,7 +1095,6 @@ onMounted(async () => {
 
 <style scoped>
 .members-container {
-
   background: #f8f9fa;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -1220,7 +1256,6 @@ onMounted(async () => {
     font-weight: 500;
   }
 
-  /* Stack buttons on very small screens */
   @media (max-width: 576px) {
     .member-actions {
       flex-direction: column;
@@ -1244,9 +1279,7 @@ onMounted(async () => {
 
 /* Pagination Footer */
 .pagination-footer {
-
   margin-top: 40px;
-
   bottom: 0;
   left: 0;
   right: 0;
@@ -1314,6 +1347,12 @@ onMounted(async () => {
 .status-secondary {
   background: #e5e7eb;
   color: #4b5563;
+}
+
+/* Gender Badge */
+.badge {
+  font-size: .65rem;
+  padding: .25em .5em;
 }
 
 /* Icon Buttons */
