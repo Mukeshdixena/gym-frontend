@@ -14,8 +14,8 @@
         </button>
 
         <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-           <i class="bi bi-plus-lg"></i>
-           Add Expense
+          <i class="bi bi-plus-lg"></i>
+          Add Expense
         </button>
       </div>
     </div>
@@ -23,7 +23,15 @@
     <!-- Filter Bar (Sticky) -->
     <div class="filter-bar">
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <!-- Filter Chips -->
+
+        <!-- 🗓 Date Range Picker -->
+        <div class="d-flex align-items-center gap-2">
+          <label class="fw-semibold text-muted small">Date Range:</label>
+          <VueDatePicker v-model="dateRange" range :enable-time-picker="false" :clearable="true" placeholder="From → To"
+            format="yyyy-MM-dd" style="min-width: 230px;" @update:model-value="onDateRangeChange" />
+        </div>
+
+        <!-- Existing filter chips -->
         <div v-for="(value, key) in activeFilters" :key="key"
           class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
           <i class="bi bi-funnel-fill"></i>
@@ -381,7 +389,7 @@
 
     <!-- Add/Edit Expense Modal -->
     <div class="modal fade" ref="expenseModalRef" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
 
         <div class="modal-content">
           <div class="modal-header">
@@ -425,7 +433,7 @@
 
     <!-- Add Payment Modal -->
     <div class="modal fade" ref="paymentModalRef" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
 
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
 
@@ -554,6 +562,12 @@ import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
 
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
+
+const dateRange = ref<[Date, Date] | null>(null)
+
+
 interface Payment {
   id: number
   amount: number
@@ -633,6 +647,17 @@ const filterLabels: Record<string, string> = {
   status: 'Status',
   date: 'Date'
 }
+
+// When user picks range
+const onDateRangeChange = (range: [Date, Date] | null) => {
+  if (range && range[0] && range[1]) {
+    filters.value.date = `${range[0].toISOString().split('T')[0]}_${range[1].toISOString().split('T')[0]}`
+  } else {
+    filters.value.date = ''
+  }
+  debouncedResetPageAndLoad()
+}
+
 
 // Active Filters
 const activeFilters = computed(() => {
