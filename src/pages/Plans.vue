@@ -2,25 +2,20 @@
   <div class="members-container">
     <!-- Top Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
+      <div style="width:100%;">
         <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Plans Management</h2>
         <p class="text-muted small mb-0">Manage membership plans, pricing and availability.</p>
       </div>
 
       <div class="d-flex gap-2 align-items-center">
         <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" @click="loadPlans">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z" />
-            <path d="M8 1v3h3" />
-          </svg>
+          <i class="bi bi-arrow-clockwise"></i>
           Refresh
         </button>
 
         <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 1v14m7-7H1" />
-          </svg>
-          + New Plan
+          <i class="bi bi-plus-circle"></i>
+          Plan
         </button>
       </div>
     </div>
@@ -706,6 +701,10 @@ onMounted(async () => {
   backdrop-filter: blur(4px);
 }
 
+.btn-cls{
+    align-items: center;
+  }
+
 .filter-chip {
   background: #e9ecef;
   border-radius: 1rem;
@@ -898,6 +897,29 @@ onMounted(async () => {
 .filter-btn.active {
   color: #4361ee;
 }
+
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .members-container {
+    padding: 1rem;
+  }
+
+  /* Stack Header Buttons */
+  .justify-content-between.align-items-center.mb-4 {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+
+  /* Filters Stack */
+  .filter-bar .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
 
 @media (max-width: 768px) {
   .pagination-footer {

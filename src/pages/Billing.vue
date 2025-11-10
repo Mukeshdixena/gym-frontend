@@ -4,15 +4,12 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Billing Management</h2>
-        <p class="text-muted small mb-0">Manage pending and approved membership & special program bills.</p>
+        <p class="text-muted small mb-0">Manage pending and approved membership & classes bills.</p>
       </div>
 
       <div class="d-flex gap-2 align-items-center">
         <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" @click="loadBills">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z" />
-            <path d="M8 1v3h3" />
-          </svg>
+          <i class="bi bi-arrow-clockwise"></i>
           Refresh
         </button>
 
@@ -20,7 +17,7 @@
           <input type="radio" class="btn-check" id="type-membership" value="membership" v-model="billType">
           <label class="btn btn-outline-primary" for="type-membership">Membership</label>
           <input type="radio" class="btn-check" id="type-addon" value="addon" v-model="billType">
-          <label class="btn btn-outline-primary" for="type-addon">Special Program</label>
+          <label class="btn btn-outline-primary" for="type-addon">Classes</label>
         </div>
       </div>
     </div>
@@ -63,7 +60,7 @@
 
     <!-- Pending Bills -->
     <div v-else class="mb-5">
-      <h5 class="fw-semibold text-warning mb-3">Pending {{ billType === 'membership' ? 'Membership' : 'Special Program'
+      <h5 class="fw-semibold text-warning mb-3">Pending {{ billType === 'membership' ? 'Membership' : 'Classes'
       }} Bills</h5>
       <div class="table-responsive rounded-3 overflow-hidden">
         <div class="table-scroll-container">
@@ -211,7 +208,7 @@
     <!-- Approved Bills -->
     <div v-if="!isLoading">
       <h5 class="fw-semibold text-success mb-3">Approved {{ billType === 'membership' ? 'Memberships' :
-        'Special Programs'
+        'Classes'
       }}</h5>
       <div class="table-responsive rounded-3 overflow-hidden">
         <div class="table-scroll-container">
@@ -363,7 +360,7 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Collect Payment – {{ billType === 'membership' ? 'Membership' : 'Special Program' }}
+            <h5 class="modal-title">Collect Payment – {{ billType === 'membership' ? 'Membership' : 'Classes' }}
             </h5>
             <button type="button" class="btn-close" @click="closeCollectModal"></button>
           </div>
@@ -376,7 +373,7 @@
               </div>
 
               <div class="mt-4">
-                <h6>{{ billType === 'membership' ? 'Membership Plan' : 'Special Program' }}</h6>
+                <h6>{{ billType === 'membership' ? 'Membership Plan' : 'Class' }}</h6>
                 <div class="form-control-plaintext p-2 bg-light rounded">
                   {{ selectedPlan?.name }} - ₹{{ selectedPlan?.price }}
                   <span v-if="billType === 'membership'">({{ selectedPlanDuration }} days)</span>
@@ -847,14 +844,15 @@ onBeforeUnmount(() => {
 })
 </script>
 
+
 <style scoped>
-/* Same styles as Members UI */
 .members-container {
   padding: 1.5rem;
   background: #f8f9fa;
   font-family: 'Inter', sans-serif;
 }
 
+/* Sticky filter bar */
 .filter-bar {
   position: sticky;
   top: 0;
@@ -865,65 +863,63 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(4px);
 }
 
+/* Filter chips */
 .filter-chip {
   background: #e9ecef;
   border-radius: 1rem;
-  font-size: .8rem;
+  font-size: 0.8rem;
   color: #495057;
 }
 
 .filter-chip .btn-close {
-  opacity: .7;
+  opacity: 0.7;
 }
-
 .filter-chip .btn-close:hover {
   opacity: 1;
 }
 
+/* Table */
 .table {
   --bs-table-hover-bg: #f1f5f9;
   margin-bottom: 0;
 }
-
 .table thead th {
   font-weight: 600;
-  font-size: .85rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: 0.05em;
   color: #6c757d;
   border-bottom: 1px solid #dee2e6;
-  padding: .75rem 1rem;
+  padding: 0.75rem 1rem;
 }
-
 .table tbody td {
-  padding: .75rem 1rem;
-  font-size: .925rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.925rem;
   vertical-align: middle;
 }
-
 .table tbody tr:hover {
   background-color: var(--bs-table-hover-bg);
 }
 
+/* Status badges */
 .status-badge {
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: .25rem .6rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 1rem;
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
 }
-
 .status-success {
   background: #d1fae5;
   color: #065f46;
 }
-
 .status-warning {
   background: #fff3cd;
   color: #856404;
 }
 
+/* Icon buttons */
 .icon-btn {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -933,21 +929,20 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all .2s;
+  transition: all 0.2s;
 }
-
 .icon-btn:hover {
   background: #e2e8f0;
   border-color: #cbd5e1;
 }
 
+/* Pagination */
 .pagination .page-link {
   color: #495057;
   border-radius: 6px;
-  padding: .35rem .65rem;
-  font-size: .875rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.875rem;
 }
-
 .pagination .page-item.active .page-link {
   background: #4361ee;
   border-color: #4361ee;
@@ -960,19 +955,19 @@ onBeforeUnmount(() => {
   background: white;
 }
 
+/* Pagination footer */
 .pagination-footer {
   position: fixed;
   bottom: 10px;
   left: 240px;
   right: 0;
   background: #fff;
-  padding: .65rem 1rem;
+  padding: 0.65rem 1rem;
   z-index: 1040;
   display: flex;
   justify-content: center;
 }
-
-.pagination-footer>div {
+.pagination-footer > div {
   width: 100%;
   max-width: 900px;
   display: flex;
@@ -980,39 +975,35 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 
+/* Filter header in table */
 .filter-header {
   position: relative;
   white-space: nowrap;
   min-width: 140px;
 }
-
 .filter-wrapper {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: .4rem;
+  gap: 0.4rem;
 }
-
 .header-label {
   font-weight: 600;
-  font-size: .85rem;
+  font-size: 0.85rem;
   color: #495057;
-  transition: opacity .2s ease;
+  transition: opacity 0.2s ease;
 }
-
 .header-label.hidden {
   opacity: 0;
   pointer-events: none;
 }
-
 .filter-input {
   width: 100%;
   max-width: 120px;
   opacity: 1;
-  transition: all .3s ease;
-  padding: .15rem .4rem;
+  transition: all 0.3s ease;
+  padding: 0.15rem 0.4rem;
 }
-
 .filter-btn {
   background: transparent;
   border: none;
@@ -1022,25 +1013,14 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color .2s;
+  transition: color 0.2s;
 }
-
 .filter-btn:hover,
 .filter-btn.active {
   color: #4361ee;
 }
 
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all .25s ease;
-}
-
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateX(6px);
-}
-
+/* Dropdown menu */
 .dropdown-menu-custom {
   position: absolute;
   right: 0;
@@ -1048,27 +1028,135 @@ onBeforeUnmount(() => {
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 2000;
   min-width: 160px;
 }
-
 .dropdown-item-custom {
   display: block;
   padding: 8px 12px;
   color: #333;
   text-decoration: none;
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
-
 .dropdown-item-custom:hover {
   background: #f8f9fa;
 }
 
-@media (max-width: 768px) {
+/* Animations */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.25s ease;
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(6px);
+}
+
+/* RESPONSIVE ADJUSTMENTS */
+@media (max-width: 992px) {
+  .members-container {
+    padding: 1rem;
+  }
+
+  /* Top header buttons stack */
+  .d-flex.justify-content-between.align-items-center.mb-4 {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  /* Radio group and refresh button */
+  .d-flex.gap-2.align-items-center {
+    flex-wrap: wrap;
+    gap: 0.5rem !important;
+  }
+
+  /* Tables scroll better on small screens */
+  .table-container {
+    max-height: none;
+    overflow-x: auto;
+  }
+
+  /* Reduce table padding */
+  .table thead th,
+  .table tbody td {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  /* Pagination footer sticks neatly */
   .pagination-footer {
-    left: 0;
-    padding: .5rem;
+    position: static;
+    padding: 0.75rem 0;
+    margin-top: 1rem;
+    background: transparent;
+    flex-direction: column;
+  }
+  .pagination-footer > div {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  /* Filter bar wraps neatly */
+  .filter-bar .d-flex {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  /* Filter chips */
+  .filter-chip {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Hide long text in small width */
+  td, th {
+    white-space: nowrap;
+  }
+
+  /* Modal spacing */
+  .modal-dialog {
+    margin: 1rem auto;
+  }
+  .modal-content {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .members-container {
+    padding: 0.75rem;
+  }
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Buttons full width on small screens */
+  .btn-group,
+  .btn.btn-outline-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Dropdown actions in table */
+  .dropdown-menu-custom {
+    min-width: 120px;
+    font-size: 0.8rem;
+  }
+
+  /* Payment modal */
+  .modal-dialog.modal-lg {
+    max-width: 95%;
+  }
+  .form-label {
+    font-size: 0.8rem;
+  }
+  .form-control {
+    font-size: 0.85rem;
   }
 }
 </style>

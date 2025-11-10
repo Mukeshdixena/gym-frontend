@@ -2,23 +2,21 @@
   <div class="members-container">
     <!-- Top Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Special Programs</h2>
-        <p class="text-muted small mb-0">Manage add-ons and special training programs.</p>
+      <div style="width:100%;">
+        <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Training Classes</h2>
+        <p class="text-muted small mb-0">Manage add-ons and training programs such as PT, Yoga, Zumba, Dance.</p>
       </div>
 
       <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8 1v14m7-7H1" />
-        </svg>
-        + New Program
+        <i class="bi bi-plus-circle"></i> Classes
       </button>
     </div>
 
     <!-- Filter Bar (Sticky) -->
     <div class="filter-bar">
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <div v-for="(value, key) in activeFilters" :key="key" class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
+        <div v-for="(value, key) in activeFilters" :key="key"
+          class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
             <path d="M2.5 2.5A.5.5 0 0 1 3 2h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5v-1z" />
             <path d="M3 5h10v1H3z" />
@@ -42,7 +40,7 @@
     <!-- Loading -->
     <div v-if="isLoading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
-      <div class="mt-2 text-muted">Loading special programs...</div>
+      <div class="mt-2 text-muted">Loading classes...</div>
     </div>
 
     <!-- Table Container -->
@@ -62,13 +60,17 @@
                     </transition>
                     <button class="filter-btn" :class="{ active: columnFilters.id }" @click.stop="toggleFilter('id')">
                       <template v-if="columnFilters.id">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
                         </svg>
                       </template>
                       <template v-else>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                         </svg>
                       </template>
                     </button>
@@ -82,15 +84,20 @@
                         type="text" class="form-control form-control-sm filter-input" placeholder="Name"
                         @blur="handleBlur('name')" />
                     </transition>
-                    <button class="filter-btn" :class="{ active: columnFilters.name }" @click.stop="toggleFilter('name')">
+                    <button class="filter-btn" :class="{ active: columnFilters.name }"
+                      @click.stop="toggleFilter('name')">
                       <template v-if="columnFilters.name">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
                         </svg>
                       </template>
                       <template v-else>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                         </svg>
                       </template>
                     </button>
@@ -110,16 +117,21 @@
                         <option value="false">Inactive</option>
                       </select>
                     </transition>
->
-                    <button class="filter-btn" :class="{ active: columnFilters.status }" @click.stop="toggleFilter('status')">
+                    >
+                    <button class="filter-btn" :class="{ active: columnFilters.status }"
+                      @click.stop="toggleFilter('status')">
                       <template v-if="columnFilters.status">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
                         </svg>
                       </template>
                       <template v-else>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M6 10a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 10zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 7zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 4z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M6 10a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 6 10zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 7zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 4z" />
                         </svg>
                       </template>
                     </button>
@@ -142,28 +154,21 @@
                 </td>
                 <td class="text-center" @click.stop>
                   <div class="d-flex justify-content-center gap-2">
-                    <button class="icon-btn" title="Toggle Status" @click.stop="toggleAddonStatus(addon.id, !addon.isActive)" :disabled="isToggling">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path v-if="addon.isActive" d="M13 2.5a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3zm-10 0a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3zm5 0a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3z"/>
-                        <path v-else d="M2 2.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
-                      </svg>
+                    <button class="icon-btn" title="Toggle Status"
+                      @click.stop="toggleAddonStatus(addon.id, !addon.isActive)" :disabled="isToggling">
+                      <i class="bi bi-pause-circle"></i>
                     </button>
                     <button class="icon-btn" title="Edit" @click.stop="editAddon(addon)">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708L4.207 13.5 2 14l.5-2.207L12.146.146zM11.207 2L3 10.207V12h1.793L13 3.793 11.207 2z"/>
-                      </svg>
+                      <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="icon-btn text-danger" title="Delete" @click.stop="confirmDelete(addon.id)">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5v7h1v-7h-1zm3 0v7h1v-7h-1z"/>
-                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4H2.5a1 1 0 1 1 0-2H5l.5-1h5l.5 1h2.5a1 1 0 0 1 1 1z"/>
-                      </svg>
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
                 </td>
               </tr>
               <tr v-if="!addons.length">
-                <td colspan="7" class="text-center text-muted py-5">No special programs found</td>
+                <td colspan="7" class="text-center text-muted py-5">No classes found</td>
               </tr>
             </tbody>
           </table>
@@ -175,11 +180,13 @@
         <div class="d-flex justify-content-between align-items-center small text-muted w-100">
           <div class="d-flex align-items-center gap-2">
             <span>
-              Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }} of {{ meta.total }} results
+              Showing {{ (meta.page - 1) * meta.limit + 1 }} to {{ Math.min(meta.page * meta.limit, meta.total) }} of {{
+              meta.total }} results
             </span>
             <div class="d-flex align-items-center ms-3">
               <label class="me-1">Rows per page:</label>
-              <select v-model.number="pagination.limit" @change="debouncedResetPageAndLoad" class="form-select form-select-sm w-auto">
+              <select v-model.number="pagination.limit" @change="debouncedResetPageAndLoad"
+                class="form-select form-select-sm w-auto">
                 <option :value="5">5</option>
                 <option :value="10">10</option>
                 <option :value="20">20</option>
@@ -210,7 +217,7 @@
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ editingAddon ? 'Edit Special Program' : 'Add Special Program' }}</h5>
+            <h5 class="modal-title">{{ editingAddon ? 'Edit Classes' : 'Add Classes' }}</h5>
             <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
           <div class="modal-body">
@@ -225,7 +232,8 @@
                 <div class="col-md-6">
                   <label class="form-label"><strong>Description</strong></label>
                   <textarea v-model.trim="form.description" class="form-control" rows="2"
-                    :class="{ 'is-invalid': errors.description }" @blur="validateField('description')" required></textarea>
+                    :class="{ 'is-invalid': errors.description }" @blur="validateField('description')"
+                    required></textarea>
                   <div v-if="errors.description" class="invalid-feedback">{{ errors.description }}</div>
                 </div>
               </div>
@@ -233,15 +241,16 @@
               <div class="row g-3 mt-2">
                 <div class="col-md-6">
                   <label class="form-label"><strong>Price (₹)</strong></label>
-                  <input v-if="!editingAddon" v-model.number="form.price" type="number" min="1"
-                    class="form-control" :class="{ 'is-invalid': errors.price }" @blur="validateField('price')" required />
+                  <input v-if="!editingAddon" v-model.number="form.price" type="number" min="1" class="form-control"
+                    :class="{ 'is-invalid': errors.price }" @blur="validateField('price')" required />
                   <div v-else class="form-control-plaintext">₹{{ form.price }}</div>
                   <div v-if="errors.price" class="invalid-feedback">{{ errors.price }}</div>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label"><strong>Duration (Days)</strong></label>
                   <input v-if="!editingAddon" v-model.number="form.durationDays" type="number" min="1"
-                    class="form-control" :class="{ 'is-invalid': errors.durationDays }" @blur="validateField('durationDays')" required />
+                    class="form-control" :class="{ 'is-invalid': errors.durationDays }"
+                    @blur="validateField('durationDays')" required />
                   <div v-else class="form-control-plaintext">{{ form.durationDays }} days</div>
                   <div v-if="errors.durationDays" class="invalid-feedback">{{ errors.durationDays }}</div>
                 </div>
@@ -506,7 +515,7 @@ const toggleAddonStatus = async (id: number, status: boolean) => {
 }
 
 const isConfirmOpen = ref(false)
-let resolveConfirm: (v: boolean) => void = () => {}
+let resolveConfirm: (v: boolean) => void = () => { }
 const showConfirm = (): Promise<boolean> => new Promise(resolve => {
   isConfirmOpen.value = true
   resolveConfirm = v => { isConfirmOpen.value = false; resolve(v) }
@@ -531,35 +540,231 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Reuse same styles from Members page */
-.members-container { padding: 1.5rem; background: #f8f9fa; font-family: 'Inter', sans-serif; }
-.filter-bar { position: sticky; top: 0; background: #f8f9fa; z-index: 15; padding: 0.75rem 0; border-bottom: 1px solid #dee2e6; backdrop-filter: blur(4px); }
-.filter-chip { background: #e9ecef; border-radius: 1rem; font-size: 0.8rem; color: #495057; }
-.filter-chip .btn-close { opacity: 0.7; }
-.filter-chip .btn-close:hover { opacity: 1; }
-.table { --bs-table-hover-bg: #f1f5f9; margin-bottom: 0; }
-.table thead th { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6c757d; border-bottom: 1px solid #dee2e6; padding: 0.75rem 1rem; }
-.table tbody td { padding: 0.75rem 1rem; font-size: 0.925rem; vertical-align: middle; }
-.table tbody tr:hover { background-color: var(--bs-table-hover-bg); }
-.status-badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
-.status-success { background: #d1fae5; color: #065f46; }
-.status-secondary { background: #e5e7eb; color: #4b5563; }
-.icon-btn { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
-.icon-btn:hover { background: #e2e8f0; border-color: #cbd5e1; }
-.sticky-top { position: sticky; top: 0; background: #f8f9fa; }
-.pagination .page-link { color: #495057; border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.875rem; }
-.pagination .page-item.active .page-link { background: #4361ee; border-color: #4361ee; color: white; }
-.table-container { max-height: calc(100vh - 240px); overflow-y: auto; background: white; }
-.pagination-footer { position: fixed; bottom: 10px; left: 240px; right: 0; background: #fff; padding: 0.65rem 1rem; z-index: 1040; display: flex; justify-content: center; align-items: center; }
-.pagination-footer > div { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; }
-.filter-header { position: relative; white-space: nowrap; min-width: 140px; }
-.filter-wrapper { display: flex; align-items: center; justify-content: flex-start; gap: 0.4rem; }
-.header-label { font-weight: 600; font-size: 0.85rem; color: #495057; transition: opacity 0.2s ease; }
-.header-label.hidden { opacity: 0; pointer-events: none; }
-.filter-input { width: 100%; max-width: 120px; opacity: 1; transition: all 0.3s ease; padding: 0.15rem 0.4rem; }
-.filter-btn { background: transparent; border: none; padding: 0; cursor: pointer; color: #6c757d; display: flex; align-items: center; justify-content: center; transition: color 0.2s; }
-.filter-btn:hover, .filter-btn.active { color: #4361ee; }
-.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.25s ease; }
-.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; transform: translateX(6px); }
-@media (max-width: 768px) { .pagination-footer { left: 0; padding: 0.5rem; } }
+
+.members-container {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  font-family: 'Inter', sans-serif;
+}
+
+.filter-bar {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 15;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #dee2e6;
+  backdrop-filter: blur(4px);
+}
+
+.filter-chip {
+  background: #e9ecef;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  color: #495057;
+}
+
+.filter-chip .btn-close {
+  opacity: 0.7;
+}
+
+.filter-chip .btn-close:hover {
+  opacity: 1;
+}
+
+.table {
+  --bs-table-hover-bg: #f1f5f9;
+  margin-bottom: 0;
+}
+
+.table thead th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c757d;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+}
+
+.table tbody td {
+  padding: 0.75rem 1rem;
+  font-size: 0.925rem;
+  vertical-align: middle;
+}
+
+.table tbody tr:hover {
+  background-color: var(--bs-table-hover-bg);
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-secondary {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.icon-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.sticky-top {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+}
+
+.pagination .page-link {
+  color: #495057;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.875rem;
+}
+
+.pagination .page-item.active .page-link {
+  background: #4361ee;
+  border-color: #4361ee;
+  color: white;
+}
+
+.table-container {
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
+  background: white;
+}
+
+.pagination-footer {
+  position: fixed;
+  bottom: 10px;
+  left: 240px;
+  right: 0;
+  background: #fff;
+  padding: 0.65rem 1rem;
+  z-index: 1040;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pagination-footer>div {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-header {
+  position: relative;
+  white-space: nowrap;
+  min-width: 140px;
+}
+
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+}
+
+.header-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #495057;
+  transition: opacity 0.2s ease;
+}
+
+.header-label.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-input {
+  width: 100%;
+  max-width: 120px;
+  opacity: 1;
+  transition: all 0.3s ease;
+  padding: 0.15rem 0.4rem;
+}
+
+.filter-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+  color: #4361ee;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.25s ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(6px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .members-container {
+    padding: 1rem;
+  }
+
+  /* Stack Header Buttons */
+  .justify-content-between.align-items-center.mb-4 {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+
+  /* Filters Stack */
+  .filter-bar .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .pagination-footer {
+    left: 0;
+    padding: 0.5rem;
+  }
+}
 </style>

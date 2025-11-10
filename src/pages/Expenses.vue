@@ -2,25 +2,20 @@
   <div class="members-container">
     <!-- Top Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
+      <div style="width: 100%;">
         <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Expense Management</h2>
         <p class="text-muted small mb-0">Track all expenses, payments, and financial records.</p>
       </div>
 
       <div class="d-flex gap-2 align-items-center">
         <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" @click="loadExpenses">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z" />
-            <path d="M8 1v3h3" />
-          </svg>
+          <i class="bi bi-arrow-clockwise"></i>
           Refresh
         </button>
 
         <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 1v14m7-7H1" />
-          </svg>
-          + Add Expense
+          <i class="bi bi-plus-circle"></i>
+          Expense
         </button>
       </div>
     </div>
@@ -28,18 +23,26 @@
     <!-- Filter Bar (Sticky) -->
     <div class="filter-bar">
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <!-- Filter Chips -->
+
+        <!-- Date Range Picker -->
+        <div class="d-flex align-items-center gap-2">
+          <label class="fw-semibold text-muted small">Date Range:</label>
+          <VueDatePicker v-model="dateRange" range :enable-time-picker="false" :clearable="true" placeholder="From To"
+            format="yyyy-MM-dd" style="min-width: 230px;" @update:model-value="onDateRangeChange" />
+        </div>
+
+        <!-- Existing filter chips -->
         <div v-for="(value, key) in activeFilters" :key="key"
           class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M2.5 2.5A.5.5 0 0 1 3 2h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5v-1z" />
-            <path d="M3 5h10v1H3z" />
-          </svg>
+          <i class="bi bi-funnel-fill"></i>
           <strong>{{ filterLabels[key] }}:</strong> {{ value }}
           <button @click="clearFilter(key)" class="btn-close btn-close-sm"></button>
         </div>
       </div>
     </div>
+
+    <!-- Global Summary Card -->
+
 
     <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
@@ -180,6 +183,64 @@
                   </div>
                 </th>
 
+                <!-- Paid -->
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.paid }">Paid</span>
+                    <transition name="fade-slide">
+                      <input v-if="columnFilters.paid" v-model.trim="filters.paid"
+                        @input="debouncedResetPageAndLoad" type="text" class="form-control form-control-sm filter-input"
+                        placeholder="Min Paid" @blur="handleBlur('paid')" />
+                    </transition>
+                    <button class="filter-btn" :class="{ active: columnFilters.paid }"
+                      @click.stop="toggleFilter('paid')" title="Filter Paid">
+                      <template v-if="columnFilters.paid">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </template>
+                    </button>
+                  </div>
+                </th>
+
+                <!-- Pending -->
+                <th class="filter-header">
+                  <div class="filter-wrapper">
+                    <span class="header-label" :class="{ hidden: columnFilters.pending }">Pending</span>
+                    <transition name="fade-slide">
+                      <input v-if="columnFilters.pending" v-model.trim="filters.pending"
+                        @input="debouncedResetPageAndLoad" type="text" class="form-control form-control-sm filter-input"
+                        placeholder="Min Pending" @blur="handleBlur('pending')" />
+                    </transition>
+                    <button class="filter-btn" :class="{ active: columnFilters.pending }"
+                      @click.stop="toggleFilter('pending')" title="Filter Pending">
+                      <template v-if="columnFilters.pending">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M2.5 2.5a.5.5 0 0 1 .707 0L8 7.293l4.793-4.793a.5.5 0 1 1 .707.707L8.707 8l4.793 4.793a.5.5 0 0 1-.707.707L8 8.707l-4.793 4.793a.5.5 0 0 1-.707-.707L7.293 8 2.5 3.207a.5.5 0 0 1 0-.707z" />
+                        </svg>
+                      </template>
+                      <template v-else>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                          viewBox="0 0 16 16">
+                          <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                        </svg>
+                      </template>
+                    </button>
+                  </div>
+                </th>
+
                 <!-- Status -->
                 <th class="filter-header">
                   <div class="filter-wrapper">
@@ -252,7 +313,9 @@
                   <td class="small text-muted">{{ exp.id }}</td>
                   <td class="fw-semibold">{{ exp.title }}</td>
                   <td class="small">{{ exp.category }}</td>
-                  <td class="small">₹{{ exp.amount.toFixed(2) }}</td>
+                  <td class="small">{{ fmtRupee(exp.amount) }}</td>
+                  <td class="small text-success">{{ fmtRupee(exp.paid ?? 0) }}</td>
+                  <td class="small text-danger">{{ fmtRupee(exp.pending ?? exp.amount) }}</td>
                   <td class="small">
                     <span class="badge" :class="getStatusClass(exp.status)">
                       {{ exp.status }}
@@ -263,29 +326,17 @@
                     <div class="d-flex justify-content-center gap-2">
                       <!-- Add Payment -->
                       <button class="icon-btn text-success" title="Add Payment" @click.stop="openPaymentModal(exp)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path d="M8 1v14m7-7H1" />
-                        </svg>
+                        <i class="bi bi-currency-rupee"></i>
                       </button>
 
                       <!-- Edit -->
                       <button class="icon-btn" title="Edit" @click.stop="editExpense(exp)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path
-                            d="M12.146.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1 0 .708L4.207 13.5 2 14l.5-2.207L12.146.146zM11.207 2L3 10.207V12h1.793L13 3.793 11.207 2z" />
-                        </svg>
+                        <i class="bi bi-pencil-square"></i>
                       </button>
 
                       <!-- Delete -->
                       <button class="icon-btn text-danger" title="Delete" @click.stop="confirmDelete(exp)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path d="M5.5 5.5v7h1v-7h-1zm3 0v7h1v-7h-1z" />
-                          <path fill-rule="evenodd"
-                            d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4H2.5a1 1 0 1 1 0-2H5l.5-1h5l.5 1h2.5a1 1 0 0 1 1 1z" />
-                        </svg>
+                        <i class="bi bi-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -293,7 +344,7 @@
 
                 <!-- Expanded Row -->
                 <tr v-if="expandedExpenseId === exp.id">
-                  <td colspan="7" class="p-0 bg-light">
+                  <td colspan="9" class="p-0 bg-light">
                     <div class="p-4">
                       <div class="row g-4">
                         <div class="col-md-6">
@@ -301,15 +352,15 @@
                           <table class="table table-sm">
                             <tr>
                               <th>Total Amount</th>
-                              <td>₹ R{{ exp.amount.toFixed(2) }}</td>
+                              <td>{{ fmtRupee(exp.amount) }}</td>
                             </tr>
                             <tr>
                               <th>Paid</th>
-                              <td class="text-success">₹{{ (exp.paid ?? 0).toFixed(2) }}</td>
+                              <td class="text-success">{{ fmtRupee(exp.paid ?? 0) }}</td>
                             </tr>
                             <tr>
                               <th>Pending</th>
-                              <td class="text-danger">₹{{ (exp.pending ?? exp.amount).toFixed(2) }}</td>
+                              <td class="text-danger">{{ fmtRupee(exp.pending ?? exp.amount) }}</td>
                             </tr>
                             <tr>
                               <th>Status</th>
@@ -336,7 +387,7 @@
                               <tbody>
                                 <tr v-for="(p, i) in exp.payments" :key="p.id">
                                   <td>{{ i + 1 }}</td>
-                                  <td>₹{{ p.amount.toFixed(2) }}</td>
+                                  <td>{{ fmtRupee(Math.abs(p.amount)) }}</td>
                                   <td>{{ formatDateTime(p.paymentDate) }}</td>
                                   <td>{{ p.method }}</td>
                                   <td>{{ p.notes || '-' }}</td>
@@ -353,12 +404,44 @@
               </template>
 
               <tr v-if="!expenses.length">
-                <td colspan="7" class="text-center text-muted py-5">No expenses found</td>
+                <td colspan="9" class="text-center text-muted py-5">No expenses found</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+
+      
+    <!-- Filter Bar (Sticky) -->
+    <div class="filter-bar">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- Existing filter chips -->
+        <div v-for="(value, key) in activeFilters" :key="key"
+          class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
+          <i class="bi bi-funnel-fill"></i>
+          <strong>{{ filterLabels[key] }}:</strong> {{ value }}
+          <button @click="clearFilter(key)" class="btn-close btn-close-sm"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Global Summary Card -->
+    <div class="summary-card mt-3 mb-4 p-3 bg-white rounded-3 shadow-sm border">
+      <div class="row g-3 text-center text-md-start">
+        <div class="col-md-4">
+          <div class="text-muted small fw-semibold">Total Amount</div>
+          <div class="fs-5 fw-bold text-dark">{{ fmtRupee(summary.totalAmount) }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-muted small fw-semibold">Total Paid</div>
+          <div class="fs-5 fw-bold text-success">{{ fmtRupee(summary.totalPaid) }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-muted small fw-semibold">Total Pending</div>
+          <div class="fs-5 fw-bold text-danger">{{ fmtRupee(summary.totalPending) }}</div>
+        </div>
+      </div>
+    </div>
 
       <!-- Pagination Footer -->
       <footer class="pagination-footer">
@@ -401,7 +484,7 @@
 
     <!-- Add/Edit Expense Modal -->
     <div class="modal fade" ref="expenseModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-md modal-dialog-centered">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">{{ editingExpense ? 'Edit Expense' : 'Add Expense' }}</h5>
@@ -444,9 +527,8 @@
 
     <!-- Add Payment Modal -->
     <div class="modal fade" ref="paymentModalRef" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-      <div class="modal-dialog modal-dialog-centered modal-xl-custom">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-
           <!-- Header -->
           <div class="modal-header bg-primary text-white px-5 py-3">
             <h5 class="modal-title fw-bold fs-4">
@@ -458,29 +540,26 @@
 
           <div class="modal-body px-5 py-4">
             <form @submit.prevent="savePayment">
-
               <!-- Summary Card -->
               <div class="bg-light rounded-3 p-4 mb-4 border">
                 <div class="row g-3 text-center text-md-start">
                   <div class="col-md-4">
                     <div class="text-muted small fw-semibold">Total Amount</div>
-                    <div class="fs-4 fw-bold text-dark">₹{{ selectedExpense?.amount?.toFixed(2) }}</div>
+                    <div class="fs-4 fw-bold text-dark">{{ fmtRupee(selectedExpense?.amount ?? 0) }}</div>
                   </div>
                   <div class="col-md-4">
                     <div class="text-muted small fw-semibold">Already Paid</div>
-                    <div class="fs-4 fw-bold text-success">₹{{ oldPaid.toFixed(2) }}</div>
+                    <div class="fs-4 fw-bold text-success">{{ fmtRupee(oldPaid) }}</div>
                   </div>
                   <div class="col-md-4">
                     <div class="text-muted small fw-semibold">Pending</div>
-                    <div class="fs-4 fw-bold text-danger">₹{{ oldPending.toFixed(2) }}</div>
+                    <div class="fs-4 fw-bold text-danger">{{ fmtRupee(oldPending) }}</div>
                   </div>
                 </div>
               </div>
 
-              <!-- Main Input Row (responsive) -->
+              <!-- Main Input Row -->
               <div class="row g-4 align-items-end">
-
-                <!-- Paying Now -->
                 <div class="col-12 col-lg-5">
                   <label class="form-label text-success fw-bold fs-5">
                     Paying Now <span class="text-danger">*</span>
@@ -492,15 +571,13 @@
                       min="0" :max="oldPending" step="0.01" @input="clampPayingNow" placeholder="0.00"
                       ref="payingNowInput" required autofocus />
                     <span class="input-group-text bg-light text-muted small fw-semibold border-start-0"
-                      :class="{ 'text-danger': pendingAfterPayment === 0 }">→ ₹{{ pendingAfterPayment.toFixed(2)
-                      }}</span>
+                      :class="{ 'text-danger': pendingAfterPayment === 0 }">→ {{ fmtRupee(pendingAfterPayment) }}</span>
                   </div>
                   <div v-if="newPaidNow > oldPending" class="invalid-feedback mt-1">
                     Cannot exceed pending amount
                   </div>
                 </div>
 
-                <!-- Method -->
                 <div class="col-12 col-lg-4">
                   <label class="form-label fw-bold fs-5">
                     Method <span class="text-danger">*</span>
@@ -515,7 +592,6 @@
                   </select>
                 </div>
 
-                <!-- Notes (optional) -->
                 <div class="col-12 col-lg-3">
                   <label class="form-label text-secondary fs-6">Notes</label>
                   <input v-model.trim="paymentNotes" type="text" class="form-control" placeholder="Optional" />
@@ -571,6 +647,10 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
+
+const dateRange = ref<[Date, Date] | null>(null)
 
 interface Payment {
   id: number
@@ -597,10 +677,24 @@ interface PaginationMeta {
   limit: number
   totalPages: number
 }
+interface ApiResponse {
+  data: Expense[]
+  meta: PaginationMeta
+  summary: {
+    totalAmount: number
+    totalPaid: number
+    totalPending: number
+  }
+}
 
 // State
 const expenses = ref<Expense[]>([])
 const meta = ref<PaginationMeta>({ total: 0, page: 1, limit: 10, totalPages: 0 })
+const summary = ref({
+  totalAmount: 0,
+  totalPaid: 0,
+  totalPending: 0
+})
 const isLoading = ref(true)
 const isSubmitting = ref(false)
 
@@ -629,6 +723,8 @@ const filters = ref({
   title: '',
   category: '',
   amount: '',
+  paid: '',
+  pending: '',
   status: '',
   date: ''
 })
@@ -637,6 +733,8 @@ const columnFilters = ref({
   title: false,
   category: false,
   amount: false,
+  paid: false,
+  pending: false,
   status: false,
   date: false
 })
@@ -648,8 +746,20 @@ const filterLabels: Record<string, string> = {
   title: 'Title',
   category: 'Category',
   amount: 'Amount',
+  paid: 'Paid',
+  pending: 'Pending',
   status: 'Status',
   date: 'Date'
+}
+
+// Date Range
+const onDateRangeChange = (range: [Date, Date] | null) => {
+  if (range && range[0] && range[1]) {
+    filters.value.date = `${range[0].toISOString().split('T')[0]}_${range[1].toISOString().split('T')[0]}`
+  } else {
+    filters.value.date = ''
+  }
+  debouncedResetPageAndLoad()
 }
 
 // Active Filters
@@ -675,6 +785,7 @@ const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 const formatDateTime = (d: string) =>
   new Date(d).toLocaleString('en-IN')
+const fmtRupee = (v: number) => `₹${Math.abs(v).toFixed(2)}`
 
 // Toast
 const showToast = (msg: string, success = true) => {
@@ -699,7 +810,7 @@ const buildQuery = () => {
 const loadExpenses = async () => {
   isLoading.value = true
   try {
-    const res = await api.get('/expenses', { params: buildQuery() }) as AxiosResponse<{ data: Expense[], meta: PaginationMeta }>
+    const res = await api.get('/expenses', { params: buildQuery() }) as AxiosResponse<ApiResponse>
     expenses.value = res.data.data.map(exp => ({
       ...exp,
       paid: exp.paid ?? 0,
@@ -707,6 +818,11 @@ const loadExpenses = async () => {
       payments: exp.payments ?? []
     }))
     meta.value = res.data.meta
+    summary.value = {
+      totalAmount: res.data.summary?.totalAmount ?? 0,
+      totalPaid: Math.abs(res.data.summary?.totalPaid ?? 0),
+      totalPending: res.data.summary?.totalPending ?? 0
+    }
   } catch {
     showToast('Failed to load expenses.', false)
   } finally {
@@ -840,8 +956,6 @@ const confirmDelete = async (exp: Expense) => {
   }
 }
 
-
-
 // Helpers
 const getStatusClass = (status?: string) => {
   if (!status) return 'bg-secondary'
@@ -881,7 +995,6 @@ onMounted(async () => {
   padding: 1.5rem;
   background: #f8f9fa;
   font-family: 'Inter', sans-serif;
-  /* min-height: 100vh; */
 }
 
 .filter-bar {
@@ -891,7 +1004,7 @@ onMounted(async () => {
   z-index: 15;
   padding: 0.75rem 0;
   border-bottom: 1px solid #dee2e6;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
 }
 
 .filter-chip {
@@ -913,6 +1026,7 @@ onMounted(async () => {
 .filter-chip .btn-close:hover {
   opacity: 1;
 }
+
 
 .table {
   --bs-table-hover-bg: #f1f5f9;
@@ -994,7 +1108,7 @@ onMounted(async () => {
   align-items: center;
 }
 
-.pagination-footer>div {
+.pagination-footer > div {
   width: 100%;
   max-width: 900px;
   display: flex;
@@ -1093,14 +1207,32 @@ onMounted(async () => {
   }
 }
 
-/* Large centered payment modal */
 .modal-xl-custom {
   max-width: 960px;
-  /* feel free to change 900-960-1000 */
   width: 100%;
 }
 
-/* Tiny tweak for very small screens */
+
+@media (max-width: 992px) {
+  .members-container {
+    padding: 1rem;
+  }
+
+  /* Stack Header Buttons */
+  .justify-content-between.align-items-center.mb-4 {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+
+  /* Filters Stack */
+  .filter-bar .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
 @media (max-width: 576px) {
   .modal-xl-custom {
     max-width: 94vw;
