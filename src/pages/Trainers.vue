@@ -1251,7 +1251,7 @@ onMounted(async () => {
   }
 
   .modal-dialog.modal-lg {
-    max-width: 95%;
+    max-width: 75%;
     margin: 0.75rem auto;
   }
 }

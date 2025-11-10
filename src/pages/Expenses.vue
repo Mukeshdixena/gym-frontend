@@ -2,7 +2,7 @@
   <div class="members-container">
     <!-- Top Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
+      <div style="width: 100%;">
         <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Expense Management</h2>
         <p class="text-muted small mb-0">Track all expenses, payments, and financial records.</p>
       </div>
@@ -14,50 +14,12 @@
         </button>
 
         <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-          <i class="bi bi-plus-lg"></i>
-          Add Expense
+          <i class="bi bi-plus-circle"></i>
+          Expense
         </button>
       </div>
     </div>
 
-    <!-- Filter Bar (Sticky) -->
-    <div class="filter-bar">
-      <div class="d-flex align-items-center gap-2 flex-wrap">
-
-        <!-- Date Range Picker -->
-        <div class="d-flex align-items-center gap-2">
-          <label class="fw-semibold text-muted small">Date Range:</label>
-          <VueDatePicker v-model="dateRange" range :enable-time-picker="false" :clearable="true" placeholder="From To"
-            format="yyyy-MM-dd" style="min-width: 230px;" @update:model-value="onDateRangeChange" />
-        </div>
-
-        <!-- Existing filter chips -->
-        <div v-for="(value, key) in activeFilters" :key="key"
-          class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
-          <i class="bi bi-funnel-fill"></i>
-          <strong>{{ filterLabels[key] }}:</strong> {{ value }}
-          <button @click="clearFilter(key)" class="btn-close btn-close-sm"></button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Global Summary Card -->
-    <div class="summary-card mt-3 mb-4 p-3 bg-white rounded-3 shadow-sm border">
-      <div class="row g-3 text-center text-md-start">
-        <div class="col-md-4">
-          <div class="text-muted small fw-semibold">Total Amount</div>
-          <div class="fs-5 fw-bold text-dark">{{ fmtRupee(summary.totalAmount) }}</div>
-        </div>
-        <div class="col-md-4">
-          <div class="text-muted small fw-semibold">Total Paid</div>
-          <div class="fs-5 fw-bold text-success">{{ fmtRupee(summary.totalPaid) }}</div>
-        </div>
-        <div class="col-md-4">
-          <div class="text-muted small fw-semibold">Total Pending</div>
-          <div class="fs-5 fw-bold text-danger">{{ fmtRupee(summary.totalPending) }}</div>
-        </div>
-      </div>
-    </div>
 
     <!-- Toast -->
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
@@ -425,6 +387,46 @@
           </table>
         </div>
       </div>
+
+      
+    <!-- Filter Bar (Sticky) -->
+    <div class="filter-bar">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+
+        <!-- Date Range Picker -->
+        <div class="d-flex align-items-center gap-2">
+          <label class="fw-bold text-muted small">Calculate your expense > Date Range:</label>
+          <VueDatePicker v-model="dateRange" range :enable-time-picker="false" :clearable="true" placeholder="From To"
+            format="yyyy-MM-dd" style="min-width: 230px;" @update:model-value="onDateRangeChange" />
+        </div>
+
+        <!-- Existing filter chips -->
+        <div v-for="(value, key) in activeFilters" :key="key"
+          class="filter-chip d-flex align-items-center gap-1 px-2 py-1">
+          <i class="bi bi-funnel-fill"></i>
+          <strong>{{ filterLabels[key] }}:</strong> {{ value }}
+          <button @click="clearFilter(key)" class="btn-close btn-close-sm"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Global Summary Card -->
+    <div class="summary-card mt-3 mb-4 p-3 bg-white rounded-3 shadow-sm border">
+      <div class="row g-3 text-center text-md-start">
+        <div class="col-md-4">
+          <div class="text-muted small fw-semibold">Total Amount</div>
+          <div class="fs-5 fw-bold text-dark">{{ fmtRupee(summary.totalAmount) }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-muted small fw-semibold">Total Paid</div>
+          <div class="fs-5 fw-bold text-success">{{ fmtRupee(summary.totalPaid) }}</div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-muted small fw-semibold">Total Pending</div>
+          <div class="fs-5 fw-bold text-danger">{{ fmtRupee(summary.totalPending) }}</div>
+        </div>
+      </div>
+    </div>
 
       <!-- Pagination Footer -->
       <footer class="pagination-footer">
@@ -987,7 +989,7 @@ onMounted(async () => {
   z-index: 15;
   padding: 0.75rem 0;
   border-bottom: 1px solid #dee2e6;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
 }
 
 .filter-chip {
@@ -1009,6 +1011,7 @@ onMounted(async () => {
 .filter-chip .btn-close:hover {
   opacity: 1;
 }
+
 
 .table {
   --bs-table-hover-bg: #f1f5f9;
@@ -1192,6 +1195,27 @@ onMounted(async () => {
 .modal-xl-custom {
   max-width: 960px;
   width: 100%;
+}
+
+
+@media (max-width: 992px) {
+  .members-container {
+    padding: 1rem;
+  }
+
+  /* Stack Header Buttons */
+  .justify-content-between.align-items-center.mb-4 {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+
+  /* Filters Stack */
+  .filter-bar .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 }
 
 @media (max-width: 576px) {
