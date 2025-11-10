@@ -743,6 +743,16 @@ interface Member {
 }
 interface PaginationMeta { total: number; page: number; limit: number; totalPages: number }
 
+interface UpdateMemberDto {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  gender?: string;
+  referralSource?: string;
+  notes?: string;
+}
 // Filter Keys
 type FilterKey = keyof typeof columnFilters.value
 
@@ -1002,18 +1012,52 @@ const editMember = (m: Member) => {
 const closeMemberModal = () => { memberModal?.hide(); editingMember.value = null }
 const saveMember = async () => {
   if (!isMemberFormValid.value) return showToast('Fill required fields.', false)
+
   try {
-    const payload = { ...memberForm.value }
-    if (payload.email === '') delete payload.email
+    // -----------------------------------------------------------------
+    // 1. Build the payload **exactly** as UpdateMemberDto expects
+    // -----------------------------------------------------------------
+    const payload: Partial<UpdateMemberDto> = {}
+
+    // Required fields – always send them (trimmed)
+    payload.firstName = memberForm.value.firstName!.trim()
+    payload.lastName = memberForm.value.lastName!.trim()
+    payload.phone = memberForm.value.phone!.trim()
+
+    // Optional fields – send **only if the user typed something**
+    if (memberForm.value.email?.trim()) {
+      payload.email = memberForm.value.email.trim()
+    } else if (editingMember.value?.email) {
+      // If the field is empty **and** the member already had an email,
+      // explicitly send an empty string so the backend can set it to NULL.
+      payload.email = ''
+    }
+
+    if (memberForm.value.address?.trim()) payload.address = memberForm.value.address.trim()
+    if (memberForm.value.gender?.trim()) payload.gender = memberForm.value.gender.trim()
+    if (memberForm.value.referralSource?.trim()) payload.referralSource = memberForm.value.referralSource.trim()
+    if (memberForm.value.notes?.trim()) payload.notes = memberForm.value.notes.trim()
+
+    // -----------------------------------------------------------------
+    // 2. Call the API
+    // -----------------------------------------------------------------
     if (editingMember.value) {
       await api.put(`/members/${editingMember.value.id}`, payload)
       showToast('Member updated!')
     } else {
+      // For **create** we still send the same shape – the backend will ignore
+      // the optional fields that are missing.
       await api.post('/members', payload)
       showToast('Member added!')
     }
-    await loadMembers(); closeMemberModal()
-  } catch { showToast('Save failed.', false) }
+
+    await loadMembers()
+    closeMemberModal()
+  } catch (err: any) {
+    // Show the exact message returned by the backend (email/phone conflict, etc.)
+    const msg = err?.response?.data?.message ?? 'Save failed.'
+    showToast(msg, false)
+  }
 }
 
 // Membership Actions
