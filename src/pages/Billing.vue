@@ -9,10 +9,7 @@
 
       <div class="d-flex gap-2 align-items-center">
         <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" @click="loadBills">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z" />
-            <path d="M8 1v3h3" />
-          </svg>
+          <i class="bi bi-arrow-clockwise"></i>
           Refresh
         </button>
 

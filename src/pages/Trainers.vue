@@ -1,26 +1,21 @@
 <template>
   <div class="members-container">
     <!-- Top Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
+    <div class="d-flex justify-content-between align-items-center mb-4" >
+      <div style="width:100%;">
         <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Trainers Management</h2>
         <p class="text-muted small mb-0">Manage trainers, specialities and assigned programs.</p>
       </div>
 
-      <div class="d-flex gap-2 align-items-center">
+      <div class="btn-cls d-flex gap-2 align-items-center">
         <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" @click="loadTrainers">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.416A6 6 0 1 1 8 2v1z" />
-            <path d="M8 1v3h3" />
-          </svg>
+          <i class="bi bi-arrow-clockwise"></i>
           Refresh
         </button>
 
         <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" @click="openAddModal">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 1v14m7-7H1" />
-          </svg>
-          + New Trainer
+          <i class="bi bi-person-plus"></i>
+          Trainer
         </button>
       </div>
     </div>
@@ -730,7 +725,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<!-- <style scoped>
 .members-container {
   padding: 1.5rem;
   background: #f8f9fa;
@@ -946,6 +941,318 @@ onMounted(async () => {
   .pagination-footer {
     left: 0;
     padding: 0.5rem;
+  }
+}
+</style> -->
+
+
+<style scoped>
+.members-container {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Sticky Filter Bar */
+.filter-bar {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 15;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #dee2e6;
+  backdrop-filter: blur(4px);
+}
+
+/* Filter Chips */
+.filter-chip {
+  background: #e9ecef;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  color: #495057;
+  transition: all 0.2s;
+}
+.filter-chip:hover {
+  background: #dee2e6;
+}
+.filter-chip .btn-close {
+  opacity: 0.7;
+}
+.filter-chip .btn-close:hover {
+  opacity: 1;
+}
+
+/* Table */
+.table {
+  --bs-table-hover-bg: #f1f5f9;
+  margin-bottom: 0;
+}
+.table thead th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c757d;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+}
+.table tbody td {
+  padding: 0.75rem 1rem;
+  font-size: 0.925rem;
+  vertical-align: middle;
+}
+.table tbody tr:hover {
+  background-color: var(--bs-table-hover-bg);
+}
+
+/* Expanded Rows */
+.table tbody tr.table-active {
+  background: #eef2ff !important;
+}
+
+/* Icon Buttons */
+.icon-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.icon-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+/* Sticky Header */
+.sticky-top {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 5;
+}
+
+/* Pagination */
+.pagination .page-link {
+  color: #495057;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.875rem;
+}
+.pagination .page-item.active .page-link {
+  background: #4361ee;
+  border-color: #4361ee;
+  color: white;
+}
+
+/* Table Scroll Container */
+.table-container {
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  background: white;
+  border-radius: 10px;
+}
+
+/* Pagination Footer */
+.pagination-footer {
+  position: fixed;
+  bottom: 10px;
+  left: 240px;
+  right: 0;
+  background: #fff;
+  padding: 0.65rem 1rem;
+  z-index: 1040;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.05);
+}
+.pagination-footer > div {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pagination-footer select {
+  min-width: 70px;
+}
+
+/* Filter Header */
+.filter-header {
+  position: relative;
+  white-space: nowrap;
+  min-width: 140px;
+}
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  position: relative;
+}
+.header-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #495057;
+  transition: opacity 0.2s ease;
+}
+.header-label.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.filter-input {
+  width: 100%;
+  max-width: 120px;
+  opacity: 1;
+  transition: all 0.3s ease;
+  padding: 0.15rem 0.4rem;
+}
+.filter-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+.filter-btn:hover,
+.filter-btn.active {
+  color: #4361ee;
+}
+
+/* Animations */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.25s ease;
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(6px);
+}
+
+/* Modal Styling */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+  overflow: hidden;
+}
+.modal-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+.modal-title {
+  font-weight: 600;
+}
+.modal-body {
+  background: #fff;
+}
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.form-control,
+.form-select {
+  font-size: 0.9rem;
+}
+
+/* Confirm Modal */
+.modal-sm .modal-content {
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .members-container {
+    padding: 1rem;
+  }
+
+  /* Stack Header Buttons */
+  .justify-content-between.align-items-center.mb-4 {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .btn-cls{
+    align-items: center;
+  }
+
+  /* Filters Stack */
+  .filter-bar .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Table Scroll */
+  .table-container {
+    max-height: none;
+    overflow-x: auto;
+  }
+
+  /* Pagination Footer Inline */
+  .pagination-footer {
+    position: static;
+    padding: 0.75rem 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .pagination-footer > div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.85rem;
+  }
+
+  /* Modal Full Width */
+  .modal-dialog.modal-lg {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 576px) {
+  .members-container {
+    padding: 0.75rem;
+  }
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Buttons Full Width */
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Table Text Smaller */
+  table {
+    font-size: 0.8rem;
+  }
+
+  td, th {
+    white-space: nowrap;
+  }
+
+  .filter-chip {
+    font-size: 0.75rem;
+  }
+
+  .modal-dialog.modal-lg {
+    max-width: 95%;
+    margin: 0.75rem auto;
   }
 }
 </style>
