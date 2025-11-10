@@ -119,10 +119,9 @@
                     <td class="small">{{ m.phone }}</td>
                     <td class="text-center">
                       <button class="icon-btn text-primary" title="Assign Plan" @click="openAssignModal(m)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                          viewBox="0 0 16 16">
-                          <path d="M8 1v14m7-7H1" />
-                        </svg>
+                        <button class="icon-btn gap-2 text-danger fw-bold" title="Assign Plan" @click="openAssignModal(m)">
+                        <i class="bi bi-plus-square"></i> Assign Now
+                      </button>
                       </button>
                     </td>
                   </tr>
@@ -247,8 +246,8 @@
                       <span class="status-badge status-success">{{ m.memberships[0]?.status }}</span>
                     </td>
                     <td class="text-center">
-                      <button class="icon-btn" title="Renew / Assign New" @click="openAssignModal(m)">
-                        <i class="bi bi-plus-square"></i>
+                      <button class="icon-btn gap-2 text-danger fw-bold" title="Renew / Assign New" @click="openAssignModal(m)">
+                        <i class="bi bi-plus-square"></i> Renew Now
                       </button>
                     </td>
                   </tr>
@@ -890,7 +889,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<!-- <style scoped>
 /* SAME AS ADMIN APPROVALS */
 .members-container {
   padding: 1.5rem;
@@ -1083,6 +1082,330 @@ onMounted(async () => {
   .pagination-footer {
     left: 0;
     padding: .5rem;
+  }
+}
+</style> -->
+
+<style scoped>
+.members-container {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  font-family: "Inter", sans-serif;
+}
+
+/* Sticky Filter Bar */
+.filter-bar {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 15;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #dee2e6;
+  backdrop-filter: blur(6px);
+}
+
+/* Filter chips */
+.filter-chip {
+  background: #e9ecef;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+}
+.filter-chip .btn-close {
+  opacity: 0.7;
+  margin-left: 0.25rem;
+}
+.filter-chip .btn-close:hover {
+  opacity: 1;
+}
+
+/* Table styling */
+.table {
+  --bs-table-hover-bg: #f8fafc;
+  margin-bottom: 0;
+}
+.table thead th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c757d;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+.table tbody td {
+  padding: 0.75rem 1rem;
+  font-size: 0.925rem;
+  vertical-align: middle;
+}
+.table tbody tr:hover {
+  background-color: var(--bs-table-hover-bg);
+}
+
+/* Status badges */
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.status-success {
+  background: #d1fae5;
+  color: #065f46;
+}
+.status-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+.status-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Icon buttons */
+.icon-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.icon-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+/* Pagination */
+.pagination .page-link {
+  color: #495057;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.875rem;
+}
+.pagination .page-item.active .page-link {
+  background: #4361ee;
+  border-color: #4361ee;
+  color: #fff;
+}
+
+/* Scrollable table wrapper */
+.table-container {
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 8px;
+}
+
+/* Pagination footer */
+.pagination-footer {
+  position: fixed;
+  bottom: 10px;
+  left: 240px;
+  right: 0;
+  background: #fff;
+  padding: 0.65rem 1rem;
+  z-index: 1040;
+  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.05);
+}
+.pagination-footer > div {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Filter headers inside tables */
+.filter-header {
+  position: relative;
+  white-space: nowrap;
+  min-width: 120px;
+}
+.filter-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+}
+.header-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #495057;
+  transition: opacity 0.2s ease;
+}
+.header-label.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.filter-input {
+  width: 100%;
+  max-width: 130px;
+  opacity: 1;
+  transition: all 0.3s ease;
+  padding: 0.2rem 0.4rem;
+}
+.filter-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+.filter-btn:hover,
+.filter-btn.active {
+  color: #4361ee;
+}
+
+/* Modal Improvements */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+}
+.modal-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+.modal-body {
+  background: #fff;
+}
+.modal-title {
+  font-weight: 600;
+}
+
+/* Section headings inside modal */
+.modal-body h5 {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.modal-body h6 {
+  font-size: 0.95rem;
+}
+
+/* Forms inside modal */
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.form-control,
+.form-select {
+  font-size: 0.9rem;
+}
+
+/* Alerts */
+.alert {
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .members-container {
+    padding: 1rem;
+  }
+
+  /* Stack header and filters */
+  .d-flex.justify-content-between.align-items-center.mb-4 {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.5rem;
+  }
+
+  /* Filters and chips */
+  .filter-bar .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Pagination footer becomes inline */
+  .pagination-footer {
+    position: static;
+    margin-top: 1rem;
+    box-shadow: none;
+    padding: 0.75rem 0;
+  }
+  .pagination-footer > div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .table-container {
+    max-height: none;
+    overflow-x: auto;
+    border-radius: 0.5rem;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .filter-input {
+    max-width: 100px;
+  }
+
+  /* Modal optimization for tablets */
+  .modal-dialog.modal-lg {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 576px) {
+  .members-container {
+    padding: 0.75rem;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Make filters and buttons full width */
+  .btn,
+  .form-select {
+    width: 100%;
+  }
+
+  /* Scrollable tables on very small screens */
+  table {
+    font-size: 0.78rem;
+  }
+
+  td,
+  th {
+    white-space: nowrap;
+  }
+
+  .filter-chip {
+    font-size: 0.7rem;
+  }
+
+  /* Modal readability */
+  .modal-content {
+    font-size: 0.85rem;
+  }
+
+  .modal-dialog.modal-lg {
+    max-width: 95%;
+    margin: 0.5rem auto;
   }
 }
 </style>
