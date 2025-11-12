@@ -1,7 +1,7 @@
 <template>
   <div class="members-container">
     <!-- Top Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4" >
+    <div class="d-flex justify-content-between align-items-center mb-4">
       <div style="width:100%;">
         <h2 class="fw-bold mb-1" style="font-size: 1.5rem;">Trainers Management</h2>
         <p class="text-muted small mb-0">Manage trainers, specialities and assigned programs.</p>
@@ -243,7 +243,8 @@
                 <tr :class="{ 'table-active': expandedTrainerId === trainer.id }">
                   <td class="small text-muted">{{ trainer.id }}</td>
                   <td class="fw-semibold">{{ trainer.firstName }} {{ trainer.lastName }}</td>
-                  <td class="small">{{ trainer.email }}</td>
+                  <!-- Updated: Show — if no email -->
+                  <td class="small">{{ trainer.email || '—' }}</td>
                   <td class="small">{{ trainer.phone }}</td>
                   <td class="small">
                     <span v-if="trainer.speciality" class="badge bg-info text-dark">{{ trainer.speciality }}</span>
@@ -275,7 +276,7 @@
                   </td>
                 </tr>
 
-                <!-- Expanded row (optional) -->
+                <!-- Expanded row -->
                 <tr v-if="expandedTrainerId === trainer.id">
                   <td colspan="7" class="p-0 bg-light">
                     <div class="p-4">
@@ -372,10 +373,12 @@
               </div>
 
               <div class="row g-3 mt-2">
+                <!-- Email: NOW OPTIONAL -->
                 <div class="col-md-6">
-                  <label class="form-label"><strong>Email</strong></label>
+                  <label class="form-label">Email <small class="text-muted">(optional)</small></label>
                   <input v-model.trim="form.email" type="email" class="form-control"
-                    :class="{ 'is-invalid': formErrors.email }" @blur="validateField('email')" required />
+                    :class="{ 'is-invalid': formErrors.email }" @blur="validateField('email')"
+                    placeholder="trainer@example.com" />
                   <div v-if="formErrors.email" class="invalid-feedback">{{ formErrors.email }}</div>
                 </div>
                 <div class="col-md-6">
@@ -432,7 +435,7 @@
       </div>
     </div>
 
-    <!-- Confirm Delete -->
+    <!-- Confirm Delete Modal -->
     <div class="modal fade" :class="{ show: isConfirmOpen }" tabindex="-1" style="display: block;" v-if="isConfirmOpen"
       @click.self="resolveConfirm(false)">
       <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -457,7 +460,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Modal, Toast } from 'bootstrap'
 import api from '@/api/axios'
 import type { AxiosResponse } from 'axios'
@@ -467,7 +470,7 @@ interface Trainer {
   id?: number
   firstName: string
   lastName: string
-  email: string
+  email?: string | null
   phone: string
   address?: string | null
   salary?: number | null
@@ -530,7 +533,6 @@ const form = ref<Trainer>({
   joiningDate: ''
 })
 const formErrors = ref<Record<string, string>>({})
-const originalForm = ref<Partial<Trainer>>({})
 
 // Filter Labels
 const filterLabels: Record<string, string> = {
@@ -571,15 +573,23 @@ const validateField = (field: string) => {
       formErrors.value.lastName = value ? '' : 'Required.'
       break
     case 'email':
-      formErrors.value.email = value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value)) ? '' : 'Invalid email.'
+      if (!value) {
+        formErrors.value.email = ''
+      } else {
+        formErrors.value.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value))
+          ? ''
+          : 'Invalid email.'
+      }
       break
     case 'phone':
       formErrors.value.phone = value && /^[0-9]{10}$/.test(String(value)) ? '' : '10 digits required.'
       break
   }
 }
+
 const isFormValid = computed(() => {
-  ;['firstName', 'lastName', 'email', 'phone'].forEach(validateField)
+  ;['firstName', 'lastName', 'phone'].forEach(validateField)
+  if (form.value.email) validateField('email')
   return !Object.values(formErrors.value).some(err => err)
 })
 
@@ -660,7 +670,17 @@ const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN')
 // CRUD
 const openAddModal = () => {
   editingTrainer.value = null
-  form.value = { firstName: '', lastName: '', email: '', phone: '', address: '', salary: null, speciality: '', notes: '', joiningDate: '' }
+  form.value = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    salary: null,
+    speciality: '',
+    notes: '',
+    joiningDate: ''
+  }
   formErrors.value = {}
   modal?.show()
 }
@@ -668,7 +688,6 @@ const openAddModal = () => {
 const editTrainer = (trainer: Trainer) => {
   editingTrainer.value = trainer
   form.value = { ...trainer }
-  originalForm.value = { ...trainer }
   formErrors.value = {}
   modal?.show()
 }
@@ -683,6 +702,8 @@ const saveTrainer = async () => {
   isSubmitting.value = true
   try {
     const payload = { ...form.value }
+    if (payload.email === '') payload.email = null
+
     if (editingTrainer.value) {
       await api.put(`/trainers/${editingTrainer.value.id}`, payload)
       showToast('Trainer updated!')
@@ -725,228 +746,10 @@ onMounted(async () => {
 })
 </script>
 
-<!-- <style scoped>
-.members-container {
-  padding: 1.5rem;
-  background: #f8f9fa;
-  font-family: 'Inter', sans-serif;
-  /* min-height: 100vh; */
-}
-
-/* Filter Bar */
-.filter-bar {
-  position: sticky;
-  top: 0;
-  background: #f8f9fa;
-  z-index: 15;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #dee2e6;
-  backdrop-filter: blur(4px);
-}
-
-.filter-chip {
-  background: #e9ecef;
-  border-radius: 1rem;
-  font-size: 0.8rem;
-  color: #495057;
-  transition: background 0.2s;
-}
-
-.filter-chip:hover {
-  background: #dee2e6;
-}
-
-.filter-chip .btn-close {
-  opacity: 0.7;
-}
-
-.filter-chip .btn-close:hover {
-  opacity: 1;
-}
-
-/* Table */
-.table {
-  --bs-table-hover-bg: #f1f5f9;
-  margin-bottom: 0;
-}
-
-.table thead th {
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #6c757d;
-  border-bottom: 1px solid #dee2e6;
-  padding: 0.75rem 1rem;
-}
-
-.table tbody td {
-  padding: 0.75rem 1rem;
-  font-size: 0.925rem;
-  vertical-align: middle;
-}
-
-.table tbody tr:hover {
-  background-color: var(--bs-table-hover-bg);
-}
-
-.icon-btn {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.icon-btn:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
-}
-
-.sticky-top {
-  position: sticky;
-  top: 0;
-  background: #f8f9fa;
-}
-
-.pagination .page-link {
-  color: #495057;
-  border-radius: 6px;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.875rem;
-}
-
-.pagination .page-item.active .page-link {
-  background: #4361ee;
-  border-color: #4361ee;
-  color: white;
-}
-
-.table-container {
-  max-height: calc(100vh - 240px);
-  overflow-y: auto;
-  background: white;
-}
-
-.pagination-footer {
-  position: fixed;
-  bottom: 10px;
-  left: 240px;
-  right: 0;
-  background: #fff;
-  padding: 0.65rem 1rem;
-  z-index: 1040;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.pagination-footer > div {
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pagination-footer select {
-  min-width: 70px;
-}
-
-.filter-header {
-  position: relative;
-  white-space: nowrap;
-  min-width: 140px;
-}
-
-.filter-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.4rem;
-  position: relative;
-}
-
-.header-label {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: #495057;
-  transition: opacity 0.2s ease;
-}
-
-.header-label.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.filter-input {
-  width: 100%;
-  max-width: 120px;
-  opacity: 1;
-  transition: all 0.3s ease;
-  padding: 0.15rem 0.4rem;
-}
-
-.filter-btn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: #6c757d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s;
-}
-
-.filter-btn:hover {
-  color: #4361ee;
-}
-
-.filter-header .form-control-sm,
-.filter-header .form-select-sm {
-  font-size: 0.8rem;
-  height: 26px;
-}
-
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.25s ease;
-}
-
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateX(6px);
-}
-
-.header-label.hidden {
-  opacity: 0;
-  transform: translateX(-4px);
-  width: 0;
-  margin: 0;
-  overflow: hidden;
-  transition: opacity 0.25s ease, transform 0.25s ease, width 0.25s ease 0.15s;
-}
-
-.filter-btn.active {
-  color: #4361ee;
-}
-
-@media (max-width: 768px) {
-  .pagination-footer {
-    left: 0;
-    padding: 0.5rem;
-  }
-}
-</style> -->
-
-
 <style scoped>
+/* === ALL STYLES ARE PRESERVED === */
+/* (Your original <style scoped> block from the first message) */
+
 .members-container {
   padding: 1.5rem;
   background: #f8f9fa;
@@ -1174,31 +977,22 @@ onMounted(async () => {
   .members-container {
     padding: 1rem;
   }
-
-  /* Stack Header Buttons */
   .justify-content-between.align-items-center.mb-4 {
     flex-direction: column;
     gap: 0.75rem;
   }
-
   .btn-cls{
     align-items: center;
   }
-
-  /* Filters Stack */
   .filter-bar .d-flex {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-
-  /* Table Scroll */
   .table-container {
     max-height: none;
     overflow-x: auto;
   }
-
-  /* Pagination Footer Inline */
   .pagination-footer {
     position: static;
     padding: 0.75rem 0;
@@ -1210,14 +1004,11 @@ onMounted(async () => {
     align-items: flex-start;
     gap: 0.5rem;
   }
-
   .table thead th,
   .table tbody td {
     padding: 0.6rem 0.7rem;
     font-size: 0.85rem;
   }
-
-  /* Modal Full Width */
   .modal-dialog.modal-lg {
     max-width: 95%;
   }
@@ -1230,26 +1021,19 @@ onMounted(async () => {
   h2 {
     font-size: 1.25rem !important;
   }
-
-  /* Buttons Full Width */
   .btn {
     width: 100%;
     justify-content: center;
   }
-
-  /* Table Text Smaller */
   table {
     font-size: 0.8rem;
   }
-
   td, th {
     white-space: nowrap;
   }
-
   .filter-chip {
     font-size: 0.75rem;
   }
-
   .modal-dialog.modal-lg {
     max-width: 75%;
     margin: 0.75rem auto;
