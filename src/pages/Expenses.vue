@@ -527,7 +527,7 @@
 
     <!-- Add Payment Modal -->
     <div class="modal fade" ref="paymentModalRef" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg-custom">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
           <!-- Header -->
           <div class="modal-header bg-primary text-white px-5 py-3">
